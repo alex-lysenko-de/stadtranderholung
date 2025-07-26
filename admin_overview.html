@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -18,13 +19,17 @@
         .spinner-grow {
             margin-right: 5px;
         }
+        .missing-children {
+            color: red;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div id="app" class="container mt-5">
         <h2 class="mb-4">Admin Übersicht für {{ todayDate }}</h2>
 
-        <div v-if="loading" class="text-center my-4">
+        <div v-if="loading && !recounting" class="text-center my-4">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Laden...</span>
             </div>
@@ -34,40 +39,79 @@
         <div v-if="errorMessage" class="alert alert-danger" role="alert">
             {{ errorMessage }}
         </div>
+        <div v-if="successMessage" class="alert alert-success" role="alert">
+            {{ successMessage }}
+        </div>
 
-        <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>Gruppe Nummer</th>
-                    <th>Anzahl der Kinder</th>
-                    <th>Heute zugewiesene Betreuer</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="group in sortedGroups" :key="group.number" :class="{'inactive-group': !group.active}">
-                    <td>
-                        <a :href="'group.html?gr=' + group.number">{{ group.number }}</a>
-                    </td>
-                    <td>
-                        <template v-if="group.kinderAnzahl !== null && group.kinderAnzahl !== undefined">
-                            {{ group.kinderAnzahl }}
-                        </template>
-                        <template v-else>
-                            <div class="spinner-container">
-                                <div class="spinner-grow spinner-grow-sm text-secondary" role="status" aria-hidden="true"></div>
-                                <span>Berechnung läuft...</span>
-                            </div>
-                        </template>
-                    </td>
-                    <td>
-                        <ul v-if="group.betreuer && group.betreuer.length > 0" class="list-unstyled">
-                            <li v-for="betreuer in group.betreuer" :key="betreuer">{{ betreuer }}</li>
-                        </ul>
-                        <span v-else>Nicht zugewiesen</span>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+            <button
+                @click="resetKinderAnzahlNow"
+                :disabled="recounting"
+                class="btn btn-warning btn-lg"
+            >
+                <span v-if="recounting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                {{ recounting ? 'Zählvorgang läuft...' : 'Neuen Zählvorgang starten' }}
+            </button>
+            <div class="text-end">
+                <h4 class="mb-0">Gesamtzahl Kinder (Anfang): {{ totalKinderAnzahl }}</h4>
+                <h4 class="mb-0" :class="{'missing-children': hasDiscrepancy}">
+                    Gesamtzahl Kinder (Aktuell): {{ totalKinderAnzahlNow }}
+                    <span v-if="hasDiscrepancy"> ({{ totalKinderAnzahl - totalKinderAnzahlNow }} Kind(er) fehlen!)</span>
+                </h4>
+            </div>
+        </div>
+        
+        <p v-if="!loading && !groups.length && !recounting" class="alert alert-info">
+            Es sind noch keine Gruppeninformationen für heute verfügbar. Bitte starten Sie einen neuen Zählvorgang, um Betreuer zur Dateneingabe aufzufordern.
+        </p>
+
+        <div v-if="groups.length > 0 || loading || recounting">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Gruppe Nummer</th>
+                        <th>Anzahl der Kinder (Anfang)</th>
+                        <th>Heute zugewiesene Betreuer</th>
+                        <th>Anzahl der Kinder (Aktuell)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="group in sortedGroups" :key="group.number" :class="{'inactive-group': !group.active}">
+                        <td>
+                            <a :href="'group.html?gr=' + group.number">{{ group.number }}</a>
+                        </td>
+                        <td>
+                            <template v-if="group.kinderAnzahl !== null && group.kinderAnzahl !== undefined">
+                                {{ group.kinderAnzahl }}
+                            </template>
+                            <template v-else>
+                                <div class="spinner-container">
+                                    <div class="spinner-grow spinner-grow-sm text-secondary" role="status" aria-hidden="true"></div>
+                                    <span>Nicht angegeben</span>
+                                </div>
+                            </template>
+                        </td>
+                        <td>
+                            <ul v-if="group.betreuer && group.betreuer.length > 0" class="list-unstyled">
+                                <li v-for="betreuer in group.betreuer" :key="betreuer">{{ betreuer }}</li>
+                            </ul>
+                            <span v-else>Nicht zugewiesen</span>
+                        </td>
+                        <td>
+                            <template v-if="group.kinderAnzahlNow !== null && group.kinderAnzahlNow !== undefined">
+                                {{ group.kinderAnzahlNow }}
+                            </template>
+                            <template v-else>
+                                <div class="spinner-container">
+                                    <div class="spinner-grow spinner-grow-sm text-secondary" role="status" aria-hidden="true"></div>
+                                    <span>Berechnung läuft...</span>
+                                </div>
+                            </template>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
         <p class="mt-4">
             <small class="text-muted">Hinweis: Gruppen in Grau haben noch keine vollständigen Informationen für heute abgegeben.</small>
@@ -81,22 +125,35 @@
                     groups: [],
                     loading: true,
                     errorMessage: '',
+                    successMessage: '',
                     todayDate: '',
-                    pollingInterval: null // Добавляем свойство для хранения ID интервала
+                    pollingInterval: null,
+                    recounting: false, // Флаг для состояния "Recount" кнопки
+                    // JSONBin.io Access Information - KEEP AS IS per user instruction
+                    MASTER_KEY: "$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm",
+                    ACCESS_KEY: "$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUaAYCu", // User requested to keep 'a'
+                    BIN_ID: "68834e6e7b4b8670d8a712d0"
                 };
             },
             computed: {
                 sortedGroups() {
                     return [...this.groups].sort((a, b) => a.number - b.number);
+                },
+                totalKinderAnzahl() {
+                    return this.groups.reduce((sum, group) => sum + (group.kinderAnzahl || 0), 0);
+                },
+                totalKinderAnzahlNow() {
+                    return this.groups.reduce((sum, group) => sum + (group.kinderAnzahlNow || 0), 0);
+                },
+                hasDiscrepancy() {
+                    return this.totalKinderAnzahl !== this.totalKinderAnzahlNow;
                 }
             },
             mounted() {
                 this.setTodayDate();
                 this.fetchAllGroupData();
-                // Запускаем периодический опрос каждые 10 секунд (10000 миллисекунд)
-                this.pollingInterval = setInterval(this.fetchAllGroupData, 10000);
+                this.pollingInterval = setInterval(this.fetchAllGroupData, 10000); // 10 seconds
             },
-            // Добавляем хук unmounted для очистки интервала, когда компонент уничтожается
             unmounted() {
                 if (this.pollingInterval) {
                     clearInterval(this.pollingInterval);
@@ -108,30 +165,28 @@
                     const options = { year: 'numeric', month: 'long', day: 'numeric' };
                     this.todayDate = today.toLocaleDateString('de-DE', options);
                 },
-                async fetchAllGroupData() {
-                    // Показывать спиннер только при первой загрузке или если данные еще не были получены
-                    if (!this.groups.length) {
-                         this.loading = true;
-                    }
-                    this.errorMessage = '';
-                   
-                    const MASTER_KEY = "$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm";
-                    const ACCESS_KEY = "$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUaAYCu";
-                    const BIN_ID = "68834e6e7b4b8670d8a712d0"; // ID для Bin "Days" в Collection "SR2025"
-
-                    const apiUrl = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+                getTodayDateKey() {
                     const today = new Date();
                     const year = today.getFullYear();
                     const month = String(today.getMonth() + 1).padStart(2, '0');
                     const day = String(today.getDate()).padStart(2, '0');
-                    const dateKey = `${year}-${month}-${day}`;
+                    return `${year}-${month}-${day}`;
+                },
+                async fetchAllGroupData() {
+                    this.errorMessage = ''; // Clear previous errors
+                    if (!this.recounting && !this.groups.length) { // Show loading only initially or if no groups data yet and not recounting
+                         this.loading = true;
+                    }
+                   
+                    const apiUrl = `https://api.jsonbin.io/v3/b/${this.BIN_ID}`;
+                    const dateKey = this.getTodayDateKey();
 
                     try {
                         const responseGet = await fetch(apiUrl, {
                             method: 'GET',
                             headers: {
-                                'X-Master-Key': MASTER_KEY,
-                                'X-Access-Key': ACCESS_KEY
+                                'X-Master-Key': this.MASTER_KEY,
+                                'X-Access-Key': this.ACCESS_KEY
                             }
                         });
 
@@ -149,38 +204,120 @@
                         const todaysGroupsData = currentData[dateKey] ? currentData[dateKey].groups : {};
 
                         let maxGroupNumber = 0;
+                        // Determine max group number from existing data or set a default
                         for (const groupNum in todaysGroupsData) {
                             const num = parseInt(groupNum, 10);
                             if (!isNaN(num) && num > maxGroupNumber) {
                                 maxGroupNumber = num;
                             }
                         }
-
-                        // Если нет данных, но хотим отобразить хотя бы одну группу (например, если группы начинаются с 1)
-                        if (maxGroupNumber === 0 && Object.keys(todaysGroupsData).length === 0) {
-                             maxGroupNumber = 5; // Предполагаем, что есть минимум 5 групп для отображения по умолчанию
+                        // Default to 15 groups if no data or fewer groups are found, matching system structure
+                        if (maxGroupNumber < 15) {
+                            maxGroupNumber = 15;
                         }
 
                         const fetchedGroups = [];
                         for (let i = 1; i <= maxGroupNumber; i++) {
                             const groupData = todaysGroupsData[i.toString()];
-                            const isActive = !!groupData;
+                            const isActive = !!groupData && (groupData.Betreuer.length > 0 || groupData.KinderAnzahl !== null);
                             
                             fetchedGroups.push({
                                 number: i,
-                                kinderAnzahl: groupData ? groupData.KinderAnzahl : null,
+                                // Use 0 if KinderAnzahl is null/undefined to ensure proper sum calculation
+                                kinderAnzahl: groupData && groupData.KinderAnzahl !== null ? groupData.KinderAnzahl : null,
                                 betreuer: groupData && groupData.Betreuer ? groupData.Betreuer : [],
+                                // Use 0 if KinderAnzahlNow is null/undefined to ensure proper sum calculation
+                                kinderAnzahlNow: groupData && groupData.KinderAnzahlNow !== null ? groupData.KinderAnzahlNow : null,
                                 active: isActive
                             });
                         }
-                        this.groups = fetchedGroups; // Обновляем данные групп
+                        this.groups = fetchedGroups;
 
                     } catch (error) {
                         console.error('Fehler beim Laden der Admin Übersicht:', error);
                         this.errorMessage = `Fehler: ${error.message}`;
-                        this.groups = [];
+                        this.groups = []; // Clear groups on error
                     } finally {
                         this.loading = false;
+                        this.recounting = false; // Reset recounting state after fetch
+                    }
+                },
+                async resetKinderAnzahlNow() {
+                    this.recounting = true;
+                    this.errorMessage = '';
+                    this.successMessage = '';
+                    const apiUrl = `https://api.jsonbin.io/v3/b/${this.BIN_ID}`;
+                    const dateKey = this.getTodayDateKey();
+
+                    try {
+                        // 1. Fetch current full data
+                        const responseGet = await fetch(apiUrl, {
+                            method: 'GET',
+                            headers: {
+                                'X-Master-Key': this.MASTER_KEY,
+                                'X-Access-Key': this.ACCESS_KEY
+                            }
+                        });
+
+                        if (!responseGet.ok) {
+                            throw new Error(`Fehler beim Abrufen der Daten vor Reset: ${responseGet.statusText}`);
+                        }
+                        let currentData = await responseGet.json();
+                        let record = currentData.record || {};
+
+                        // Ensure the structure for today's date exists
+                        if (!record[dateKey]) {
+                            record[dateKey] = { groups: {} };
+                        }
+                        // If groups object doesn't exist for today, create it
+                        if (!record[dateKey].groups) {
+                            record[dateKey].groups = {};
+                        }
+
+                        // 2. Modify KinderAnzahlNow to null for all groups for today
+                        // Iterate through all possible groups (1 to 15)
+                        for (let i = 1; i <= 15; i++) {
+                            const groupNumStr = i.toString();
+                            if (record[dateKey].groups[groupNumStr]) {
+                                record[dateKey].groups[groupNumStr].KinderAnzahlNow = null;
+                            } else {
+                                // If a group doesn't exist, create a placeholder for it
+                                // This ensures all 15 groups are represented after reset,
+                                // even if they haven't logged in yet, making the table complete.
+                                record[dateKey].groups[groupNumStr] = {
+                                    Betreuer: [],
+                                    KinderAnzahl: null,
+                                    KinderAnzahlNow: null
+                                };
+                            }
+                        }
+
+                        // 3. Send modified data back (PUT request)
+                        const responsePut = await fetch(apiUrl, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Master-Key': this.MASTER_KEY,
+                                'X-Access-Key': this.ACCESS_KEY
+                            },
+                            body: JSON.stringify(record)
+                        });
+
+                        if (!responsePut.ok) {
+                            throw new Error(`Fehler beim Speichern der Daten nach Reset: ${responsePut.statusText}`);
+                        }
+                        await responsePut.json();
+                        this.successMessage = 'Neuer Zählvorgang gestartet! Betreuer werden um Aktualisierung gebeten.';
+                        // Trigger a fetch immediately after reset to update UI
+                        this.fetchAllGroupData(); 
+
+                    } catch (error) {
+                        console.error('Fehler beim Zurücksetzen des Zählvorgangs:', error);
+                        this.errorMessage = `Fehler beim Starten des Zählvorgangs: ${error.message}`;
+                        this.recounting = false; // Ensure button state resets on error
+                    } finally {
+                        // Success message will clear after next fetchAllGroupData is done
+                        // No need to set recounting to false here, fetchAllGroupData will do it
                     }
                 }
             }
