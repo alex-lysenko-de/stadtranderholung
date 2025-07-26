@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Gruppe</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div id="app" class="container py-5">
+    <h2>Gruppe {{ groupNumber }}</h2>
+
+    <form @submit.prevent="addChild" class="row g-3 mb-4">
+      <div class="col-md-4">
+        <input
+          v-model="newChildName"
+          type="text"
+          class="form-control"
+          placeholder="Name des Kindes"
+          required
+        >
+      </div>
+      <div class="col-md-2">
+        <input
+          v-model.number="newChildAge"
+          type="number"
+          class="form-control"
+          placeholder="Alter"
+          min="0"
+          required
+        >
+      </div>
+      <div class="col-md-3 form-check d-flex align-items-center">
+        <input
+          v-model="isPresent"
+          class="form-check-input me-2"
+          type="checkbox"
+          id="presentCheckbox"
+        >
+        <label class="form-check-label" for="presentCheckbox">Anwesend</label>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-success">Kind hinzufügen</button>
+      </div>
+    </form>
+
+    <table class="table table-bordered table-striped" v-if="children.length">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Alter</th>
+          <th>Anwesend</th>
+          <th>Aktion</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(child, index) in children" :key="index">
+          <td>{{ child.name }}</td>
+          <td>{{ child.age }}</td>
+          <td>
+            <span v-if="child.present" class="text-success">✓ Ja</span>
+            <span v-else class="text-danger">✗ Nein</span>
+          </td>
+          <td>
+            <button @click="removeChild(index)" class="btn btn-danger btn-sm">Entfernen</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          groupNumber: '',              // число (например: 2)
+          groupKey: '',                 // ключ в localStorage (например: gr2)
+          newChildName: '',
+          newChildAge: '',
+          isPresent: false,
+          children: []
+        };
+      },
+      methods: {
+        getGroupFromURL() {
+          const params = new URLSearchParams(window.location.search);
+          const gr = params.get('gr');
+          if (!gr) return;
+          this.groupNumber = gr;
+          this.groupKey = `gr${gr}`;
+        },
+        loadChildrenFromStorage() {
+          const data = JSON.parse(localStorage.getItem('Kinder')) || {};
+          this.children = data[this.groupKey] || [];
+        },
+        saveChildrenToStorage() {
+          const data = JSON.parse(localStorage.getItem('Kinder')) || {};
+          data[this.groupKey] = this.children;
+          localStorage.setItem('Kinder', JSON.stringify(data));
+        },
+        addChild() {
+          if (!this.newChildName || this.newChildAge === '') return;
+
+          this.children.push({
+            name: this.newChildName.trim(),
+            age: this.newChildAge,
+            present: this.isPresent
+          });
+
+          this.saveChildrenToStorage();
+
+          this.newChildName = '';
+          this.newChildAge = '';
+          this.isPresent = false;
+        },
+        removeChild(index) {
+          this.children.splice(index, 1);
+          this.saveChildrenToStorage();
+        }
+      },
+      mounted() {
+        this.getGroupFromURL();
+        this.loadChildrenFromStorage();
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
