@@ -70,11 +70,20 @@
             </div>
         </div>
         
-        <p v-if="!loading && !groups.length && !recounting && !resettingFullData" class="alert alert-info">
-            Es sind noch keine Gruppeninformationen für heute verfügbar. Bitte starten Sie einen neuen Zählvorgang, um Betreuer zur Dateneingabe aufzufordern.
+        <div class="mb-4">
+            <button
+                @click="toggleDetails"
+                class="btn btn-info"
+            >
+                {{ showDetails ? 'Details ausblenden' : 'Details anzeigen' }}
+            </button>
+        </div>
+
+        <p v-if="!loading && !groups.length && !recounting && !resettingFullData && !showDetails" class="alert alert-info">
+            Es sind noch keine Gruppeninformationen für heute verfügbar. Bitte starten Sie einen neuen Zählvorgang, um Betreuer zur Dateneingabe aufzufordern, oder zeigen Sie Details an, um eine leere Tabelle zu sehen.
         </p>
 
-        <div v-if="groups.length > 0 || loading || recounting || resettingFullData">
+        <div v-if="showDetails && (groups.length > 0 || loading || recounting || resettingFullData)">
             <table class="table table-striped table-hover">
                 <thead>
                     <tr>
@@ -122,7 +131,7 @@
             </table>
         </div>
 
-        <p class="mt-4">
+        <p class="mt-4" v-if="showDetails">
             <small class="text-muted">Hinweis: Gruppen in Grau haben noch keine vollständigen Informationen für heute abgegeben.</small>
         </p>
     </div>
@@ -139,6 +148,7 @@
                     pollingInterval: null,
                     recounting: false, // Флаг для состояния "Recount" кнопки
                     resettingFullData: false, // Флаг для состояния "Полный сброс" кнопки
+                    showDetails: false, // Флаг для отображения/скрытия деталей
                     // JSONBin.io Access Information - KEEP AS IS per user instruction
                     MASTER_KEY: "$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm",
                     ACCESS_KEY: "$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUaAYCu", // User requested to keep 'a'
@@ -185,7 +195,8 @@
                 async fetchAllGroupData() {
                     this.errorMessage = ''; // Clear previous errors
                     this.successMessage = ''; // Clear success message on new fetch
-                    if (!this.recounting && !this.resettingFullData && !this.groups.length) { // Show loading only initially or if no groups data yet and not actively resetting
+                    // Показывать спиннер загрузки только если нет данных и не идет активный процесс пересчета/сброса
+                    if (!this.recounting && !this.resettingFullData && (!this.groups.length || this.loading)) {
                          this.loading = true;
                     }
                    
@@ -230,7 +241,8 @@
                         const fetchedGroups = [];
                         for (let i = 1; i <= maxGroupNumber; i++) {
                             const groupData = todaysGroupsData[i.toString()];
-                            const isActive = !!groupData && (groupData.Betreuer && groupData.Betreuer.length > 0 || groupData.KinderAnzahl !== null); // Check for Betreuer or KinderAnzahl for active status
+                            // Группа считается активной, если есть Betreuer или KinderAnzahl
+                            const isActive = !!groupData && (groupData.Betreuer && groupData.Betreuer.length > 0 || groupData.KinderAnzahl !== null); 
                             
                             fetchedGroups.push({
                                 number: i,
@@ -358,7 +370,7 @@
                             delete record[dateKey];
                         } else {
                             this.successMessage = 'Данные за текущий день уже отсутствуют.';
-                            this.fetchAllGroupData();
+                            this.fetchAllGroupData(); // Trigger a fetch to update state
                             return;
                         }
 
@@ -386,6 +398,9 @@
                     } finally {
                         // resettingFullData will be set to false by fetchAllGroupData's finally block
                     }
+                },
+                toggleDetails() {
+                    this.showDetails = !this.showDetails;
                 }
             }
         });
