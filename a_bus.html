@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus-Übersicht - Stadtranderholung</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px 0;
+        }
+        
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .total-summary {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            transition: all 0.5s ease;
+        }
+        
+        .total-summary.complete {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .total-count {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            border: none;
+            border-radius: 15px;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            width: 100%;
+            margin-bottom: 20px;
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+        
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        
+        .bus-table {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .table thead th {
+            background: #f8f9fa;
+            border: none;
+            font-weight: bold;
+            padding: 15px;
+            white-space: nowrap;
+        }
+        
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+            border-top: 1px solid #dee2e6;
+            white-space: nowrap;
+        }
+        
+        .bus-number {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 1.2rem;
+        }
+        
+        .count-value {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #28a745;
+        }
+        
+        .count-null {
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .betreuer-name {
+            background: #e9ecef;
+            border-radius: 15px;
+            padding: 5px 12px;
+            display: inline-block;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+        
+        .bus-inactive {
+            opacity: 0.5;
+            background-color: #f8f9fa;
+        }
+        
+        .loading-spinner {
+            color: #007bff;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-ok {
+            background-color: #28a745;
+        }
+        
+        .status-inactive {
+            background-color: #6c757d;
+        }
+        
+        .overview-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .back-button {
+            background: #6c757d;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            color: white;
+            font-size: 1.1rem;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+        
+        .timestamp {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 767px) {
+            body {
+                padding-top: 10px;
+            }
+            
+            .total-count {
+                font-size: 5rem;
+            }
+            
+            .refresh-btn {
+                padding: 12px 20px;
+                font-size: 1rem;
+                position: sticky;
+                top: 10px;
+            }
+            
+            .table tbody td {
+                white-space: normal;
+                word-break: break-word;
+            }
+            
+            .table thead th:nth-child(1), .table tbody td:nth-child(1) { width: 10%; }
+            .table thead th:nth-child(2), .table tbody td:nth-child(2) { width: 20%; }
+            .table thead th:nth-child(3), .table tbody td:nth-child(3) { width: 20%; }
+            .table thead th:nth-child(4), .table tbody td:nth-child(4) { width: 25%; }
+            .table thead th:nth-child(5), .table tbody td:nth-child(5) { width: 25%; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="main-container">
+            <!-- Alert Container -->
+            <div id="alertContainer"></div>
+
+            <!-- Total Summary -->
+            <div :class="['total-summary', { 'complete': allBusesHaveData }]">
+                <h3 class="mb-3">Gesamt</h3>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="total-count">{{ totalChildren }}</div>
+                        <h4 class="mt-2">Kinder</h4>
+                    </div>
+                    <div class="col-6">
+                        <div class="total-count">{{ totalBetreuer }}</div>
+                        <h4 class="mt-2">Betreuer</h4>
+                    </div>
+                </div>
+                <div v-show="showHeaderInfo" class="mt-3">
+                    <h5><i class="fas fa-bus me-2"></i>Bus-Übersicht</h5>
+                    <p class="mb-0">{{ formattedCurrentDate }} - {{ activeBusesCount }} von {{ totalBusCount }} Bussen aktiv</p>
+                </div>
+                <div v-if="allBusesHaveData" class="mt-3">
+                    <h5><i class="fas fa-check-circle me-2"></i>Alle Busse erfasst!</h5>
+                    <p class="mb-0">Bereit für die Abfahrt</p>
+                </div>
+            </div>
+
+            <!-- Refresh Button (Sticky) -->
+            <button class="btn refresh-btn" @click="loadBusData(false)" :disabled="loadingInitialData">
+                <span v-if="loadingInitialData" class="spinner-border spinner-border-sm me-2"></span>
+                <i v-else class="fas fa-sync-alt me-2"></i>
+                {{ loadingInitialData ? 'Laden...' : 'Aktualisieren' }}
+            </button>
+
+            <!-- Bus Data Card -->
+            <div class="overview-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-bus me-2"></i>Alle Busse
+                        <span class="badge bg-secondary ms-2">{{ activeBusesCount }} aktive Busse</span>
+                    </h5>
+
+                    <!-- Loading State -->
+                    <div v-if="loadingInitialData" class="text-center py-5">
+                        <div class="spinner-border mb-3" role="status">
+                            <span class="visually-hidden">Wird geladen...</span>
+                        </div>
+                        <p class="text-muted">Lade Bus-Daten für heute...</p>
+                    </div>
+
+                    <!-- No Data State -->
+                    <div v-else-if="!hasBusData" class="text-center py-5">
+                        <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Keine Bus-Daten für heute verfügbar</h5>
+                        <p class="text-muted">Noch kein Betreuer hat Bus-Daten heute übermittelt.</p>
+                    </div>
+
+                    <!-- Bus Table -->
+                    <div v-else class="table-responsive">
+                        <table class="table table-hover bus-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">&nbsp;</th>
+                                    <th scope="col">Bus</th>
+                                    <th scope="col">Kinder</th>
+                                    <th scope="col">Betreuer</th>
+                                    <th scope="col">Verantwortlicher</th>
+                                    <th scope="col">Letzte Aktualisierung</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="busNumber in totalBusRange" :key="busNumber"
+                                    :class="{ 'bus-inactive': !getBusData(busNumber).kinder_count && getBusData(busNumber).kinder_count !== 0 }">
+                                    <td><span v-html="getStatusIndicator(getBusData(busNumber))"></span></td>
+                                    <td>
+                                        <span class="bus-number">
+                                            <i class="fas fa-bus me-2"></i>
+                                            {{ busNumber }}
+                                        </span>
+                                    </td>
+                                    <td><span v-html="formatCount(getBusData(busNumber).kinder_count)"></span></td>
+                                    <td><span v-html="formatCount(getBusData(busNumber).betreuer_count)"></span></td>
+                                    <td><span v-html="formatBetreuerName(getBusData(busNumber).betreuer_name)"></span></td>
+                                    <td><span v-html="formatTimestamp(getBusData(busNumber).timestamp)"></span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back Button -->
+            <button class="btn back-button" @click="goBack">
+                <i class="fas fa-arrow-left me-2"></i>
+                Zurück
+            </button>
+
+            <!-- Last Update Time -->
+            <div class="text-center mt-3">
+                <span class="text-white">
+                    <i class="fas fa-sync-alt me-1"></i>
+                    Letzte Aktualisierung: {{ lastUpdateTime || '-' }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <script>
+        /**
+         * Configuration object with API credentials and endpoints
+         * Shared configuration with other components
+         */
+        const CONFIG = {
+            API_BASE_URL: 'https://api.jsonbin.io/v3/b',
+            BIN_ID: '68834e6e7b4b8670d8a712d0',
+            MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
+            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
+            TOTAL_BUSES: 3, // Total number of buses (1-3)
+        };
+
+        /**
+         * Utility class for managing JSONBin.io API interactions
+         * Handles all CRUD operations with proper error handling
+         */
+        class JSONBinAPI {
+            constructor(config) {
+                this.config = config;
+                this.headers = {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': config.MASTER_KEY,
+                    'X-Access-Key': config.ACCESS_KEY
+                };
+            }
+
+            /**
+             * Retrieve current data from JSONBin
+             * @returns {Promise<Object>} Current data structure or empty object
+             */
+            async getData() {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
+                        method: 'GET',
+                        headers: this.headers
+                    });
+
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorBody}`);
+                    }
+
+                    const result = await response.json();
+                    return result.record || {};
+                } catch (error) {
+                    console.error('Error fetching data from JSONBin:', error);
+                    throw error;
+                }
+            }
+        }
+
+        /**
+         * Utility functions for common operations
+         */
+        const Utils = {
+            /**
+             * Get current date string in YYYY-MM-DD format
+             * @returns {string} Formatted date string
+             */
+            getCurrentDateString() {
+                return new Date().toISOString().split('T')[0];
+            },
+
+            /**
+             * Format date for display
+             * @param {string} dateString - Date in YYYY-MM-DD format
+             * @returns {string} Formatted date string
+             */
+            formatDateForDisplay(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('de-DE', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            },
+
+            /**
+             * Get current time for display
+             * @returns {string} Current time in HH:MM:SS format
+             */
+            getCurrentTimeForDisplay() {
+                return new Date().toLocaleTimeString('de-DE');
+            },
+
+            /**
+             * Show alert message to user
+             * @param {string} message - Message to display
+             * @param {string} type - Alert type (success, danger, warning, info)
+             */
+            showAlert(message, type = 'info') {
+                const alertContainer = document.getElementById('alertContainer');
+                alertContainer.innerHTML = '';
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                alertDiv.role = 'alert';
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                alertContainer.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    const bsAlert = bootstrap.Alert.getInstance(alertDiv) || new bootstrap.Alert(alertDiv);
+                    bsAlert.close();
+                }, 5000);
+            }
+        };
+
+        /**
+         * Main application for Bus Overview with Vue.js 3
+         * Manages bus data display, aggregation and manual refresh
+         */
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentDate: Utils.getCurrentDateString(),
+                    busesData: {},
+                    totalBusCount: CONFIG.TOTAL_BUSES,
+                    loadingInitialData: true,
+                    api: new JSONBinAPI(CONFIG),
+                    lastUpdateTime: null,
+                    showHeaderInfo: true,
+                };
+            },
+
+            computed: {
+                formattedCurrentDate() {
+                    return Utils.formatDateForDisplay(this.currentDate);
+                },
+                
+                totalChildren() {
+                    let total = 0;
+                    Object.values(this.busesData).forEach(bus => {
+                        if (bus.kinder_count !== null && bus.kinder_count !== undefined) {
+                            total += bus.kinder_count;
+                        }
+                    });
+                    return total;
+                },
+                
+                totalBetreuer() {
+                    let total = 0;
+                    Object.values(this.busesData).forEach(bus => {
+                        if (bus.betreuer_count !== null && bus.betreuer_count !== undefined) {
+                            total += bus.betreuer_count;
+                        }
+                    });
+                    return total;
+                },
+                
+                activeBusesCount() {
+                    return Object.keys(this.busesData).length;
+                },
+                
+                hasBusData() {
+                    return Object.keys(this.busesData).length > 0;
+                },
+                
+                totalBusRange() {
+                    return Array.from({ length: CONFIG.TOTAL_BUSES }, (_, i) => i + 1);
+                },
+                
+                allBusesHaveData() {
+                    // Check if all buses (1, 2, 3) have data
+                    for (let i = 1; i <= CONFIG.TOTAL_BUSES; i++) {
+                        const busData = this.getBusData(i);
+                        if (busData.kinder_count === null || busData.kinder_count === undefined) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            },
+
+            mounted() {
+                // Load data once when page opens
+                this.loadBusData(false);
+                
+                // Auto-hide header info after 3 seconds
+                setTimeout(() => {
+                    this.showHeaderInfo = false;
+                }, 3000);
+            },
+
+            methods: {
+                getBusData(busNumber) {
+                    return this.busesData[busNumber.toString()] || {
+                        kinder_count: null,
+                        betreuer_count: null,
+                        betreuer_name: null,
+                        timestamp: null
+                    };
+                },
+
+                async loadBusData(silent = false) {
+                    try {
+                        if (!silent) {
+                            this.loadingInitialData = true;
+                        }
+
+                        const fullBinData = await this.api.getData();
+                        this.lastUpdateTime = Utils.getCurrentTimeForDisplay();
+
+                        const todayData = fullBinData[this.currentDate];
+
+                        if (todayData && todayData.buses) {
+                            this.busesData = JSON.parse(JSON.stringify(todayData.buses));
+                        } else {
+                            this.busesData = {};
+                        }
+
+                        if (!silent) {
+                            Utils.showAlert('Bus-Daten erfolgreich aktualisiert!', 'success');
+                        }
+
+                    } catch (error) {
+                        console.error('Error loading bus data:', error);
+                        Utils.showAlert('Datenaktualisierung fehlgeschlagen. Netzwerkproblem?', 'danger');
+                        this.busesData = {};
+                    } finally {
+                        this.loadingInitialData = false;
+                    }
+                },
+
+                getStatusIndicator(busData) {
+                    if (busData.kinder_count === null || busData.kinder_count === undefined) {
+                        return '<span class="status-indicator status-inactive" title="Keine Daten"></span>';
+                    }
+                    return '<span class="status-indicator status-ok" title="Daten verfügbar"></span>';
+                },
+
+                formatCount(count) {
+                    if (count === null || count === undefined) {
+                        return '<span class="count-null">Nicht gesetzt</span>';
+                    }
+                    return `<span class="count-value">${count}</span>`;
+                },
+
+                formatBetreuerName(name) {
+                    if (!name) {
+                        return '<span class="count-null">Unbekannt</span>';
+                    }
+                    return `<span class="betreuer-name">${name}</span>`;
+                },
+
+                formatTimestamp(timestamp) {
+                    if (!timestamp) {
+                        return '<span class="count-null">-</span>';
+                    }
+                    
+                    try {
+                        const date = new Date(timestamp);
+                        const timeString = date.toLocaleTimeString('de-DE', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                        });
+                        return `<span class="timestamp">${timeString}</span>`;
+                    } catch (error) {
+                        return '<span class="count-null">-</span>';
+                    }
+                },
+
+                goBack() {
+                    window.history.back();
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

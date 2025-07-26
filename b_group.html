@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gruppe verwalten - Stadtranderholung</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Общие стили для фона и шрифтов */
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 30px 0; /* Увеличен отступ сверху и снизу */
+        }
+        /* Стили для основного контейнера, центрирование и максимальная ширина */
+        .main-container {
+            max-width: 550px; /* Увеличена максимальная ширина */
+            margin: 0 auto;
+            padding: 30px; /* Увеличен внутренний отступ */
+        }
+        /* Стили для карточек групп, тени и скругления углов */
+        .group-card {
+            background: white;
+            border-radius: 20px; /* Увеличен радиус скругления */
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25); /* Усилена тень */
+            margin-bottom: 30px; /* Увеличен отступ между карточками */
+            overflow: hidden; /* Для корректного скругления углов */
+        }
+        /* Стили для заголовка карточки */
+        .card-header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border-radius: 20px 20px 0 0; /* Соответствует border-radius group-card */
+            text-align: center;
+            padding: 25px; /* Увеличен отступ внутри заголовка */
+            font-size: 1.5rem; /* Увеличен размер шрифта */
+        }
+        /* Стили для тела карточки */
+        .card-body {
+            padding: 25px; /* Увеличен отступ внутри тела карточки */
+        }
+        /* Общие стили для кнопок */
+        .btn-primary, .btn-secondary, .btn-outline-primary {
+            border-radius: 12px; /* Увеличен радиус скругления кнопок */
+            padding: 14px 20px; /* Увеличены отступы кнопок */
+            font-weight: bold;
+            font-size: 1.1rem; /* Увеличен размер шрифта кнопок */
+            transition: all 0.3s ease; /* Добавлен плавный переход */
+        }
+        /* Стили для основной кнопки (Primary) */
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            border: none;
+        }
+        /* Стили для вторичной кнопки (Secondary) */
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            border: none;
+        }
+        /* Стили для кнопки с обводкой (Outline) */
+        .btn-outline-primary {
+            border: 2px solid #4CAF50;
+            color: #4CAF50;
+            background-color: transparent;
+        }
+        .btn-outline-primary:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+        /* Стили для полей ввода */
+        .form-control {
+            border-radius: 12px; /* Увеличен радиус скругления полей ввода */
+            border: 2px solid #dee2e6; /* Более выраженная граница */
+            padding: 15px; /* Увеличен отступ внутри полей ввода */
+            font-size: 1.2rem; /* Увеличен размер шрифта полей ввода */
+            text-align: center;
+        }
+        .form-control:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 0.25rem rgba(76, 175, 80, 0.25);
+        }
+        /* Стили для больших полей ввода и кнопок в группах ввода */
+        .input-group-lg > .form-control,
+        .input-group-lg > .btn {
+            padding: 0.85rem 1.2rem; /* Адаптация для input-group-lg */
+            font-size: 1.25rem;
+            border-radius: 12px;
+        }
+        .input-group-lg .btn {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        /* Стили для спиннера загрузки */
+        .loading-spinner {
+            display: inline-block; /* Ensure spinner is visible when needed */
+            vertical-align: middle;
+            margin-right: .5em;
+        }
+        /* Стили для списка betreuer (воспитателей) */
+        /* Этот блок стилей становится менее актуальным, так как список больше не отображается, но может быть оставлен для общности */
+        .betreuer-list {
+            background: #f1f3f5; /* Немного более выраженный фон */
+            border-radius: 12px;
+            padding: 20px; /* Увеличен отступ */
+            margin-top: 20px; /* Увеличен отступ сверху */
+        }
+        /* Стили для отдельного элемента betreuer */
+        .betreuer-item {
+            background: white;
+            border-radius: 10px; /* Увеличен радиус скругления */
+            padding: 10px 15px; /* Увеличены отступы */
+            margin: 8px 0; /* Увеличен отступ между элементами */
+            border-left: 5px solid #4CAF50; /* Более заметная полоса */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* Добавлена легкая тень */
+            font-size: 1.1rem; /* Увеличен размер шрифта */
+        }
+        /* Стили для отображения количества детей */
+        .count-display {
+            font-size: 2.5rem; /* Значительно увеличен размер шрифта */
+            font-weight: bold;
+            color: #4CAF50;
+            text-align: center;
+            margin: 15px 0; /* Увеличен отступ */
+            cursor: pointer; /* Указывает, что элемент кликабельный */
+        }
+        .count-null {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 1.5rem; /* Уменьшен размер для "Nicht gesetzt" */
+        }
+        /* Стили для меток полей ввода */
+        .form-label {
+            font-weight: 600; /* Более жирный шрифт для лейблов */
+            margin-bottom: 8px; /* Отступ под лейблом */
+            display: block; /* Чтобы label занимал всю ширину */
+            text-align: center; /* Выравнивание текста по центру */
+            font-size: 1rem; /* Стандартный размер шрифта для лейбла */
+            color: #495057; /* Темнее цвет текста */
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="main-container">
+            <div class="group-card">
+                <div class="card-header">
+                    <h2 class="mb-0">{{ groupTitle }}</h2>
+                    <p class="mb-0 mt-2">{{ formattedCurrentDate }}</p>
+                </div>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <div class="group-card">
+                <div class="card-body">
+                    <h5 class="card-title text-center mb-4">Anzahl Kinder</h5>
+                    <div class="mb-4">
+                        <label for="kinderAnzahl" class="form-label">
+                            Anzahl Kinder am Morgen (erhalten von Eltern)
+                        </label>
+                        <div v-if="bKinderAnzahl_EditMode" class="input-group input-group-lg">
+                            <input type="number" class="form-control text-center" id="kinderAnzahl"
+                                   min="0" max="20" placeholder="0" v-model.number="groupData.KinderAnzahl">
+                            <button class="btn btn-primary" type="button" @click="saveKinderAnzahl" :disabled="isSavingKinderAnzahl">
+                                <span v-if="isSavingKinderAnzahl" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Speichern
+                            </button>
+                        </div>
+                        <div v-else class="count-display" @click="bKinderAnzahl_EditMode = true">
+                            <span class="count-null" v-if="groupData.KinderAnzahl === null">Nicht gesetzt</span>
+                            <span v-else>{{ groupData.KinderAnzahl }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="kinderAnzahlNow" class="form-label">
+                            Aktuelle Anzahl Kinder (nach Nachzählung)
+                        </label>
+                        <div v-if="bKinderAnzahlNow_EditMode" class="input-group input-group-lg">
+                            <input type="number" class="form-control text-center" id="kinderAnzahlNow"
+                                   min="0" max="20" placeholder="0" v-model.number="groupData.KinderAnzahlNow">
+                            <button class="btn btn-primary" type="button" @click="saveKinderAnzahlNow" :disabled="isSavingKinderAnzahlNow">
+                                <span v-if="isSavingKinderAnzahlNow" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Aktualisieren
+                            </button>
+                        </div>
+                        <div v-else class="count-display" @click="bKinderAnzahlNow_EditMode = true">
+                            <span class="count-null" v-if="groupData.KinderAnzahlNow === null">Nicht gesetzt</span>
+                            <span v-else>{{ groupData.KinderAnzahlNow }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="group-card">
+                <div class="card-body">
+                    <!--<h5 class="card-title text-center mb-4">Aktionen</h5>-->
+                    <div class="d-grid gap-3">
+                        <button class="btn btn-secondary d-none" @click="navigateToChildrenEdit">
+                            Liste der Kinder bearbeiten
+                        </button>
+                        <button class="btn btn-secondary d-none" @click="navigateToCalculation">
+                            Rechnen
+                        </button>
+                        <button class="btn btn-outline-primary mt-3" @click="goBack"> Zurück </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <script>
+        /**
+         * Объект конфигурации, содержащий API-ключи и эндпоинты
+         * Общая конфигурация с другими компонентами
+         */
+        const CONFIG = {
+            API_BASE_URL: 'https://api.jsonbin.io/v3/b',
+            BIN_ID: '68834e6e7b4b8670d8a712d0',
+            MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
+            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu'
+        };
+
+        /**
+         * Класс утилиты для взаимодействия с JSONBin.io API
+         * Обрабатывает все CRUD-операции с соответствующей обработкой ошибок
+         */
+        class JSONBinAPI {
+            constructor(config) {
+                this.config = config;
+                // Заголовки теперь включают Access-Key для операций записи
+                this.headers = {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': config.MASTER_KEY,
+                    'X-Access-Key': config.ACCESS_KEY // Включаем Access-Key для PUT-запросов
+                };
+            }
+
+            /**
+             * Получает текущие данные из JSONBin
+             * @returns {Promise<Object>} Текущая структура данных или пустой объект
+             */
+            async getData() {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
+                        method: 'GET',
+                        headers: {
+                            'X-Master-Key': this.config.MASTER_KEY,
+                            // Access-Key обычно не нужен для GET-запросов, но безопасно включить для консистентности
+                            'X-Access-Key': this.config.ACCESS_KEY
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    return result.record || {}; // Гарантируем возврат пустого объекта, если record null/undefined
+                } catch (error) {
+                    console.error('Error fetching data from JSONBin:', error);
+                    return {}; // Возвращаем пустой объект при ошибке, чтобы предотвратить сбой приложения
+                }
+            }
+
+            /**
+             * Обновляет данные в JSONBin (операция PUT)
+             * @param {Object} data - Полная структура данных для сохранения
+             * @returns {Promise<boolean>} Статус успеха
+             */
+            async updateData(data) {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}`, {
+                        method: 'PUT',
+                        headers: this.headers, // Используем заголовки с Access-Key для PUT
+                        body: JSON.stringify(data)
+                    });
+
+                    if (!response.ok) {
+                        // Попытка прочитать сообщение об ошибке из ответа
+                        const errorData = await response.json();
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`);
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error('Error updating data in JSONBin:', error);
+                    return false;
+                }
+            }
+        }
+
+        /**
+         * Вспомогательные функции для общих операций
+         */
+        const Utils = {
+            /**
+             * Получает текущую дату в формате YYYY-MM-DD
+             * @returns {string} Отформатированная строка даты
+             */
+            getCurrentDate() {
+                return new Date().toISOString().split('T')[0];
+            },
+
+            /**
+             * Получает параметр URL по имени
+             * @param {string} name - Имя параметра
+             * @returns {string|null} Значение параметра или null
+             */
+            getURLParameter(name) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(name);
+            },
+
+            /**
+             * Показывает временное сообщение пользователю
+             * @param {string} message - Сообщение для отображения
+             * @param {string} type - Тип оповещения Bootstrap (success, danger, warning, info)
+             */
+            showAlert(message, type = 'info') {
+                const alertContainer = document.getElementById('alertContainer');
+                if (!alertContainer) return; // Убедиться, что контейнер существует
+
+                // Очистить существующие оповещения
+                alertContainer.innerHTML = '';
+                const alertHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show mb-4" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                alertContainer.innerHTML = alertHtml;
+                // Автоматически скрывать оповещение через 5 секунд
+                setTimeout(() => {
+                    const alertElement = alertContainer.querySelector('.alert');
+                    if (alertElement) {
+                        const bsAlert = bootstrap.Alert.getInstance(alertElement) || new bootstrap.Alert(alertElement);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            },
+        };
+
+        /**
+         * Основное приложение для управления группами с использованием Vue.js 3
+         * Обрабатывает отображение данных группы и управление количеством детей
+         */
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    groupNumber: null,
+                    currentDate: '',
+                    groupData: {
+                        Betreuer: [], // Список воспитателей (больше не отображается, но хранится в данных)
+                        KinderAnzahl: null, // Изначальное количество детей (утренний подсчет), хранится в localStorage
+                        KinderAnzahlNow: null // Текущее количество детей (пересчет), не хранится в localStorage, вводится вручную
+                    },
+                    bKinderAnzahl_EditMode: true, // Состояние UI: true для поля ввода, false для отображения значения KinderAnzahl
+                    bKinderAnzahlNow_EditMode: true, // Состояние UI: true для поля ввода, false для отображения значения KinderAnzahlNow
+                    isSavingKinderAnzahl: false, // Флаг состояния сохранения KinderAnzahl
+                    isSavingKinderAnzahlNow: false, // Флаг состояния сохранения KinderAnzahlNow
+                    isLoadingBetreuer: true, // Флаг состояния загрузки списка Betreuer (все еще используется для внутренней логики загрузки groupData)
+                    api: new JSONBinAPI(CONFIG), // Экземпляр API для взаимодействия с JSONBin.io
+                    groupTitle: 'Gruppe wird geladen...', // Заголовок группы
+                    formattedCurrentDate: '', // Отформатированная текущая дата для отображения
+                };
+            },
+
+            mounted() {
+                // Вызывается при монтировании компонента (загрузке страницы)
+                this.initializeGroup();
+            },
+
+            methods: {
+                /**
+                 * Инициализация страницы группы: получение номера группы из URL,
+                 * загрузка KinderAnzahl из localStorage и загрузка Betreuer из JSONBin.
+                 */
+                async initializeGroup() {
+                    this.groupNumber = Utils.getURLParameter('gr');
+                    this.currentDate = Utils.getCurrentDate();
+                    this.formattedCurrentDate = this.formatDate(this.currentDate);
+
+                    if (!this.groupNumber) {
+                        Utils.showAlert('Gruppennummer nicht gefunden. Bitte über die Anmeldung zugreifen.', 'danger');
+                        setTimeout(() => {
+                            window.location.href = 'b_login.html';
+                        }, 3000);
+                        return;
+                    }
+
+                    this.groupTitle = `Gruppe ${this.groupNumber}`;
+
+                    // Загружаем KinderAnzahl из localStorage
+                    this.loadKinderAnzahlFromLocalStorage();
+
+                    // Определяем режим редактирования для KinderAnzahl: если значение null, то в режиме редактирования
+                    this.bKinderAnzahl_EditMode = this.groupData.KinderAnzahl === null;
+                    // Определяем режим редактирования для KinderAnzahlNow: если значение null, то в режиме редактирования
+                    this.bKinderAnzahlNow_EditMode = this.groupData.KinderAnzahlNow === null;
+
+
+                    // Загружаем данные Betreuer из JSONBin (не отображаются, но необходимы для поддержания структуры данных)
+                    await this.loadBetreuerDataFromJSONBin();
+                },
+
+                /**
+                 * Загружает значение KinderAnzahl из localStorage.
+                 * Ключ в localStorage: `${currentDate}-${groupNumber}-KinderAnzahl`.
+                 */
+                loadKinderAnzahlFromLocalStorage() {
+                    const storageKey = `${this.currentDate}-${this.groupNumber}-KinderAnzahl`;
+                    const storedValue = localStorage.getItem(storageKey);
+                    if (storedValue !== null) {
+                        // Парсим как число, если есть значение
+                        this.groupData.KinderAnzahl = parseInt(storedValue, 10);
+                        if (isNaN(this.groupData.KinderAnzahl)) {
+                            this.groupData.KinderAnzahl = null; // Если не число, сбросить
+                        }
+                    } else {
+                        this.groupData.KinderAnzahl = null; // Если нет в localStorage, установить null
+                    }
+                    console.log(`KinderAnzahl loaded from localStorage (${storageKey}):`, this.groupData.KinderAnzahl);
+                },
+
+                /**
+                 * Загружает данные группы (в основном Betreuer) из JSONBin.io.
+                 * KinderAnzahl и KinderAnzahlNow НЕ подтягиваются из JSONBin.
+                 */
+                async loadBetreuerDataFromJSONBin() {
+                    this.isLoadingBetreuer = true; // Показываем спиннер загрузки
+                    try {
+                        const data = await this.api.getData();
+
+                        // Проверяем, существует ли запись для текущей даты и группы
+                        if (data && data[this.currentDate] && data[this.currentDate].groups && data[this.currentDate].groups[this.groupNumber]) {
+                            // Обновляем только список Betreuer из данных JSONBin
+                            // KinderAnzahl и KinderAnzahlNow ИГНОРИРУЮТСЯ из JSONBin при загрузке.
+                            // Они управляются localStorage и прямым вводом пользователя соответственно.
+                            this.groupData.Betreuer = data[this.currentDate].groups[this.groupNumber].Betreuer || [];
+                            // this.groupData.KinderAnzahl = data[this.currentDate].groups[this.groupNumber].KinderAnzahl; // ИГНОРИРУЕМ
+                            // this.groupData.KinderAnzahlNow = data[this.currentDate].groups[this.groupNumber].KinderAnzahlNow; // ИГНОРИРУЕМ
+                        } else {
+                            // Если данных для текущей даты/группы нет, инициализируем пустой список Betreuer
+                            this.groupData.Betreuer = [];
+
+                            // Если это первая загрузка для новой группы/дня, сохраняем пустую структуру в JSONBin
+                            console.log('No existing data for group/day in JSONBin. Initializing structure.');
+                            const updatedData = {
+                                ...data, // Сохраняем существующие даты/данные
+                                [this.currentDate]: {
+                                    ... (data[this.currentDate] || { groups: {} }), // Убеждаемся, что объект текущей даты существует
+                                    groups: {
+                                        ... (data[this.currentDate] ? data[this.currentDate].groups : {}),
+                                        // Инициализируем группу, но KinderAnzahl и KinderAnzahlNow остаются null (поскольку они не загружаются из JSONBin)
+                                        [this.groupNumber]: {
+                                            Betreuer: [],
+                                            KinderAnzahl: null,
+                                            KinderAnzahlNow: null
+                                        }
+                                    }
+                                }
+                            };
+                            // Отправляем на сервер, не дожидаемся ответа, чтобы не блокировать UI
+                            this.api.updateData(updatedData).then(success => {
+                                if (!success) console.error('Failed to initialize empty group data structure in JSONBin.');
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Fehler beim Laden der Gruppendaten (Betreuer):', error);
+                        Utils.showAlert('Fehler beim Laden der Betreuerdaten.', 'danger');
+                    } finally {
+                        this.isLoadingBetreuer = false; // Всегда устанавливаем false после попытки
+                    }
+                },
+
+                /**
+                 * Сохраняет KinderAnzahl (утренний подсчет) в JSONBin и localStorage.
+                 */
+                async saveKinderAnzahl() {
+                    // Валидация ввода
+                    if (this.groupData.KinderAnzahl !== null && (isNaN(this.groupData.KinderAnzahl) || this.groupData.KinderAnzahl < 0 || this.groupData.KinderAnzahl > 20)) {
+                        Utils.showAlert('Bitte geben Sie eine gültige Anzahl zwischen 0 und 20 ein.', 'warning');
+                        return;
+                    }
+
+                    this.isSavingKinderAnzahl = true; // Показываем спиннер сохранения
+                    try {
+                        // Обновляем поле KinderAnzahl в JSONBin
+                        const success = await this.updateGroupFieldInJSONBin('KinderAnzahl', this.groupData.KinderAnzahl);
+
+                        if (success) {
+                            Utils.showAlert('Anzahl Kinder am Morgen gespeichert!', 'success');
+                            // Дополнительно сохраняем в localStorage
+                            const storageKey = `${this.currentDate}-${this.groupNumber}-KinderAnzahl`;
+                            localStorage.setItem(storageKey, this.groupData.KinderAnzahl);
+                            console.log(`KinderAnzahl saved to localStorage (${storageKey}):`, this.groupData.KinderAnzahl);
+
+                            this.bKinderAnzahl_EditMode = false; // Переключаемся в режим отображения после успешного сохранения
+                        } else {
+                            Utils.showAlert('Fehler beim Speichern der Daten.', 'danger');
+                        }
+                    } catch (error) {
+                        console.error('Error saving KinderAnzahl:', error);
+                        Utils.showAlert('Unerwarteter Fehler aufgetreten.', 'danger');
+                    } finally {
+                        this.isSavingKinderAnzahl = false; // Скрываем спиннер
+                    }
+                },
+
+                /**
+                 * Сохраняет KinderAnzahlNow (текущий подсчет) в JSONBin.
+                 * KinderAnzahlNow не сохраняется в localStorage, так как всегда вводится вручную.
+                 */
+                async saveKinderAnzahlNow() {
+                    // Валидация ввода
+                    if (this.groupData.KinderAnzahlNow !== null && (isNaN(this.groupData.KinderAnzahlNow) || this.groupData.KinderAnzahlNow < 0 || this.groupData.KinderAnzahlNow > 20)) {
+                        Utils.showAlert('Bitte geben Sie eine gültige Anzahl zwischen 0 и 20 ein.', 'warning');
+                        return;
+                    }
+
+                    this.isSavingKinderAnzahlNow = true; // Показываем спиннер сохранения
+                    try {
+                        // Обновляем поле KinderAnzahlNow в JSONBin
+                        const success = await this.updateGroupFieldInJSONBin('KinderAnzahlNow', this.groupData.KinderAnzahlNow);
+
+                        if (success) {
+                            Utils.showAlert('Aktuelle Anzahl Kinder aktualisiert!', 'success');
+                            // Переключаемся в режим отображения после успешного сохранения
+                            this.bKinderAnzahlNow_EditMode = false;
+                        } else {
+                            Utils.showAlert('Fehler beim Speichern der Daten.', 'danger');
+                        }
+                    } catch (error) {
+                        console.error('Error saving KinderAnzahlNow:', error);
+                        Utils.showAlert('Unerwarteter Fehler aufgetreten.', 'danger');
+                    } finally {
+                        this.isSavingKinderAnzahlNow = false; // Скрываем спиннер
+                    }
+                },
+
+                /**
+                 * Обновляет конкретное поле в данных группы в JSONBin.
+                 * Эта функция получает всю корзину, обновляет данные конкретной группы за сегодня,
+                 * а затем выполняет PUT-запрос для обновления всей корзины.
+                 * @param {string} field - Имя поля для обновления (например, 'KinderAnzahl', 'KinderAnzahlNow')
+                 * @param {any} value - Новое значение для поля
+                 * @returns {Promise<boolean>} Статус успеха
+                 */
+                async updateGroupFieldInJSONBin(field, value) {
+                    try {
+                        // 1. Получаем всю текущую структуру данных из JSONBin.io
+                        const currentData = await this.api.getData();
+
+                        // 2. Убеждаемся, что необходимые вложенные объекты существуют для текущей даты и группы
+                        if (!currentData[this.currentDate]) {
+                            currentData[this.currentDate] = { groups: {} };
+                        }
+                        if (!currentData[this.currentDate].groups) {
+                            currentData[this.currentDate].groups = {};
+                        }
+                        if (!currentData[this.currentDate].groups[this.groupNumber]) {
+                            // Если группа не существует, инициализируем ее значениями по умолчанию
+                            currentData[this.currentDate].groups[this.groupNumber] = {
+                                Betreuer: [],
+                                KinderAnzahl: null,
+                                KinderAnzahlNow: null
+                            };
+                        }
+
+                        // 3. Обновляем конкретное поле для текущей группы и даты
+                        currentData[this.currentDate].groups[this.groupNumber][field] = value;
+
+                        // 4. Отправляем обновленную структуру данных обратно в JSONBin.io
+                        const success = await this.api.updateData(currentData);
+
+                        if (success) {
+                            // Если успешно, обновляем локальный реактивный объект groupData
+                            // Это гарантирует немедленное отображение изменений в UI
+                            this.groupData[field] = value;
+                            return true;
+                        } else {
+                            console.error(`Failed to update field ${field} in JSONBin.`);
+                            return false;
+                        }
+                    } catch (error) {
+                        console.error(`Error in updateGroupFieldInJSONBin for ${field}:`, error);
+                        return false;
+                    }
+                },
+
+                /**
+                 * Переход на страницу редактирования детей
+                 */
+                navigateToChildrenEdit() {
+                    window.location.href = `group_edit.html?gr=${this.groupNumber}`;
+                },
+
+                /**
+                 * Переход на страницу расчета
+                 */
+                navigateToCalculation() {
+                    window.location.href = `group_calc.html?gr=${this.groupNumber}`;
+                },
+
+                /**
+                 * Возврат на предыдущую страницу (логин или обзор админа)
+                 */
+                goBack() {
+                    window.history.back();
+                },
+
+                /**
+                 * Форматирование даты для отображения
+                 * @param {string} dateString - Дата в формате YYYY-MM-DD
+                 * @returns {string} Отформатированная строка даты
+                 */
+                formatDate(dateString) {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('de-DE', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                }
+            }
+        }).mount('#app');
+
+        /**
+         * Инициализация страницы после загрузки DOM
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            // Font Awesome для иконок
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css';
+            document.head.appendChild(link);
+
+            console.log('Group page DOM loaded.');
+        });
+    </script>
+</body>
+</html>

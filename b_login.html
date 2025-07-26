@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betreuer Anmeldung - Stadtranderholung</title>
+    <!-- Bootstrap 5.3.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS for mobile optimization -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+            padding: 20px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: bold;
+        }
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px;
+        }
+        .form-control:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+        }
+        .loading-spinner {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="card-header">
+                    <h2 class="mb-0">Betreuer Anmeldung</h2>
+                    <p class="mb-0 mt-2">Stadtranderholung 2025</p>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Alert container for success/error messages -->
+                    <div id="alertContainer"></div>
+                    
+                    <!-- Изменено: Добавлено @submit.prevent="handleSubmit" к форме -->
+                    <form id="loginForm" @submit.prevent="handleSubmit">
+                        <div class="mb-3">
+                            <label for="currentDate" class="form-label">Datum</label>
+                            <!-- Изменено: Добавлено v-model="currentDate" -->
+                            <input type="date" class="form-control" id="currentDate" v-model="currentDate" readonly>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="betreuerName" class="form-label">Ihr Name (Betreuer)</label>
+                            <!-- Изменено: Добавлено v-model="betreuerName" -->
+                            <input type="text" class="form-control" id="betreuerName" 
+                                   v-model="betreuerName" placeholder="Geben Sie Ihren Namen ein" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="groupNumber" class="form-label">Gruppennummer</label>
+                            <!-- Изменено: Добавлено v-model="groupNumber" -->
+                            <select class="form-control" id="groupNumber" v-model="groupNumber" required>
+                                <option value="">Wählen Sie eine Gruppe</option>
+                                <!-- Generate options for groups -->
+                                <template v-for="i in totalGroups">
+                                    <option :value="i">Gruppe {{ i }}</option>
+                                </template>
+                                <!-- Изменено: Используется v-for для генерации групп -->
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <span class="loading-spinner spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span class="button-text">Zählen</span>
+                        </button>
+                        <button @click="goToBusPage" class="btn btn-secondary w-100 mt-3">
+                            Bus
+                        </button>    
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5.3.3 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <script>
+        /**
+         * Configuration object containing API credentials and endpoints
+         * Centralized configuration for easy maintenance
+         */
+        const CONFIG = {
+            API_BASE_URL: 'https://api.jsonbin.io/v3/b',
+            BIN_ID: '68834e6e7b4b8670d8a712d0',
+            MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
+            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
+            TOTAL_GROUPS: 5
+
+        };
+
+        /**
+         * Utility class for managing JSONBin.io API interactions
+         * Handles all CRUD operations with proper error handling
+         */
+        class JSONBinAPI {
+            constructor(config) {
+                this.config = config;
+                this.headers = {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': config.MASTER_KEY,
+                    'X-Access-Key': config.ACCESS_KEY
+                };
+            }
+
+            /**
+             * Fetch current data from JSONBin
+             * @returns {Promise<Object>} Current data structure or empty object
+             */
+            async getData() {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
+                        method: 'GET',
+                        headers: this.headers
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    return result.record || {};
+                } catch (error) {
+                    console.error('Error fetching data from JSONBin:', error);
+                    return {}; // Return empty object if fetch fails
+                }
+            }
+
+            /**
+             * Update data in JSONBin
+             * @param {Object} data - Complete data structure to save
+             * @returns {Promise<boolean>} Success status
+             */
+            async updateData(data) {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}`, {
+                        method: 'PUT',
+                        headers: this.headers,
+                        body: JSON.stringify(data)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Error updating data in JSONBin:', error);
+                    return false;
+                }
+            }
+        }
+
+        /**
+         * Utility functions for common operations
+         */
+        const Utils = {
+            /**
+             * Get current date in YYYY-MM-DD format
+             * @returns {string} Formatted date string
+             */
+            getCurrentDate() {
+                return new Date().toISOString().split('T')[0];
+            },
+
+            /**
+             * Get stored Betreuer name from localStorage
+             * @returns {string|null} Stored name or null
+             */
+            getStoredBetreuerName() {
+                return localStorage.getItem('betreuer_name');
+            },
+
+            /**
+             * Store Betreuer name in localStorage for future convenience
+             * @param {string} name - Betreuer name to store
+             */
+            storeBetreuerName(name) {
+                localStorage.setItem('betreuer_name', name);
+            },
+
+            /**
+             * Store group number in localStorage for future convenience
+             * @param {string} groupNumber - Group number to store
+             */ 
+            storeGroupNumber(groupNumber) {
+                localStorage.setItem('group_number', groupNumber);
+            },  
+
+            /**
+             * Get stored group number from localStorage
+             * @returns {string|null} Stored group number or null
+             */
+            getStoredGroupNumber() {
+                return localStorage.getItem('group_number');
+            },  
+
+            /**
+             * Show alert message to user
+             * @param {string} message - Message to display
+             * @param {string} type - Alert type (success, danger, warning, info)
+             */
+            showAlert(message, type = 'info') {
+                const alertContainer = document.getElementById('alertContainer');
+                const alertHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                alertContainer.innerHTML = alertHtml;
+            }
+        };
+
+        /**
+         * Main Login Application using Vue.js 3
+         * Handles user authentication and data submission to JSONBin
+         */
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentDate: '',
+                    totalGroups: CONFIG.TOTAL_GROUPS,
+                    betreuerName: '',
+                    groupNumber: '',
+                    isLoading: false,
+                    api: new JSONBinAPI(CONFIG)
+                };
+            },
+            
+            mounted() {
+                this.initializeForm();
+            },
+            
+            methods: {
+                /**
+                 * Initialize form with current date and stored name
+                 */
+                initializeForm() {
+                    // Set current date automatically
+                    this.currentDate = Utils.getCurrentDate();
+                    // Удалено: document.getElementById('currentDate').value = this.currentDate;
+                    
+                    // Load stored Betreuer name if available
+                    const storedName = Utils.getStoredBetreuerName();
+                    if (storedName) {
+                        this.betreuerName = storedName;
+                        // Удалено: document.getElementById('betreuerName').value = storedName;
+                    }
+                    // Load stored group number if available
+                    const storedGroupNumber = Utils.getStoredGroupNumber();
+
+                    // Проверяем URL на наличие GET-параметра 'gr'
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const groupNumberFromUrl = urlParams.get('gr');
+                    if (groupNumberFromUrl) {
+                        this.groupNumber = groupNumberFromUrl;
+                    } else if (storedGroupNumber) {
+                        this.groupNumber = storedGroupNumber;
+                    } else {
+                        this.groupNumber = ''; // Default to empty if no stored value
+                    }
+
+                },
+                /**
+                 * Navigate to bus page
+                 * Redirects to b_bus.html
+                 */
+                goToBusPage() {
+                    // check if betreuerName is empty
+                    if (!this.betreuerName) {
+                        Utils.showAlert('Bitte geben Sie Ihren Namen ein, bevor Sie zum Bus gehen.', 'warning');
+                        return;
+                    }
+                    // Store name for future convenience
+                    Utils.storeBetreuerName(this.betreuerName);
+                    // Redirect to bus page     
+                    window.location.href = 'b_bus.html';
+                },  
+
+                /**
+                 * Handle form submission
+                 * Validates input, saves data to JSONBin, and redirects to group page
+                 * @param {Event} event - Form submit event
+                 */
+                async handleSubmit(event) {
+                    // event.preventDefault() не нужен, так как @submit.prevent уже делает это
+                    
+                    // Значения уже связаны через v-model, прямое обращение к DOM не требуется
+                    // this.betreuerName = document.getElementById('betreuerName').value.trim();
+                    // this.groupNumber = document.getElementById('groupNumber').value;
+                    
+                    // Validate input
+                    if (!this.betreuerName || !this.groupNumber) {
+                        Utils.showAlert('Bitte füllen Sie alle Felder aus.', 'warning');
+                        return;
+                    }
+                    
+                    // Show loading state
+                    this.setLoadingState(true);
+                    
+                    try {
+                        // Store name for future convenience
+                        Utils.storeBetreuerName(this.betreuerName);
+
+                        Utils.storeGroupNumber(this.groupNumber);
+                        
+                        // Submit data to JSONBin
+                        const success = await this.submitLoginData();
+                        
+                        if (success) {
+                            window.location.href = `b_group.html?gr=${this.groupNumber}`;                          
+                        } else {
+                            Utils.showAlert('Fehler bei der Anmeldung. Bitte versuchen Sie es erneut.', 'danger');
+                        }
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        Utils.showAlert('Unerwarteter Fehler aufgetreten. Bitte versuchen Sie es erneut.', 'danger');
+                    } finally {
+                        this.setLoadingState(false);
+                    }
+                },
+
+                /**
+                 * Submit login data to JSONBin
+                 * Creates or updates the data structure with Betreuer assignment
+                 * @returns {Promise<boolean>} Success status
+                 */
+                async submitLoginData() {
+                    try {
+                        // Get current data from JSONBin
+                        const currentData = await this.api.getData();
+                        
+                        // Ensure date structure exists
+                        if (!currentData[this.currentDate]) {
+                            currentData[this.currentDate] = { groups: {} };
+                        }
+                        
+                        // Ensure group structure exists
+                        if (!currentData[this.currentDate].groups[this.groupNumber]) {
+                            currentData[this.currentDate].groups[this.groupNumber] = {
+                                Betreuer: [],
+                                KinderAnzahl: null,
+                                KinderAnzahlNow: null
+                            };
+                        }
+                        
+                        // Add Betreuer to group if not already present
+                        const groupData = currentData[this.currentDate].groups[this.groupNumber];
+                        if (!groupData.Betreuer.includes(this.betreuerName)) {
+                            groupData.Betreuer.push(this.betreuerName);
+                        }
+                        
+                        // Update data in JSONBin
+                        return await this.api.updateData(currentData);
+                    } catch (error) {
+                        console.error('Error submitting login data:', error);
+                        return false;
+                    }
+                },
+
+                /**
+                 * Set loading state for UI feedback
+                 * @param {boolean} loading - Loading state
+                 */
+                setLoadingState(loading) {
+                    this.isLoading = loading;
+                    const spinner = document.querySelector('.loading-spinner');
+                    const buttonText = document.querySelector('.button-text');
+                    const submitButton = document.querySelector('button[type="submit"]');
+                    
+                    if (loading) {
+                        spinner.style.display = 'inline-block';
+                        buttonText.textContent = 'Wird verarbeitet...';
+                        submitButton.disabled = true;
+                    } else {
+                        spinner.style.display = 'none';
+                        buttonText.textContent = 'Anmelden';
+                        submitButton.disabled = false;
+                    }
+                }
+            }
+        }).mount('#app');  
+        
+        // Удалено: document.addEventListener('DOMContentLoaded', function() { ... });
+        // Эта часть кода больше не нужна, так как Vue обрабатывает событие submit
+    </script>
+</body>
+</html>
