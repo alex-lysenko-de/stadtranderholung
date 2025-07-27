@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuration - Stadtranderholung</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode.js/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.min.js"></script>
     <style>
         body {
@@ -54,16 +55,40 @@
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
         }
-        .btn-secondary {
-            background: #6c757d;
+        .btn-info {
+            background-color: #17a2b8; /* Bootstrap info color */
             border: none;
             border-radius: 10px;
             padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
             transition: all 0.3s ease;
         }
-        .btn-secondary:hover {
-            background: #5a6268;
+        .btn-info:hover {
+            background-color: #138496;
             transform: translateY(-1px);
+        }
+        .btn-success {
+            background-color: #28a745; /* Bootstrap success color */
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+            transform: translateY(-1px);
+        }
+        .btn-outline-secondary {
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
         .alert {
             border-radius: 10px;
@@ -77,13 +102,20 @@
         .card-body {
             padding: 2rem;
         }
-        .qr-code img {
-            max-width: 100%;
-            height: auto;
+        .qr-code {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            padding: 5px;
             background-color: white;
+            min-height: 270px; /* To prevent layout shift when QR is generated */
+        }
+        /* qrcode.js generates a canvas or table directly inside the target div */
+        .qr-code canvas, .qr-code table {
+            max-width: 100%;
+            height: auto;
         }
         @media (max-width: 768px) {
             .container {
@@ -182,7 +214,7 @@
                                 </div>
                                 <div class="qr-code text-center">
                                     <h6 class="mb-2">QR-Code:</h6>
-                                    <img v-if="qrCodeUrl" :src="qrCodeUrl" alt="QR Code">
+                                    <div id="qrcode" ref="qrcodeContainer"></div>
                                 </div>
                             </div>
                         </div>
@@ -208,7 +240,7 @@
                         base_url: 'https://raw.githack.com/alex-lysenko-de/stadtranderholung/main/'
                     },
                     generatedUrl: '',
-                    qrCodeUrl: '',
+                    qrCodeInstance: null, // To store the QRCode.js instance
                     showSuccess: false,
                     successMessage: '',
                     showError: false,
@@ -236,6 +268,14 @@
                     }
                 },
                 generateUrl(is_admin) {
+                    // Basic validation for essential fields
+                    if (!this.formData.year || !this.formData.bin_collection || !this.formData.bin_master_key || !this.formData.bin_access_key || !this.formData.base_url) {
+                        this.showNotification('Bitte füllen Sie alle erforderlichen Felder aus, um eine URL zu generieren.', 'error');
+                        this.generatedUrl = '';
+                        this.clearQrCode(); // Clear any existing QR code before returning
+                        return;
+                    }
+
                     const params = new URLSearchParams({
                         year: this.formData.year,
                         collection: this.formData.bin_collection,
@@ -245,15 +285,63 @@
                     const page = is_admin ? "a_login.html" : "b_login.html";
                     const url = `${this.formData.base_url}${page}?${params.toString()}`;
                     this.generatedUrl = url;
-                    this.qrCodeUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(url)}`;
+                    
+                    // Use $nextTick to ensure the DOM element for QR code is rendered
+                    this.$nextTick(() => {
+                        this.renderQrCode(this.generatedUrl);
+                    });
+                },
+                renderQrCode(url) {
+                    // Clear the container before generating a new QR code
+                    // This is crucial to prevent multiple QR codes or errors if element is reused
+                    const qrcodeDiv = this.$refs.qrcodeContainer;
+                    if (qrcodeDiv) {
+                        qrcodeDiv.innerHTML = ''; // Clear previous content (canvas/table)
+                        
+                        // If an instance exists, clear it. Otherwise, create a new one.
+                        // We recreate the instance each time to ensure it works correctly
+                        // especially after v-if transitions or manual clearing.
+                        this.qrCodeInstance = new QRCode(qrcodeDiv, {
+                            text: url,
+                            width: 256,
+                            height: 256,
+                            colorDark : "#000000",
+                            colorLight : "#ffffff",
+                            correctLevel : QRCode.CorrectLevel.H
+                        });
+                        // No need for makeCode(url) if text is provided in constructor.
+                        // However, makeCode is useful if you want to change the QR code content later without recreating the instance.
+                    }
+                },
+                clearQrCode() {
+                    if (this.qrCodeInstance) {
+                        this.qrCodeInstance.clear(); // Clear the QR code canvas/table
+                        // It's often good practice to also nullify the instance if you're recreating it
+                        this.qrCodeInstance = null;
+                    }
+                    // Also ensure the div is empty if the instance was not created
+                    const qrcodeDiv = this.$refs.qrcodeContainer;
+                    if (qrcodeDiv) {
+                        qrcodeDiv.innerHTML = '';
+                    }
                 },
                 showAdminLoginUrl() {
+                    // Ensure the results block is shown
+                    this.generatedUrl = ''; // Temporarily clear to ensure re-render and QR code clear
+                    this.clearQrCode();
                     this.generateUrl(true);
-                    this.showNotification('Admin Login URL generiert.', 'success');
+                    if (this.generatedUrl) {
+                        this.showNotification('Admin Login URL generiert.', 'success');
+                    }
                 },
                 showBetreuerLoginUrl() {
+                    // Ensure the results block is shown
+                    this.generatedUrl = ''; // Temporarily clear to ensure re-render and QR code clear
+                    this.clearQrCode();
                     this.generateUrl(false);
-                    this.showNotification('Betreuer Login URL generiert.', 'success');
+                    if (this.generatedUrl) {
+                        this.showNotification('Betreuer Login URL generiert.', 'success');
+                    }
                 },
                 shareUrl() {
                     if (navigator.share && this.generatedUrl) {
@@ -266,6 +354,7 @@
                             this.showNotification('Fehler beim Teilen der URL. Bitte manuell kopieren.', 'error');
                         });
                     } else {
+                        // Fallback for browsers that do not support navigator.share
                         this.copyToClipboard();
                         this.showNotification('Teilen nicht unterstützt. URL wurde in die Zwischenablage kopiert.', 'info');
                     }
@@ -283,18 +372,16 @@
                     }
                 },
                 showNotification(message, type) {
-                    if (type === 'success') {
+                    // Reset alerts
+                    this.showSuccess = false;
+                    this.showError = false;
+
+                    if (type === 'success' || type === 'info') {
                         this.showSuccess = true;
                         this.successMessage = message;
-                        this.showError = false;
                     } else if (type === 'error') {
                         this.showError = true;
                         this.errorMessage = message;
-                        this.showSuccess = false;
-                    } else { // 'info' or other
-                        this.showSuccess = true; // Use success alert for info too for simplicity
-                        this.successMessage = message;
-                        this.showError = false;
                     }
                     setTimeout(() => {
                         this.showSuccess = false;
