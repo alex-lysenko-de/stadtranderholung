@@ -31,7 +31,7 @@
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         }
         .total-count {
-            font-size: 3rem;
+            font-size: 5rem;
             font-weight: bold;
             margin: 10px 0;
         }
@@ -46,7 +46,7 @@
             border: none;
             border-radius: 15px;
             padding: 15px 30px;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: bold;
             color: white;
             flex-grow: 1; /* Allows buttons to take equal width */
@@ -73,8 +73,9 @@
             white-space: nowrap; /* Prevent wrapping in headers */
         }
         .table tbody td {
-            padding: 15px;
+            padding: 3px;
             vertical-align: middle;
+            text-align: center;
             border-top: 1px solid #dee2e6;
             white-space: nowrap; /* Keep content on one line for better table flow on desktop */
         }
@@ -180,7 +181,7 @@
                 padding: 15px;
             }
             .total-count {
-                font-size: 2.2rem; /* Smaller font on mobile */
+                font-size: 4rem; /* Smaller font on mobile */
             }
             .action-buttons {
                 flex-direction: column; /* Stack buttons vertically on mobile */
@@ -189,7 +190,7 @@
             .refresh-btn,
             .recount-btn {
                 padding: 12px 20px; /* Slightly smaller buttons */
-                font-size: 1rem;
+                font-size: 1.3rem;
             }
             .table-responsive {
                 border-radius: 0; /* Remove border-radius for full width tables */
@@ -224,17 +225,20 @@
         <div id="alertContainer"></div>
 
         <div :class="['total-summary', { 'danger': missingChildren.length > 0 }]">
+            <div class = "row"><div class="col-12"><h4>Kinder</h4></div></div>
             <div class="row">
-                <div class="col-6">
-                    <h4>Kinder am Morgen</h4>
+                <div class="col-6">         
+                    <h3>am Morgen</h3>           
                     <div class="total-count">{{ totalMorningCount }}</div>
+                    
                 </div>
-                <div class="col-6">
-                    <h4>Kinder aktuell</h4>
+                <div class="col-6">          
+                     <h3>Aktuell</h3>          
                     <div class="total-count">
                         <span v-if="recountInitiating || totalCurrentCount === null" class="spinner-border spinner-border-sm text-white me-2" role="status" aria-hidden="true"></span>
                         {{ totalCurrentCount !== null ? totalCurrentCount : 'N/A' }}
                     </div>
+                   
                 </div>
             </div>
             <div v-if="missingChildren.length > 0" class="mt-3">
@@ -256,7 +260,7 @@
         <div class="action-buttons">
             <button class="btn refresh-btn" @click="loadOverviewData(false)" :disabled="recountInitiating || loadingInitialData">
                 <span v-if="loadingInitialData" class="spinner-border spinner-border-sm me-2"></span>
-                <span class="button-text">{{ loadingInitialData ? 'Laden...' : 'Aktualisieren' }}</span>
+                <i class="fas fa-sync me-2"></i><span class="button-text">{{ loadingInitialData ? 'Laden...' : 'Aktualisieren' }}</span>
             </button>
             <button class="btn recount-btn" @click="triggerRecount" :disabled="recountInitiating">
                 <span v-if="recountInitiating" class="spinner-border spinner-border-sm me-2"></span>
@@ -302,8 +306,8 @@
                                 :class="{ 'group-inactive': !getGroupData(groupNumber).Betreuer || getGroupData(groupNumber).Betreuer.length === 0 }">
                                 <td><span v-html="getStatusIndicator(getGroupData(groupNumber))"></span></td>
                                 <td>
-                                    <a :href="'group.html?gr=' + groupNumber" class="group-number">
-                                        Gruppe {{ groupNumber }}
+                                    <a :href="'b_group.html?gr=' + groupNumber" class="group-number">
+                                        <i class="fas fa-users"></i><br> {{ groupNumber }}
                                     </a>
                                 </td>
                                 <td><span v-html="formatCount(getGroupData(groupNumber).KinderAnzahl, 'morning')"></span></td>
