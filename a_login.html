@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrator Login - Stadtranderholung</title>
+    <!-- Bootstrap 5.3.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS for mobile optimization -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+            padding: 20px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .admin-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .navigation-section {
+            padding: 20px;
+        }
+        .nav-button {
+            transition: transform 0.2s ease;
+        }
+        .nav-button:hover {
+            transform: translateY(-2px);
+        }
+        .parameters-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        .parameter-item {
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="card-header">
+                    <div class="admin-icon">🔧</div>
+                    <h2 class="mb-0">Administrator</h2>
+                    <p class="mb-0 mt-2">Stadtranderholung 2025</p>
+                </div>
+                <div class="navigation-section">
+                    <!-- Alert container for success/error messages -->
+                    <div id="alertContainer"></div>
+                    
+                    <!-- Parameters Info (only shown if parameters were loaded) -->
+                    <div v-if="hasParameters" class="parameters-info">
+                        <h6 class="mb-2">📋 Geladene Parameter:</h6>
+                        <div v-for="(value, key) in loadedParameters" :key="key" class="parameter-item">
+                            <strong>{{ key }}:</strong> {{ value }}
+                        </div>
+                    </div>
+                    
+                    <!-- Main Navigation Buttons -->
+                    <div class="d-grid gap-2">
+                        <button @click="navigateTo('a_overview.html')" class="btn btn-primary nav-button">
+                            📊 Gruppen Übersicht
+                        </button>
+                        
+                        <button @click="navigateTo('a_bus.html')" class="btn btn-primary nav-button">
+                            🚌 Bus Übersicht
+                        </button>
+                        
+                        <button @click="navigateTo('b_login.html')" class="btn btn-info nav-button">
+                            👤 Betreuer Login
+                        </button>
+                    </div>
+                    
+                    <!-- Additional Info Section -->
+                    <div class="mt-4 text-center">
+                        <small class="text-muted">
+                            Aktuelle Zeit: {{ currentDateTime }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5.3.3 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Vue.js 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <script>
+        /**
+         * Utility functions for common operations
+         */
+        const Utils = {
+            /**
+             * Get current date and time in readable format
+             * @returns {string} Formatted date and time string
+             */
+            getCurrentDateTime() {
+                const now = new Date();
+                return now.toLocaleString('de-DE', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            },
+
+            /**
+             * Parse URL parameters and save them to localStorage
+             * @returns {Object} Object containing all parsed parameters
+             */
+            parseAndSaveUrlParameters() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const parameters = {};
+                
+                // Iterate through all URL parameters
+                urlParams.forEach((value, key) => {
+                    // Decode the value in case it's URL encoded
+                    const decodedValue = decodeURIComponent(value);
+                    
+                    // Save to localStorage
+                    localStorage.setItem(key, decodedValue);
+                    
+                    // Store in our return object
+                    parameters[key] = decodedValue;
+                    
+                    console.log(`Saved parameter: ${key} = ${decodedValue}`);
+                });
+                
+                return parameters;
+            },
+
+            /**
+             * Show alert message to user
+             * @param {string} message - Message to display
+             * @param {string} type - Alert type (success, danger, warning, info)
+             */
+            showAlert(message, type = 'info') {
+                const alertContainer = document.getElementById('alertContainer');
+                const alertHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                alertContainer.innerHTML = alertHtml;
+                
+                // Auto-hide success messages after 3 seconds
+                if (type === 'success') {
+                    setTimeout(() => {
+                        const alert = alertContainer.querySelector('.alert');
+                        if (alert) {
+                            alert.remove();
+                        }
+                    }, 3000);
+                }
+            }
+        };
+
+        /**
+         * Main Admin Login Application using Vue.js 3
+         * Handles parameter parsing and navigation
+         */
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentDateTime: '',
+                    loadedParameters: {},
+                    hasParameters: false
+                };
+            },
+            
+            mounted() {
+                this.initializeApp();
+                this.startClock();
+            },
+            
+            methods: {
+                /**
+                 * Initialize the application
+                 * Parse URL parameters and set up initial state
+                 */
+                initializeApp() {
+                    console.log('Initializing Admin Login...');
+                    
+                    // Parse and save URL parameters
+                    this.loadedParameters = Utils.parseAndSaveUrlParameters();
+                    this.hasParameters = Object.keys(this.loadedParameters).length > 0;
+                    
+                    // Show success message if parameters were loaded
+                    if (this.hasParameters) {
+                        const paramCount = Object.keys(this.loadedParameters).length;
+                        Utils.showAlert(
+                            `${paramCount} Parameter erfolgreich geladen und gespeichert.`, 
+                            'success'
+                        );
+                        console.log('Loaded parameters:', this.loadedParameters);
+                    }
+                    
+                    // Set initial time
+                    this.updateDateTime();
+                },
+
+                /**
+                 * Navigate to specified page
+                 * @param {string} page - Target page filename
+                 */
+                navigateTo(page) {
+                    console.log(`Navigating to: ${page}`);
+                    window.location.href = page;
+                },
+
+                /**
+                 * Update current date and time display
+                 */
+                updateDateTime() {
+                    this.currentDateTime = Utils.getCurrentDateTime();
+                },
+
+                /**
+                 * Start the clock to update time every minute
+                 */
+                startClock() {
+                    // Update immediately
+                    this.updateDateTime();
+                    
+                    // Update every minute
+                    setInterval(() => {
+                        this.updateDateTime();
+                    }, 60000);
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -64,6 +64,30 @@ The application supports a continuous monitoring process throughout the event:
 
 The project comprises several core HTML files and additional files for future extensions, each with distinct functionalities. All pages, except `a_login.html` and `b_login.html`, must include a "Zurück" (Back) button at the very bottom that triggers `history.back()`.
 
+
+### `index.html` (Страница конфигурации)
+
+**Назначение:** Этот модуль служит точкой входа для настройки приложения. Он позволяет администраторам или ответственным лицам установить ключевые параметры, необходимые для работы других частей приложения, включая подключение к базе данных JSONBin.io и базовый URL приложения.
+
+**Функциональность:**
+
+* **Поля ввода:**
+    * `Jahr` (Год): Текстовое поле для указания текущего года (по умолчанию - текущий год). Используется для организации данных в JSONBin.io по годам.
+    * `Bin Collection Name (JSONBin.io)`: Текстовое поле для ввода имени коллекции (или "библиотеки") в JSONBin.io, где будут храниться данные. Например, "SR2025".
+    * `Master Key (JSONBin.io)`: Текстовое поле для ввода Master Key вашего аккаунта JSONBin.io. Это ключ с полными правами доступа.
+    * `Access Key (JSONBin.io)`: Текстовое поле для ввода Access Key вашего аккаунта JSONBin.io. Этот ключ обычно используется для чтения/записи данных.
+    * `Basis-URL (ohne Dateinamen)`: Текстовое поле для указания базового URL, по которому развернуты файлы приложения (`a_login.html`, `b_login.html` и т.д.). По умолчанию: `https://raw.githack.com/alex-lysenko-de/stadtranderholung/main/`.
+* **Сохранение в Local Storage:** При нажатии кнопки "Einstellungen Speichern" все введенные данные сохраняются в локальном хранилище браузера. Это позволяет приложению запоминать настройки между сессиями.
+* **Загрузка из Local Storage:** При открытии страницы `index.html` приложение автоматически пытается загрузить сохраненные настройки из локального хранилища, если они доступны.
+* **Генерация URL для входа:**
+    * **"Admin Login URL anzeigen"**: Генерирует полный URL для страницы входа администратора (`a_login.html`), включая все настроенные параметры в качестве параметров запроса (query parameters).
+    * **"Betreuer Login URL anzeigen"**: Генерирует полный URL для страницы входа воспитателя (`b_login.html`), также включая все настроенные параметры.
+* **Отображение URL и QR-кода:** Сгенерированный URL отображается в специальном блоке "Ergebnisse" вместе с соответствующим QR-кодом для удобного доступа с мобильных устройств.
+* **Функции распространения URL:**
+    * **"Verteilen (Whatsapp, E-Mail, Zwischenablage)"**: Позволяет поделиться сгенерированным URL через стандартный механизм обмена в браузере (если поддерживается) или скопировать его в буфер обмена.
+    * **"In Zwischenablage kopieren"**: Копирует сгенерированный URL непосредственно в буфер обмена.
+
+
 #### 8.1. `b_login.html`
 
 * **Purpose:** The entry point for Betreuers. Users input the current date, their name (Betreuer), and group number.
@@ -156,6 +180,24 @@ The project comprises several core HTML files and additional files for future ex
     * Includes checkboxes next to each child's name, labeled "anwesend" (present).
     * **Minimal Implementation:** Similar to `group_edit.html`, this can be a simple HTML structure with headings, a list of placeholder children, and checkboxes, without full functionality, for the initial phase.
 * **Navigation:** Includes a "Zurück" button.
+
+## Хранение данных
+
+Проект использует **JSONBin.io** в качестве облачного хранилища данных. Это позволяет централизованно хранить информацию о количестве детей и воспитателей по автобусам и группам.
+
+Дополнительно, для временного хранения настроек и последних введенных данных, используется **Local Storage** браузера. Это обеспечивает удобство использования и запоминание предпочтений пользователя.
+
+## Зависимости
+
+* **Bootstrap 5.3.3:** Для стилизации и адаптивного дизайна.
+* **Vue 3.4.21:** Для реактивного пользовательского интерфейса.
+* **Bootstrap Icons 1.11.3:** Для иконок.
+* **qrcode.js 1.0.0:** Для генерации QR-кодов на стороне клиента.
+
+## Развертывание
+
+Файлы HTML и JavaScript могут быть размещены на любом веб-сервере или CDN (например, GitHub Pages, Netlify, Vercel) и доступны через HTTP/HTTPS.
+
 
 ### 9\. JSON Data Storage Service
 
