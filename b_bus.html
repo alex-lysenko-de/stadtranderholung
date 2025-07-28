@@ -5,559 +5,205 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bus Management - Stadtranderholung</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.min.js"></script>
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
-        
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
-        }
-        
-        .card-header {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
-            color: white;
-            border-radius: 15px 15px 0 0 !important;
-            padding: 1.5rem;
-        }
-        
-        .form-control, .form-select {
-            border-radius: 10px;
-            border: 2px solid #e0e0e0;
-            padding: 0.75rem 1rem;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: #2196F3;
-            box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
-            border: none;
-            border-radius: 10px;
-            padding: 0.75rem 2rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
-        }
-        
-        .btn-secondary {
-            background: #6c757d;
-            border: none;
-            border-radius: 10px;
-            padding: 0.75rem 1.5rem;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-secondary:hover {
-            background: #5a6268;
-            transform: translateY(-1px);
-        }
-        
-        .alert {
-            border-radius: 10px;
-            border: none;
-        }
-        
-        .spinner-border {
-            width: 1.5rem;
-            height: 1.5rem;
-        }
-        
-        .form-label {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-        }
-        
-        .input-group-text {
-            background: #f8f9fa;
-            border: 2px solid #e0e0e0;
-            border-right: none;
-            border-radius: 10px 0 0 10px;
-        }
-        
-        .input-group .form-control {
-            border-left: none;
-            border-radius: 0 10px 10px 0;
-        }
-        
-        .card-body {
-            padding: 2rem;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding-top: 1rem;
-            }
-            
-            .card-body {
-                padding: 1.5rem;
-            }
-        }
-    </style>
+    <link href="main.css" rel="stylesheet">
 </head>
 <body>
     <div id="app">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-8 col-lg-6">
-                    <div class="card">
-                        <div class="card-header text-center">
-                            <h3 class="mb-0">
-                                <i class="bi bi-bus-front"></i>
-                                Bus Management
-                            </h3>
-                            <p class="mb-0 mt-2">Erfassung der Kinder und Betreuer im Bus</p>
+        <div class="container py-4">
+            <div id="alertContainer"></div>
+
+            <div class="card shadow-lg">
+                <div class="card-header">
+                    <div class="icon">🚌</div>
+                    <h2>Bus-Management</h2>
+                </div>
+                <div class="card-body p-4">
+                    <form @submit.prevent="saveBusData">
+                        <div class="mb-3">
+                            <label for="busNumber" class="form-label">Busnummer:</label>
+                            <select id="busNumber" class="form-select form-control" v-model.number="formData.bus_number" @change="loadDataFromLocalStorage" :disabled="isLoading || !isConfigLoaded">
+                                <option v-for="n in total_buses" :key="n" :value="n">Bus {{ n }}</option>
+                            </select>
                         </div>
-                        <div class="card-body">
-                            <!-- Alert Container -->
-                            <div id="alertContainer"></div>
-                            
-                            <div v-if="betreuerName" class="alert alert-info d-flex align-items-center mb-4">
-                                <i class="bi bi-person-badge me-2"></i>
-                                <div>
-                                    <strong>Betreuer:</strong> {{ betreuerName }}
-                                </div>
-                            </div>
-                            
-                            <form @submit.prevent="submitBusData">
-                                <div class="mb-4">
-                                    <label for="busNumber" class="form-label">
-                                        <i class="bi bi-bus-front me-1"></i>
-                                        Bus Nummer
-                                    </label>
-                                    <select 
-                                        id="busNumber" 
-                                        v-model.number="formData.bus_number" 
-                                        class="form-select"
-                                        required
-                                        :disabled="!isConfigLoaded"
-                                    >
-                                        <option value="">Bus auswählen...</option>
-                                        <option v-for="busNum in busCount" :key="busNum" :value="busNum">
-                                            Bus {{ busNum }}
-                                        </option>
-                                    </select>
-                                </div>
-                                
-                                <div class="mb-4">
-                                    <label for="kinderCount" class="form-label">
-                                        <i class="bi bi-people me-1"></i>
-                                        Anzahl Kinder
-                                    </label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">
-                                            <i class="bi bi-people"></i>
-                                        </span>
-                                        <input 
-                                            type="number" 
-                                            id="kinderCount"
-                                            v-model.number="formData.kinder_count" 
-                                            class="form-control"
-                                            min="0" 
-                                            max="100"
-                                            placeholder="Anzahl eingeben"
-                                            required
-                                            :disabled="!isConfigLoaded"
-                                        >
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-4">
-                                    <label for="betreuerCount" class="form-label">
-                                        <i class="bi bi-person-badge me-1"></i>
-                                        Anzahl Betreuer
-                                    </label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">
-                                            <i class="bi bi-person-badge"></i>
-                                        </span>
-                                        <input 
-                                            type="number" 
-                                            id="betreuerCount"
-                                            v-model.number="formData.betreuer_count" 
-                                            class="form-control"
-                                            min="0" 
-                                            max="100"
-                                            placeholder="Anzahl eingeben"
-                                            required
-                                            :disabled="!isConfigLoaded"
-                                        >
-                                    </div>
-                                </div>
-                                
-                                <div class="d-grid gap-2">
-                                    <button 
-                                        type="submit" 
-                                        class="btn btn-primary"
-                                        :disabled="isLoading || !isFormValid || !isConfigLoaded"
-                                    >
-                                        <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status"></span>
-                                        <i v-else class="bi bi-send me-2"></i>
-                                        {{ isLoading ? 'Wird gesendet...' : 'Senden' }}
-                                    </button>
-                                </div>
-                            </form>
-                            
-                            <div class="mt-4 pt-3 border-top">
-                                <div class="d-grid gap-2">
-                                    <button 
-                                        @click="goBack" 
-                                        class="btn btn-secondary"
-                                    >
-                                        <i class="bi bi-arrow-left me-1"></i>
-                                        Zurück
-                                    </button>
-                                    
-                                </div>
-                            </div>
+                        <div class="mb-3">
+                            <label for="kinderCount" class="form-label">Anzahl Kinder:</label>
+                            <input type="number" id="kinderCount" class="form-control" v-model.number="formData.kinder_count" min="0" :disabled="isLoading || !isConfigLoaded">
                         </div>
-                    </div>
+                        <div class="mb-4">
+                            <label for="betreuerCount" class="form-label">Anzahl Betreuer:</label>
+                            <input type="number" id="betreuerCount" class="form-control" v-model.number="formData.betreuer_count" min="0" :disabled="isLoading || !isConfigLoaded">
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-bus" :disabled="isLoading || !isConfigLoaded">
+                                <span v-if="isLoading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span v-else>Speichern</span>
+                            </button>
+                            <button type="button" class="btn btn-secondary" @click="goBack" :disabled="isLoading || !isConfigLoaded">
+                                Zurück zur Übersicht
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center text-muted">
+                    <small>Aktuelle Zeit: {{ currentDateTime }}</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.min.js"></script>
     
-    <script>
-        /**
-         * Standardkonfigurationswerte. Diese werden durch URL-Parameter oder LocalStorage überschrieben.
-         */
-        const CONFIG_DEFAULTS = {
-            API_BASE_URL: 'https://api.jsonbin.io/v3/b',
-            BIN_COLLECTION_NAME: 'SR2025',
-            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
-            MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
-            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
-            TOTAL_GROUPS: 15,
-            TOTAL_BUSES: 3
-        };
-
-        /**
-         * Dienstprogrammklasse für die Verwaltung von JSONBin.io API-Interaktionen
-         * Behandelt alle CRUD-Operationen mit ordnungsgemäßer Fehlerbehandlung
-         */
-        class JSONBinAPI {
-            constructor(config) {
-                this.config = config;
-                this.headers = {
-                    'Content-Type': 'application/json',
-                    'X-Master-Key': config.MASTER_KEY,
-                    'X-Access-Key': config.ACCESS_KEY
-                };
-            }
-
-            /**
-             * Aktuelle Daten von JSONBin abrufen
-             * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt
-             */
-            async getData() {
-                try {
-                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
-                        method: 'GET',
-                        headers: {
-                            'X-Master-Key': this.config.MASTER_KEY,
-                            'X-Access-Key': this.config.ACCESS_KEY
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP-Fehler! Status: ${response.status}`);
-                    }
-                    
-                    const result = await response.json();
-                    return result.record || {};
-                } catch (error) {
-                    console.error('Fehler beim Abrufen der Daten von JSONBin:', error);
-                    return {};
-                }
-            }
-
-            /**
-             * Daten in JSONBin aktualisieren (PUT-Operation)
-             * @param {Object} data - Vollständige Datenstruktur zum Speichern
-             * @returns {Promise<boolean>} Erfolgsstatus
-             */
-            async updateData(data) {
-                try {
-                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}`, {
-                        method: 'PUT',
-                        headers: this.headers,
-                        body: JSON.stringify(data)
-                    });
-                    
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorData.message || 'Unbekannter Fehler'}`);
-                    }
-                    
-                    return true;
-                } catch (error) {
-                    console.error('Fehler beim Aktualisieren der Daten in JSONBin:', error);
-                    return false;
-                }
-            }
-        }
-
-        /**
-         * Dienstprogrammfunktionen für allgemeine Operationen
-         */
-        const Utils = {
-            /**
-             * Aktuelles Datum im Format YYYY-MM-DD abrufen
-             * @returns {string} Formatiertes Datumszeichenfolge
-             */
-            getCurrentDate() {
-                return new Date().toISOString().split('T')[0];
-            },
-
-            /**
-             * Temporäre Nachricht für den Benutzer anzeigen
-             * @param {string} message - Anzuzeigende Nachricht
-             * @param {string} type - Bootstrap-Alert-Typ (success, danger, warning, info)
-             */
-            showAlert(message, type = 'info') {
-                const alertContainer = document.getElementById('alertContainer');
-                if (!alertContainer) return;
-
-                alertContainer.innerHTML = '';
-                const alertHtml = `
-                    <div class="alert alert-${type} alert-dismissible fade show mb-4" role="alert">
-                        ${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                `;
-                alertContainer.innerHTML = alertHtml;
-                setTimeout(() => {
-                    const alertElement = alertContainer.querySelector('.alert');
-                    if (alertElement) {
-                        const bsAlert = bootstrap.Alert.getInstance(alertElement) || new bootstrap.Alert(alertElement);
-                        bsAlert.close();
-                    }
-                }, 5000);
-            },
-
-            /**
-             * Konfigurationsparameter von URL oder LocalStorage laden.
-             * URL-Parameter haben Vorrang. Fehlende Parameter verwenden Standardwerte.
-             * Alle geladenen/Standardparameter werden im LocalStorage gespeichert.
-             * @returns {Object} Ein Objekt, das die geladene Konfiguration oder eine Fehlermeldung enthält.
-             */
-            loadConfig: function() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const config = {};
-                const missingParams = [];
-
-                const paramMap = {
-                    'TOTAL_GROUPS': 'config_total_groups',
-                    'TOTAL_BUSES': 'config_total_buses',
-                    'MASTER_KEY': 'config_bin_master_key',
-                    'ACCESS_KEY': 'config_bin_access_key',
-                    'BIN_COLLECTION_NAME': 'config_bin_collection',
-                    'BIN_ID': 'config_bin_id'
-                };
-
-                for (const urlParam in paramMap) {
-                    const lsKey = paramMap[urlParam];
-                    let value = urlParams.get(urlParam) || localStorage.getItem(lsKey);
-
-                    if (value !== null && value !== '') {
-                        if (urlParam === 'TOTAL_GROUPS' || urlParam === 'TOTAL_BUSES') {
-                            config[urlParam] = parseInt(value, 10);
-                        } else {
-                            config[urlParam] = value;
-                        }
-                        localStorage.setItem(lsKey, value);
-                    } else {
-                        if (CONFIG_DEFAULTS.hasOwnProperty(urlParam)) {
-                            config[urlParam] = CONFIG_DEFAULTS[urlParam];
-                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]);
-                        } else {
-                            missingParams.push(urlParam);
-                        }
-                    }
-                }
-                
-                config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
-
-                if (missingParams.length > 0) {
-                    return { config: null, error: `Es fehlen wesentliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass diese über die URL übergeben oder in index.html festgelegt werden.` };
-                }
-                
-                return { config: config, error: null };
-            }
-        };
+    <script type="module">
+        import { CONFIG_DEFAULTS, JSONBinAPI, Utils } from './common.js';
 
         const { createApp } = Vue;
 
         createApp({
             data() {
                 return {
-                    busCount: 0, // Wird dynamisch aus der Konfiguration geladen
-                    betreuerName: '',
                     formData: {
-                        bus_number: '',
-                        kinder_count: '',
-                        betreuer_count: ''
+                        bus_number: 1,
+                        kinder_count: 0,
+                        betreuer_count: 0
                     },
-                    isLoading: false,
-                    currentDate: '',
-                    isConfigLoaded: false, // Flag für den Konfigurationsladestatus
-                    config: null, // Hier wird die geladene Konfiguration gespeichert
-                    api: null // API-Instanz wird nach dem Laden der Konfiguration initialisiert
+                    currentDateTime: '',
+                    isLoading: true, // Initial loading state
+                    currentDate: '', // For localStorage keying
+                    isConfigLoaded: false,
+                    config: {}, // Loaded config from common.js
+                    api: null,  // JSONBinAPI instance
+                    total_buses: CONFIG_DEFAULTS.TOTAL_BUSES // Initial fallback, updated from config
                 };
             },
             
-            computed: {
-                isFormValid() {
-                    return this.formData.bus_number !== '' && 
-                           this.formData.kinder_count !== '' && 
-                           this.formData.betreuer_count !== '' &&
-                           this.formData.kinder_count >= 0 &&
-                           this.formData.betreuer_count >= 0;
-                }
+            mounted() {
+                this.initializeBusPage();
             },
             
             methods: {
                 /**
-                 * Initialisiert die Bus-Seite: lädt Konfiguration, Betreuer-Namen und gespeicherte Daten.
+                 * Стандартизированная инициализация страницы для Vue-компонентов
+                 * Загружает конфигурацию и инициализирует API, затем загружает данные автобуса.
                  */
                 async initializeBusPage() {
-                    // Konfiguration laden
-                    const { config, error } = Utils.loadConfig();
+                    this.isLoading = true;
+                    console.log('Инициализация страницы b_bus.html...');
+                    
+                    const success = Utils.initializePage(this); // Инициализация из common.js
 
-                    if (error) {
-                        Utils.showAlert(error, 'danger');
-                        this.isConfigLoaded = false;
-                        // Optional: Zurück zur Anmeldeseite, wenn Konfiguration fehlt
-                        setTimeout(() => {
-                            window.location.href = 'b_login.html';
-                        }, 3000);
-                        return;
+                    if (success) {
+                        this.total_buses = this.config.TOTAL_BUSES; // Обновляем total_buses из загруженного конфига
+                        console.log('Конфигурация успешно загружена:', this.config);
+                        this.currentDate = Utils.getCurrentDateString(); // Устанавливаем текущую дату
+                        this.loadDataFromLocalStorage(); // Загружаем данные из localStorage
+                        await this.loadBusData(); // Загружаем данные с сервера после инициализации
+                    } else {
+                        console.error('Ошибка инициализации страницы.');
+                        Utils.showAlert('Fehler beim Laden der Konfiguration. Die Seite kann nicht richtig funktionieren.', 'danger');
                     }
-
-                    this.config = config; // Geladene Konfiguration speichern
-                    this.api = new JSONBinAPI(this.config); // API-Instanz mit geladener Konfiguration initialisieren
-                    this.isConfigLoaded = true; // Konfiguration als geladen markieren
-                    this.busCount = this.config.TOTAL_BUSES; // Busanzahl aus der Konfiguration setzen
-
-                    this.currentDate = Utils.getCurrentDate(); // Aktuelles Datum setzen
-                    this.loadBetreuerName(); // Betreuer-Namen laden
-                    this.loadFromLocalStorage(); // Daten aus LocalStorage laden
+                    this.updateDateTime();
+                    this.startClock();
+                    this.isLoading = false; // Set loading to false after all initial data is loaded
                 },
 
                 /**
-                 * Sendet die Busdaten an JSONBin.io.
+                 * Загружает данные по автобусу с JSONBin.io.
                  */
-                async submitBusData() {
-                    if (!this.isFormValid || !this.isConfigLoaded) {
-                        Utils.showAlert('Bitte füllen Sie alle Felder korrekt aus und stellen Sie sicher, dass die App konfiguriert ist.', 'warning');
+                async loadBusData() {
+                    if (!this.api || !this.isConfigLoaded) {
+                        Utils.showAlert('API-Client nicht initialisiert oder Konfiguration nicht geladen.', 'danger');
                         return;
                     }
-                    
+
                     this.isLoading = true;
-                    
                     try {
-                        const today = this.currentDate;
+                        const allData = await this.api.getData();
+                        const dailyBusData = allData.buses && allData.buses[this.currentDate];
                         
-                        // Bestehende Daten abrufen
-                        let existingData = await this.api.getData();
-                        
-                        // Datumsstruktur initialisieren, falls nicht vorhanden
-                        if (!existingData[today]) {
-                            existingData[today] = {
-                                groups: {},
-                                buses: {}
-                            };
-                        }
-                        
-                        if (!existingData[today].buses) {
-                            existingData[today].buses = {};
-                        }
-                        
-                        // Busdaten aktualisieren
-                        existingData[today].buses[this.formData.bus_number.toString()] = {
-                            kinder_count: this.formData.kinder_count,
-                            betreuer_count: this.formData.betreuer_count,
-                            betreuer_name: this.betreuerName || 'Unbekannt',
-                            timestamp: new Date().toISOString()
-                        };
-                        
-                        // Daten speichern
-                        const success = await this.api.updateData(existingData);
-                        
-                        if (success) {
-                            this.saveToLocalStorage(); // Nach erfolgreicher JSONBin.io-Aktualisierung im LocalStorage speichern
-                            Utils.showAlert('Daten erfolgreich gesendet!', 'success');
+                        if (dailyBusData) {
+                            const busInfo = dailyBusData.find(bus => bus.bus_number === this.formData.bus_number);
+                            if (busInfo) {
+                                this.formData.kinder_count = busInfo.kinder_count;
+                                this.formData.betreuer_count = busInfo.betreuer_count;
+                                Utils.showAlert(`Daten für Bus ${this.formData.bus_number} geladen.`, 'success');
+                            } else {
+                                this.formData.kinder_count = 0;
+                                this.formData.betreuer_count = 0;
+                                Utils.showAlert(`Keine Daten für Bus ${this.formData.bus_number} am ${this.currentDate} gefunden.`, 'info');
+                            }
                         } else {
-                            Utils.showAlert('Fehler beim Senden der Daten. Bitte versuchen Sie es erneut.', 'danger');
+                            this.formData.kinder_count = 0;
+                            this.formData.betreuer_count = 0;
+                            Utils.showAlert(`Keine Busdaten für ${this.currentDate} gefunden.`, 'info');
                         }
-                        
                     } catch (error) {
-                        console.error('Fehler beim Übermitteln der Busdaten:', error);
-                        Utils.showAlert('Fehler beim Senden der Daten. Bitte versuchen Sie es erneut.', 'danger');
+                        console.error('Fehler beim Laden der Busdaten:', error);
+                        Utils.showAlert('Fehler beim Laden der Busdaten: ' + error.message, 'danger');
                     } finally {
                         this.isLoading = false;
                     }
                 },
-                
+
                 /**
-                 * Navigiert zurück zur vorherigen Seite im Browserverlauf.
+                 * Сохраняет данные по автобусу на JSONBin.io.
                  */
-                goBack() {
-                    window.history.back();
-                },
-                
-                /**
-                 * Lädt den Betreuer-Namen aus dem LocalStorage.
-                 */
-                loadBetreuerName() {
-                    const savedName = localStorage.getItem('betreuer_name');
-                    if (savedName) {
-                        this.betreuerName = savedName;
-                    } else {
-                        Utils.showAlert('Kein Betreuer-Name gefunden. Bitte zuerst über Login anmelden.', 'danger');
+                async saveBusData() {
+                    if (!this.api || !this.isConfigLoaded) {
+                        Utils.showAlert('API-Client nicht initialisiert oder Konfiguration nicht geladen.', 'danger');
+                        return;
+                    }
+
+                    this.isLoading = true;
+                    try {
+                        let allData = await this.api.getData();
+                        
+                        if (!allData.buses) {
+                            allData.buses = {};
+                        }
+                        
+                        if (!allData.buses[this.currentDate]) {
+                            allData.buses[this.currentDate] = [];
+                        }
+
+                        // Find existing bus entry
+                        let busEntryIndex = allData.buses[this.currentDate].findIndex(
+                            bus => bus.bus_number === this.formData.bus_number
+                        );
+
+                        if (busEntryIndex !== -1) {
+                            // Update existing entry
+                            allData.buses[this.currentDate][busEntryIndex] = { ...this.formData };
+                        } else {
+                            // Add new entry
+                            allData.buses[this.currentDate].push({ ...this.formData });
+                        }
+
+                        await this.api.updateData(allData);
+                        Utils.showAlert('Busdaten erfolgreich gespeichert!', 'success');
+                        this.saveDataToLocalStorage(); // Save to local storage after successful save to bin
+                    } catch (error) {
+                        console.error('Fehler beim Speichern der Busdaten:', error);
+                        Utils.showAlert('Fehler beim Speichern der Busdaten: ' + error.message, 'danger');
+                    } finally {
+                        this.isLoading = false;
                     }
                 },
-                
+
                 /**
-                 * Speichert die aktuellen Busdaten im LocalStorage.
+                 * Сохраняет выбранные данные по автобусу в localStorage.
                  */
-                saveToLocalStorage() {
+                saveDataToLocalStorage() {
                     localStorage.setItem(`last_selected_bus_number_${this.currentDate}`, this.formData.bus_number);
                     localStorage.setItem(`BusKinderCount_${this.currentDate}_${this.formData.bus_number}`, this.formData.kinder_count);
                     localStorage.setItem(`BusBetreuerCount_${this.currentDate}_${this.formData.bus_number}`, this.formData.betreuer_count);
                     console.log('Busdaten im LocalStorage gespeichert.');
                 },
-                
+
                 /**
-                 * Lädt die zuletzt gespeicherten Busdaten aus dem LocalStorage.
+                 * Загружает сохраненные данные по автобусу из localStorage.
                  */
-                loadFromLocalStorage() {
-                    this.currentDate = Utils.getCurrentDate(); // Aktuelles Datum setzen
-                    
+                loadDataFromLocalStorage() {
                     const savedBusNumber = localStorage.getItem(`last_selected_bus_number_${this.currentDate}`);
                     if (savedBusNumber) {
                         this.formData.bus_number = parseInt(savedBusNumber);
@@ -565,21 +211,49 @@
                         const savedKinderCount = localStorage.getItem(`BusKinderCount_${this.currentDate}_${this.formData.bus_number}`);
                         if (savedKinderCount !== null) {
                             this.formData.kinder_count = parseInt(savedKinderCount);
+                        } else {
+                            this.formData.kinder_count = 0; // Reset if no data found for current bus and date
                         }
                         
                         const savedBetreuerCount = localStorage.getItem(`BusBetreuerCount_${this.currentDate}_${this.formData.bus_number}`);
                         if (savedBetreuerCount !== null) {
                             this.formData.betreuer_count = parseInt(savedBetreuerCount);
+                        } else {
+                            this.formData.betreuer_count = 0; // Reset if no data found for current bus and date
                         }
                         console.log('Busdaten aus LocalStorage geladen.');
                     } else {
-                        console.log('Keine Busdaten im LocalStorage für heute gefunden.');
+                        console.log('Keine Busdaten im LocalStorage für heute gefunden. Standardwerte werden verwendet.');
+                        this.formData.kinder_count = 0;
+                        this.formData.betreuer_count = 0;
                     }
+                    // After loading from localStorage, try to load from the bin (which might override or confirm localStorage data)
+                    this.loadBusData();
+                },
+
+                /**
+                 * Возвращает пользователя на страницу администратора.
+                 */
+                goBack() {
+                    Utils.navigateTo('a_login.html', this);
+                },
+
+                /**
+                 * Обновляет текущие дату и время.
+                 */
+                updateDateTime() {
+                    this.currentDateTime = Utils.getCurrentDateTime();
+                },
+
+                /**
+                 * Запускает часы для обновления времени каждую минуту.
+                 */
+                startClock() {
+                    this.updateDateTime();
+                    setInterval(() => {
+                        this.updateDateTime();
+                    }, 60000);
                 }
-            },
-            
-            mounted() {
-                this.initializeBusPage(); // Startet die Initialisierung der Seite
             }
         }).mount('#app');
     </script>
