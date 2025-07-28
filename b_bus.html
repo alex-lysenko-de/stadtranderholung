@@ -6,6 +6,109 @@
     <title>Bus Management - Stadtranderholung</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
     <link href="main.css" rel="stylesheet">
+    <style>
+        /**
+ * Стили для управления автобусом (b_bus.html)
+ */
+
+/* Основные стили контейнера */
+.container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+/* Специфичные стили заголовка для автобуса */
+.card-header {
+    background: linear-gradient(135deg, #FF6B6B 0%, #EE3364 100%);
+    color: white;
+    border-radius: 15px 15px 0 0;
+    padding: 20px;
+    text-align: center;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.card-header .icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+/* Стили форм для автобуса */
+.form-label {
+    font-weight: bold;
+    color: #333;
+}
+
+.form-control {
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    padding: 10px 15px;
+}
+
+/* Кнопки автобуса */
+.btn-bus {
+    background-color: #EE3364;
+    border-color: #EE3364;
+    color: white;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-bus:hover {
+    background-color: #d12c5b;
+    border-color: #d12c5b;
+}
+
+.btn-secondary {
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: bold;
+}
+
+/* Стили уведомлений для автобуса */
+.alert {
+    display: flex;
+    align-items: center;
+}
+
+.alert .spinner-border {
+    margin-right: 10px;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    .card {
+        margin: 0 15px;
+    }
+    
+    .card-header {
+        padding: 15px;
+    }
+    
+    .card-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .card-header .icon {
+        font-size: 2rem;
+    }
+    
+    .btn-bus, .btn-secondary {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
+}
+    </style>
 </head>
 <body>
     <div id="app">

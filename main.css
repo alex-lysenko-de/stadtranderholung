@@ -30,6 +30,14 @@ body {
     max-width: 400px;
 }
 
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+}
+
 /* Заголовки карточек - базовые стили */
 .card-header {
     color: white;
@@ -174,6 +182,12 @@ body {
     box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
 }
 
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
 .form-label.config {
     font-weight: 600;
     color: #495057;
@@ -222,26 +236,20 @@ body {
 .alert {
     border-radius: 10px;
     border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Специальные стили для конфигурационной страницы */
-.card.config {
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.95);
+.alert-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1050;
+    width: 90%;
+    max-width: 500px;
 }
 
-.card-body.config {
-    padding: 2rem;
-}
-
-.container.config {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-}
-
+/* QR код */
 .qr-code {
     display: flex;
     justify-content: center;
@@ -259,124 +267,23 @@ body {
     height: auto;
 }
 
-
-/* Styles for a_overview.html */
-/* General body styles (already in main.css, ensuring padding) */
-body {
-    padding: 20px 0; /* Standard-Padding für Desktop */
-}
-
-.main-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.total-summary {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    color: white;
-    border-radius: 15px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    text-align: center;
-}
-.total-summary h2 {
-    font-size: 2.2rem;
-    margin-bottom: 10px;
-}
-.total-summary p {
-    font-size: 1.2rem;
-    margin-bottom: 5px;
-}
-.controls-card {
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    padding: 25px;
-    margin-bottom: 20px;
-}
-.controls-card h3 {
-    color: #333;
-    margin-bottom: 20px;
-    font-size: 1.6rem;
-}
-.controls-card .btn {
-    font-weight: bold;
-    padding: 10px 20px;
-    border-radius: 8px;
-}
-.btn-recount {
-    background-color: #ffc107;
-    border-color: #ffc107;
-    color: #212529;
-}
-.btn-recount:hover {
-    background-color: #e0a800;
-    border-color: #d39e00;
-}
-.btn-bus-management {
-    background-color: #17a2b8;
-    border-color: #17a2b8;
-    color: white;
-}
-.btn-bus-management:hover {
-    background-color: #138496;
-    border-color: #117a8b;
-}
-.btn-back-login {
-    background-color: #6c757d;
-    border-color: #6c757d;
-    color: white;
-}
-.btn-back-login:hover {
-    background-color: #5a6268;
-    border-color: #545b62;
-}
-.group-table-card {
-    background: white;
-    border-radius: 15px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    padding: 25px;
-}
-.group-table-card h3 {
-    color: #333;
-    margin-bottom: 20px;
-    font-size: 1.6rem;
-}
+/* Стили для таблиц */
 .table {
     margin-bottom: 0;
 }
-.table th, .table td {
+
+.table th,
+.table td {
     vertical-align: middle;
-    text-align: center;
+    padding: 0.75rem;
 }
-.table thead th {
-    background-color: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
-    font-weight: bold;
-    color: #495057;
-}
-.table-striped tbody tr:nth-of-type(odd) {
-    background-color: rgba(0, 0, 0, 0.03);
-}
-.table-hover tbody tr:hover {
-    background-color: rgba(0, 0, 0, 0.075);
-}
-/* Alert container styles (if not already defined globally) */
-.alert-container {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1050;
-    width: 90%;
-    max-width: 500px;
-}
-.alert {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+.table-responsive {
     border-radius: 10px;
+    overflow: hidden;
 }
+
+/* Индикаторы состояния */
 .status-dot {
     height: 12px;
     width: 12px;
@@ -385,20 +292,40 @@ body {
     display: inline-block;
     margin-right: 5px;
 }
+
 .status-dot.green {
     background-color: #28a745;
 }
+
 .status-dot.red {
     background-color: #dc3545;
 }
+
 .status-dot.orange {
     background-color: #ffc107;
 }
 
+/* Стили состояний */
+.status-active {
+    color: #28a745;
+    font-weight: bold;
+}
 
+.status-inactive {
+    color: #6c757d;
+}
 
+.status-warning {
+    color: #ffc107;
+    font-weight: bold;
+}
 
-/* Дополнительные утилитарные классы */
+.status-danger {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Утилитарные классы */
 .text-center {
     text-align: center;
 }
@@ -459,42 +386,6 @@ body {
     display: block;
 }
 
-/* Стили для таблиц (для административных обзоров) */
-.table {
-    margin-bottom: 0;
-}
-
-.table th,
-.table td {
-    vertical-align: middle;
-    padding: 0.75rem;
-}
-
-.table-responsive {
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-/* Стили состояний */
-.status-active {
-    color: #28a745;
-    font-weight: bold;
-}
-
-.status-inactive {
-    color: #6c757d;
-}
-
-.status-warning {
-    color: #ffc107;
-    font-weight: bold;
-}
-
-.status-danger {
-    color: #dc3545;
-    font-weight: bold;
-}
-
 /* Адаптивность для мобильных устройств */
 @media (max-width: 768px) {
     .container.config {
@@ -513,300 +404,5 @@ body {
     .login-card,
     .main-card {
         max-width: 100%;
-    }
-}
-
-/* Responsive styles for a_overview.html */
-@media (max-width: 576px) { 
-    body {
-        padding: 10px 0;
-    }
-    .main-container {
-        padding: 10px;
-    }
-    .total-summary h2 {
-        font-size: 1.8rem;
-    }
-    .total-summary p {
-        font-size: 1rem;
-    }
-    .controls-card, .group-table-card {
-        padding: 15px;
-    }
-    .controls-card h3, .group-table-card h3 {
-        font-size: 1.4rem;
-    }
-    .controls-card .btn {
-        padding: 8px 15px;
-        font-size: 0.9rem;
-    }
-    .table th, .table td {
-        font-size: 0.85rem;
-        padding: 0.5rem;
-    }
-}
-
-/* Styles for b_bus.html */
-
-/* General styles for background and fonts (already in main.css, ensuring padding) */
-body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.container {
-    padding-top: 2rem;
-    padding-bottom: 2rem;
-}
-
-.card {
-    border: none;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.95);
-}
-
-.card-header {
-    background: linear-gradient(135deg, #FF6B6B 0%, #EE3364 100%);
-    color: white;
-    border-radius: 15px 15px 0 0;
-    padding: 20px;
-    text-align: center;
-}
-
-.card-header h2 {
-    margin: 0;
-    font-size: 1.8rem;
-}
-
-.card-header .icon {
-    font-size: 2.5rem;
-    margin-bottom: 10px;
-}
-
-.form-label {
-    font-weight: bold;
-    color: #333;
-}
-
-.form-control {
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    padding: 10px 15px;
-}
-
-.btn-bus {
-    background-color: #EE3364;
-    border-color: #EE3364;
-    color: white;
-    font-weight: bold;
-    padding: 10px 20px;
-    border-radius: 8px;
-    transition: background-color 0.3s ease;
-}
-
-.btn-bus:hover {
-    background-color: #d12c5b;
-    border-color: #d12c5b;
-}
-
-.btn-secondary {
-    border-radius: 8px;
-    padding: 10px 20px;
-    font-weight: bold;
-}
-
-/* Specific alert-container styles (if not already defined globally) */
-.alert-container {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1050;
-    width: 90%;
-    max-width: 500px;
-}
-
-.alert {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-}
-
-.alert .spinner-border {
-    margin-right: 10px;
-}
-
-/* Media queries for responsiveness (check for duplicates in main.css) */
-@media (max-width: 768px) {
-    .container {
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-    }
-    
-    .card {
-        margin: 0 15px;
-    }
-    
-    .card-header {
-        padding: 15px;
-    }
-    
-    .card-header h2 {
-        font-size: 1.5rem;
-    }
-    
-    .card-header .icon {
-        font-size: 2rem;
-    }
-    
-    .btn-bus, .btn-secondary {
-        padding: 8px 15px;
-        font-size: 0.9rem;
-    }
-}
-
-/* Styles for b_group.html */
-
-/* General styles for background and fonts (already in main.css, ensuring padding) */
-body {
-    padding: 30px 0; /* Increased top and bottom padding */
-}
-
-/* Styles for the main container, centering and max-width */
-.main-container {
-    max-width: 550px; /* Increased maximum width */
-    margin: 0 auto;
-    padding: 30px; /* Increased inner padding */
-}
-
-/* Styles for group cards, shadow and rounded corners */
-.group-card {
-    background: white;
-    border-radius: 20px; /* Increased corner radius */
-    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-    padding: 30px; /* Increased inner padding */
-}
-
-/* Styles for icons */
-.icon {
-    font-size: 2.5rem; /* Larger icons */
-    margin-bottom: 15px;
-    color: #4CAF50; /* Green color for icons */
-}
-
-/* Styles for tables, responsive design */
-.table-responsive {
-    margin-top: 20px;
-}
-.table .btn {
-    padding: .3rem .6rem;
-    font-size: .8rem;
-}
-
-/* Progress bar, visual enhancements */
-.progress {
-    height: 25px;
-    margin-top: 15px;
-    border-radius: 12px;
-    overflow: hidden; /* Ensure content does not overflow */
-}
-.progress-bar {
-    background-color: #4CAF50; /* Green color for progress bar */
-    color: white;
-    font-weight: bold;
-    font-size: 0.9em;
-    text-align: center;
-    line-height: 25px; /* Align text to center */
-}
-
-/* Styles for buttons, color schemes and margins */
-.btn-action {
-    width: 100%;
-    margin-bottom: 10px;
-    font-weight: bold;
-}
-.btn-add {
-    background-color: #28a745; /* Green */
-    border-color: #28a745;
-    color: white;
-}
-.btn-add:hover {
-    background-color: #218838;
-    border-color: #1e7e34;
-}
-.btn-remove {
-    background-color: #dc3545; /* Red */
-    border-color: #dc3545;
-    color: white;
-}
-.btn-remove:hover {
-    background-color: #c82333;
-    border-color: #bd2130;
-}
-.btn-toggle-status {
-    background-color: #007bff; /* Blue */
-    border-color: #007bff;
-    color: white;
-}
-.btn-toggle-status:hover {
-    background-color: #0069d9;
-    border-color: #0062cc;
-}
-.btn-calc {
-    background-color: #ffc107; /* Yellow */
-    border-color: #ffc107;
-    color: #212529; /* Dark text for contrast */
-}
-.btn-calc:hover {
-    background-color: #e0a800;
-    border-color: #d39e00;
-}
-.btn-back {
-    background-color: #6c757d; /* Gray */
-    border-color: #6c757d;
-    color: white;
-}
-.btn-back:hover {
-    background-color: #5a6268;
-    border-color: #545b62;
-}
-
-/* Styles for inactive children, strikethrough text */
-.child-inactive {
-    text-decoration: line-through;
-    color: #888;
-}
-
-/* General styles for headings and text */
-h3 {
-    color: #333;
-    margin-bottom: 20px;
-}
-p {
-    color: #555;
-}
-
-/* Responsiveness for mobile devices (already in main.css, check for duplicates) */
-@media (max-width: 768px) {
-    .main-container {
-        padding: 15px;
-    }
-    .group-card {
-        padding: 20px;
-        border-radius: 15px;
-    }
-    .icon {
-        font-size: 2rem;
-    }
-    .btn-action {
-        font-size: 0.9rem;
-    }
-    .table .btn {
-        padding: .2rem .5rem;
-        font-size: .75rem;
     }
 }

@@ -7,124 +7,41 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="main.css" rel="stylesheet">
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
-        }
-        .container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
-        }
-        .card-header {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
-            color: white;
-            border-radius: 15px 15px 0 0 !important;
-            padding: 1.5rem;
-        }
-        .form-control, .form-select {
-            border-radius: 10px;
-            border: 2px solid #e0e0e0;
-            padding: 0.75rem 1rem;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-        }
-        .form-control:focus, .form-select:focus {
-            border-color: #2196F3;
-            box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
-            border: none;
-            border-radius: 10px;
-            padding: 0.75rem 2rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
-        }
-        .btn-info {
-            background-color: #17a2b8; /* Bootstrap info color */
-            border: none;
-            border-radius: 10px;
-            padding: 0.75rem 1.5rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: white;
-            transition: all 0.3s ease;
-        }
-        .btn-info:hover {
-            background-color: #138496;
-            transform: translateY(-1px);
-        }
-        .btn-success {
-            background-color: #28a745; /* Bootstrap success color */
-            border: none;
-            border-radius: 10px;
-            padding: 0.75rem 1.5rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: white;
-            transition: all 0.3s ease;
-        }
-        .btn-success:hover {
-            background-color: #218838;
-            transform: translateY(-1px);
-        }
-        .btn-outline-secondary {
-            border-radius: 10px;
-            padding: 0.75rem 1.5rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .alert {
-            border-radius: 10px;
-            border: none;
-        }
-        .form-label {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-        }
-        .card-body {
-            padding: 2rem;
-        }
-        .qr-code {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            background-color: white;
-            min-height: 270px; /* To prevent layout shift when QR is generated */
-        }
-        /* qrcode.js generates a canvas or table directly inside the target div */
-        .qr-code canvas, .qr-code table {
-            max-width: 100%;
-            height: auto;
-        }
-        @media (max-width: 768px) {
-            .container {
-                padding-top: 1rem;
-            }
-            .card-body {
-                padding: 1.5rem;
-            }
-        }
+/**
+ * Стили для страницы конфигурации
+ */
+
+/* Специальные стили для конфигурационной страницы */
+.card.config {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.card-body.config {
+    padding: 2rem;
+}
+
+.container.config {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .container.config {
+        padding-top: 1rem;
+    }
+    
+    .card-body.config {
+        padding: 1.5rem;
+    }
+}
     </style>
 </head>
 <body>
