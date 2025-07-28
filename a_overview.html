@@ -321,7 +321,15 @@
                 </div>
             </div>
         </div>
-
+<div class="card">
+        
+            <div class="row">
+                <div class="col-12">
+                    <button class="btn btn-secondary w-100" @click="gotoLoginPage">Zurück</button>
+                </div>
+            </div>
+        
+</div>
         <div class="text-center mt-3">
             <span class="text-white">
                 <i class="fas fa-sync-alt me-1"></i>
@@ -533,6 +541,10 @@
                     };
                 },
 
+                gotoLoginPage() {
+                    location.href = 'a_login.html';
+                },  
+
                 async loadOverviewData(silent = false) {
                     try {
                         if (!silent) {
@@ -705,9 +717,13 @@
                         const success = await this.api.updateData(fullBinData);
 
                         if (success) {
-                            Utils.showAlert('Zählvorgang erfolgreich initiiert! Betreuer werden um neue Zählung gebeten.', 'success');
-                            this.groupsData = JSON.parse(JSON.stringify(groupsToUpdate));
-                            this.processGroupsData();
+                            Utils.showAlert('Zählvorgang erfolgreich abgeschlossen!', 'success');
+                            // after small delay 3 seconds, goto a_login.html
+                            setTimeout(() => {
+                                location.href = 'a_login.html';
+                            }, 3000);
+                            //this.groupsData = JSON.parse(JSON.stringify(groupsToUpdate));
+                            //this.processGroupsData();
                         } else {
                             Utils.showAlert('Fehler beim Starten des Zählvorgangs.', 'danger');
                         }
