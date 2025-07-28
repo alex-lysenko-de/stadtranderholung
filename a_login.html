@@ -1,25 +1,103 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administrator Login - Stadtranderholung</title>
+    <!-- Bootstrap 5.3.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="main.css" rel="stylesheet">
+    <!-- Custom CSS for mobile optimization -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+            padding: 20px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .admin-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .navigation-section {
+            padding: 20px;
+        }
+        .nav-button {
+            transition: transform 0.2s ease;
+        }
+        .nav-button:hover {
+            transform: translateY(-2px);
+        }
+        .parameters-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        .parameter-item {
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+    </style>
 </head>
 <body>
     <div id="app">
         <div class="login-container">
             <div class="login-card">
-                <div class="card-header admin">
+                <div class="card-header">
                     <div class="admin-icon">🔧</div>
                     <h2 class="mb-0">Administrator</h2>
                     <p class="mb-0 mt-2">Stadtranderholung 2025</p>
                 </div>
                 <div class="navigation-section">
+                    <!-- Container für Erfolgs-/Fehlermeldungen -->
                     <div id="alertContainer"></div>
                     
+                    <!-- Parameterinformationen (nur anzeigen, wenn Parameter geladen wurden) -->
                     <div v-if="hasParameters && isConfigLoaded" class="parameters-info">
                         <h6 class="mb-2">📋 Geladene Parameter:</h6>
                         <div v-for="(value, key) in loadedParameters" :key="key" class="parameter-item">
@@ -27,12 +105,13 @@
                         </div>
                     </div>
                     
+                    <!-- Hauptnavigationsschaltflächen -->
                     <div class="d-grid gap-2">
-                        <button @click="navigateTo('a_overview.html')" class="btn btn-primary admin nav-button" :disabled="!isConfigLoaded">
+                        <button @click="navigateTo('a_overview.html')" class="btn btn-primary nav-button" :disabled="!isConfigLoaded">
                             📊 Gruppen Übersicht
                         </button>
                         
-                        <button @click="navigateTo('a_bus.html')" class="btn btn-primary admin nav-button" :disabled="!isConfigLoaded">
+                        <button @click="navigateTo('a_bus.html')" class="btn btn-primary nav-button" :disabled="!isConfigLoaded">
                             🚌 Bus Übersicht
                         </button>
                         
@@ -41,6 +120,7 @@
                         </button>
                     </div>
                     
+                    <!-- Zusätzlicher Informationsbereich -->
                     <div class="mt-4 text-center">
                         <small class="text-muted">
                             Aktuelle Zeit: {{ currentDateTime }}
@@ -51,12 +131,127 @@
         </div>
     </div>
 
+    <!-- Bootstrap 5.3.3 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Vue.js 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     
-    <script type="module">
-        import { CONFIG_DEFAULTS, JSONBinAPI, Utils } from './common.js';
+    <script>
+        /**
+         * Standardkonfigurationswerte. Diese werden durch URL-Parameter oder LocalStorage überschrieben.
+         */
+        const CONFIG_DEFAULTS = {
+            API_BASE_URL: 'https://api.jsonbin.io/v3/b',
+            BIN_COLLECTION_NAME: 'SR2025',
+            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
+            MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
+            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
+            TOTAL_GROUPS: 15,
+            TOTAL_BUSES: 3
+        };
 
+        /**
+         * Dienstprogrammfunktionen für allgemeine Operationen
+         */
+        const Utils = {
+            /**
+             * Aktuelles Datum und Uhrzeit in lesbarem Format abrufen
+             * @returns {string} Formatiertes Datums- und Uhrzeitzeichenfolge
+             */
+            getCurrentDateTime() {
+                const now = new Date();
+                return now.toLocaleString('de-DE', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            },
+
+            /**
+             * Warnmeldung für den Benutzer anzeigen
+             * @param {string} message - Anzuzeigende Nachricht
+             * @param {string} type - Warnungstyp (success, danger, warning, info)
+             */
+            showAlert(message, type = 'info') {
+                const alertContainer = document.getElementById('alertContainer');
+                const alertHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                alertContainer.innerHTML = alertHtml;
+                
+                // Warnung nach 5 Sekunden ausblenden
+                setTimeout(() => {
+                    if (alertContainer.firstChild) {
+                        alertContainer.firstChild.remove();
+                    }
+                }, 5000);
+            },
+
+            /**
+             * Konfigurationsparameter von URL oder LocalStorage laden.
+             * URL-Parameter haben Vorrang. Fehlende Parameter verwenden Standardwerte.
+             * Alle geladenen/Standardparameter werden im LocalStorage gespeichert.
+             * @returns {Object} Ein Objekt, das die geladene Konfiguration oder eine Fehlermeldung enthält.
+             */
+            loadConfig: function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const config = {};
+                const missingParams = [];
+
+                // Alle erwarteten Parameter und deren LocalStorage-Schlüssel definieren
+                const paramMap = {
+                    'TOTAL_GROUPS': 'config_total_groups',
+                    'TOTAL_BUSES': 'config_total_buses',
+                    'MASTER_KEY': 'config_bin_master_key',
+                    'ACCESS_KEY': 'config_bin_access_key',
+                    'BIN_COLLECTION_NAME': 'config_bin_collection',
+                    'BIN_ID': 'config_bin_id'
+                };
+
+                for (const urlParam in paramMap) {
+                    const lsKey = paramMap[urlParam];
+                    let value = urlParams.get(urlParam) || localStorage.getItem(lsKey);
+
+                    if (value !== null && value !== '') {
+                        // Spezielle Behandlung für numerische Parameter
+                        if (urlParam === 'TOTAL_GROUPS' || urlParam === 'TOTAL_BUSES') {
+                            config[urlParam] = parseInt(value, 10);
+                        } else {
+                            config[urlParam] = value;
+                        }
+                        // Im LocalStorage speichern, wenn es von der URL kam oder einfach sicherstellen, dass es dort ist
+                        localStorage.setItem(lsKey, value);
+                    } else {
+                        // Prüfen, ob ein Standardwert in CONFIG_DEFAULTS existiert
+                        if (CONFIG_DEFAULTS.hasOwnProperty(urlParam)) {
+                            config[urlParam] = CONFIG_DEFAULTS[urlParam];
+                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]); // Standardwert im LS speichern
+                        } else {
+                            missingParams.push(urlParam);
+                        }
+                    }
+                }
+                
+                // API_BASE_URL ist eine Konstante und wird nicht über URL/LocalStorage übergeben
+                config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
+
+                if (missingParams.length > 0) {
+                    return { config: null, error: `Es fehlen wesentliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass diese über die URL übergeben oder in index.html festgelegt werden.` };
+                }
+                
+                return { config: config, error: null };
+            }
+        };
+
+        /**
+         * Haupt-Admin-Anmeldeanwendung mit Vue.js 3
+         * Verwaltet die Parameteranalyse und Navigation
+         */
         const { createApp } = Vue;
 
         createApp({
@@ -65,70 +260,87 @@
                     currentDateTime: '',
                     loadedParameters: {},
                     hasParameters: false,
-                    isConfigLoaded: false, 
-                    config: {}
+                    isConfigLoaded: false, // Flag, um den Konfigurationsladestatus zu verfolgen
+                    config: {} // Hier wird die geladene Konfiguration gespeichert
                 };
             },
             
             mounted() {
-                this.initializePage(); // Используем стандартизированный метод инициализации
+                this.initializeApp();
                 this.startClock();
             },
             
             methods: {
                 /**
-                 * Стандартизированная инициализация страницы для Vue-компонентов
-                 * Загружает конфигурацию и инициализирует API
+                 * Initialisiert die Anwendung
+                 * Analysiert URL-Parameter und richtet den Anfangszustand ein
                  */
-                initializePage() {
-                    console.log('Инициализация страницы a_login.html...');
-                    const success = Utils.initializePage(this); // Вызов из common.js
+                initializeApp() {
+                    console.log('Administrator-Anmeldung wird initialisiert...');
+                    
+                    const { config, error } = Utils.loadConfig();
 
-                    if (success) {
-                        // Отображение загруженных параметров в UI
-                        this.loadedParameters = {};
-                        for (const key in this.config) {
-                            // Фильтрация внутренних ключей конфигурации, которые не должны отображаться
-                            if (key !== 'API_BASE_URL') { 
-                                this.loadedParameters[key] = this.config[key];
-                            }
-                        }
-                        this.hasParameters = Object.keys(this.loadedParameters).length > 0;
-                        
-                        if (this.hasParameters) {
-                            const paramCount = Object.keys(this.loadedParameters).length;
-                            Utils.showAlert(
-                                `${paramCount} Parameter erfolgreich geladen und gespeichert.`, 
-                                'success'
-                            );
-                            console.log('Geladene Parameter:', this.loadedParameters);
-                        }
-                    } else {
-                        console.error('Ошибка инициализации страницы.');
+                    if (error) {
+                        Utils.showAlert(error, 'danger');
+                        this.isConfigLoaded = false;
+                        return; // Initialisierung stoppen, wenn Konfiguration fehlt
                     }
+
+                    this.config = config; // Geladene Konfiguration speichern
+                    this.isConfigLoaded = true; // Konfiguration als geladen markieren
+
+                    // Anzeigen der geladenen Parameter im UI
+                    this.loadedParameters = {};
+                    for (const key in this.config) {
+                        // Filtern von internen Konfigurationsschlüsseln, die nicht angezeigt werden sollen
+                        if (key !== 'API_BASE_URL') { 
+                            this.loadedParameters[key] = this.config[key];
+                        }
+                    }
+                    this.hasParameters = Object.keys(this.loadedParameters).length > 0;
+                    
+                    if (this.hasParameters) {
+                        const paramCount = Object.keys(this.loadedParameters).length;
+                        Utils.showAlert(
+                            `${paramCount} Parameter erfolgreich geladen und gespeichert.`, 
+                            'success'
+                        );
+                        console.log('Geladene Parameter:', this.loadedParameters);
+                    }
+                    
+                    // Aktuelle Zeit einstellen
                     this.updateDateTime();
                 },
 
                 /**
-                 * Навигация на указанную страницу
-                 * @param {string} page - Имя файла целевой страницы
+                 * Navigiert zur angegebenen Seite
+                 * @param {string} page - Dateiname der Zielseite
                  */
                 navigateTo(page) {
-                    Utils.navigateTo(page, this); // Использование стандартизированной навигации из common.js
+                    if (!this.isConfigLoaded) {
+                        Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Navigation nicht möglich.', 'danger');
+                        return;
+                    }
+                    console.log(`Navigiere zu: ${page}`);
+                    // Navigation ohne URL-Parameter, da Module aus LocalStorage lesen sollen
+                    window.location.href = page;
                 },
 
                 /**
-                 * Обновить текущие дату и время
+                 * Aktuelles Datum und Uhrzeit aktualisieren
                  */
                 updateDateTime() {
-                    this.currentDateTime = Utils.getCurrentDateTime(); // Использование Utils из common.js
+                    this.currentDateTime = Utils.getCurrentDateTime();
                 },
 
                 /**
-                 * Запускает часы для обновления времени каждую минуту
+                 * Startet die Uhr, um die Zeit jede Minute zu aktualisieren
                  */
                 startClock() {
+                    // Sofort aktualisieren
                     this.updateDateTime();
+                    
+                    // Jede Minute aktualisieren
                     setInterval(() => {
                         this.updateDateTime();
                     }, 60000);

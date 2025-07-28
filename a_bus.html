@@ -3,256 +3,675 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bus Management - Stadtranderholung</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
-    <link href="main.css" rel="stylesheet">
+    <title>Bus-Übersicht - Stadtranderholung</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px 0;
+        }
+        
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .total-summary {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            transition: all 0.5s ease;
+        }
+        
+        .total-summary.complete {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .total-count {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            border: none;
+            border-radius: 15px;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            width: 100%;
+            margin-bottom: 20px;
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+        
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        
+        .bus-table {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .table thead th {
+            background: #f8f9fa;
+            border: none;
+            font-weight: bold;
+            padding: 15px;
+            white-space: nowrap;
+        }
+        
+        .table tbody td {
+            padding: 15px;
+            vertical-align: middle;
+            border-top: 1px solid #dee2e6;
+            white-space: nowrap;
+        }
+        
+        .bus-number {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 1.2rem;
+        }
+        
+        .count-value {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #28a745;
+        }
+        
+        .count-null {
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .betreuer-name {
+            background: #e9ecef;
+            border-radius: 15px;
+            padding: 5px 12px;
+            display: inline-block;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+        
+        .bus-inactive {
+            opacity: 0.5;
+            background-color: #f8f9fa;
+        }
+        
+        .loading-spinner {
+            color: #007bff;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-ok {
+            background-color: #28a745;
+        }
+        
+        .status-inactive {
+            background-color: #6c757d;
+        }
+        
+        .overview-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .back-button {
+            background: #6c757d;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            color: white;
+            font-size: 1.1rem;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+        
+        .timestamp {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 767px) {
+            body {
+                padding-top: 10px;
+            }
+            
+            .total-count {
+                font-size: 5rem;
+            }
+            
+            .refresh-btn {
+                padding: 12px 20px;
+                font-size: 1rem;
+                position: sticky;
+                top: 10px;
+            }
+            
+            .table tbody td {
+                white-space: normal;
+                word-break: break-word;
+            }
+            
+            .table thead th:nth-child(1), .table tbody td:nth-child(1) { width: 10%; }
+            .table thead th:nth-child(2), .table tbody td:nth-child(2) { width: 20%; }
+            .table thead th:nth-child(3), .table tbody td:nth-child(3) { width: 20%; }
+            .table thead th:nth-child(4), .table tbody td:nth-child(4) { width: 25%; }
+            .table thead th:nth-child(5), .table tbody td:nth-child(5) { width: 25%; }
+        }
+    </style>
 </head>
 <body>
     <div id="app">
-        <div class="container py-4">
+        <div class="main-container">
+            <!-- Alert Container -->
             <div id="alertContainer"></div>
 
-            <div class="card shadow-lg">
-                <div class="card-header">
-                    <div class="icon">🚌</div>
-                    <h2>Bus-Management</h2>
+            <!-- Total Summary -->
+            <div :class="['total-summary', { 'complete': allBusesHaveData }]">
+                <h3 class="mb-3">Gesamt</h3>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="total-count">{{ totalChildren }}</div>
+                        <h4 class="mt-2">Kinder</h4>
+                    </div>
+                    <div class="col-6">
+                        <div class="total-count">{{ totalBetreuer }}</div>
+                        <h4 class="mt-2">Betreuer</h4>
+                    </div>
                 </div>
-                <div class="card-body p-4">
-                    <form @submit.prevent="saveBusData">
-                        <div class="mb-3">
-                            <label for="busNumber" class="form-label">Busnummer:</label>
-                            <select id="busNumber" class="form-select form-control" v-model.number="formData.bus_number" @change="loadDataFromLocalStorage" :disabled="isLoading || !isConfigLoaded">
-                                <option v-for="n in total_buses" :key="n" :value="n">Bus {{ n }}</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="kinderCount" class="form-label">Anzahl Kinder:</label>
-                            <input type="number" id="kinderCount" class="form-control" v-model.number="formData.kinder_count" min="0" :disabled="isLoading || !isConfigLoaded">
-                        </div>
-                        <div class="mb-4">
-                            <label for="betreuerCount" class="form-label">Anzahl Betreuer:</label>
-                            <input type="number" id="betreuerCount" class="form-control" v-model.number="formData.betreuer_count" min="0" :disabled="isLoading || !isConfigLoaded">
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-bus" :disabled="isLoading || !isConfigLoaded">
-                                <span v-if="isLoading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                <span v-else>Speichern</span>
-                            </button>
-                            <button type="button" class="btn btn-secondary" @click="goBack" :disabled="isLoading || !isConfigLoaded">
-                                Zurück zur Übersicht
-                            </button>
-                        </div>
-                    </form>
+                <div v-show="showHeaderInfo" class="mt-3">
+                    <h5><i class="fas fa-bus me-2"></i>Bus-Übersicht</h5>
+                    <p class="mb-0">{{ formattedCurrentDate }} - {{ activeBusesCount }} von {{ totalBusCount }} Bussen aktiv</p>
                 </div>
-                <div class="card-footer text-center text-muted">
-                    <small>Aktuelle Zeit: {{ currentDateTime }}</small>
+                <div v-if="allBusesHaveData" class="mt-3">
+                    <h5><i class="fas fa-check-circle me-2"></i>Alle Busse erfasst!</h5>
+                    <p class="mb-0">Bereit für die Abfahrt</p>
                 </div>
+            </div>
+
+            <!-- Refresh Button (Sticky) -->
+            <button class="btn refresh-btn" @click="loadBusData(false)" :disabled="loadingInitialData || !isConfigLoaded">
+                <span v-if="loadingInitialData" class="spinner-border spinner-border-sm me-2"></span>
+                <i v-else class="fas fa-sync-alt me-2"></i>
+                {{ loadingInitialData ? 'Laden...' : 'Aktualisieren' }}
+            </button>
+
+            <!-- Bus Data Card -->
+            <div class="overview-card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-bus me-2"></i>Alle Busse
+                        <span class="badge bg-secondary ms-2">{{ activeBusesCount }} aktive Busse</span>
+                    </h5>
+
+                    <!-- Loading State -->
+                    <div v-if="loadingInitialData" class="text-center py-5">
+                        <div class="spinner-border mb-3" role="status">
+                            <span class="visually-hidden">Wird geladen...</span>
+                        </div>
+                        <p class="text-muted">Lade Bus-Daten für heute...</p>
+                    </div>
+
+                    <!-- No Data State -->
+                    <div v-else-if="!hasBusData && isConfigLoaded" class="text-center py-5">
+                        <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Keine Bus-Daten für heute verfügbar</h5>
+                        <p class="text-muted">Noch kein Betreuer hat Bus-Daten heute übermittelt.</p>
+                    </div>
+                    <!-- Configuration Not Loaded State -->
+                    <div v-else-if="!isConfigLoaded" class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Konfiguration konnte nicht geladen werden.</h5>
+                        <p class="text-muted">Bitte gehen Sie zur Anmeldeseite zurück, um die Konfiguration zu laden.</p>
+                    </div>
+
+                    <!-- Bus Table -->
+                    <div v-else class="table-responsive">
+                        <table class="table table-hover bus-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">&nbsp;</th>
+                                    <th scope="col">Bus</th>
+                                    <th scope="col">Kinder</th>
+                                    <th scope="col">Betreuer</th>
+                                    <th scope="col">Verantwortlicher</th>
+                                    <th scope="col">Letzte Aktualisierung</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="busNumber in totalBusRange" :key="busNumber"
+                                    :class="{ 'bus-inactive': !getBusData(busNumber).kinder_count && getBusData(busNumber).kinder_count !== 0 }">
+                                    <td><span v-html="getStatusIndicator(getBusData(busNumber))"></span></td>
+                                    <td>
+                                        <span class="bus-number">
+                                            <i class="fas fa-bus me-2"></i>
+                                            {{ busNumber }}
+                                        </span>
+                                    </td>
+                                    <td><span v-html="formatCount(getBusData(busNumber).kinder_count)"></span></td>
+                                    <td><span v-html="formatCount(getBusData(busNumber).betreuer_count)"></span></td>
+                                    <td><span v-html="formatBetreuerName(getBusData(busNumber).betreuer_name)"></span></td>
+                                    <td><span v-html="formatTimestamp(getBusData(busNumber).timestamp)"></span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back Button -->
+            <button class="btn back-button" @click="goBack">
+                <i class="fas fa-arrow-left me-2"></i>
+                Zurück
+            </button>
+
+            <!-- Last Update Time -->
+            <div class="text-center mt-3">
+                <span class="text-white">
+                    <i class="fas fa-sync-alt me-1"></i>
+                    Letzte Aktualisierung: {{ lastUpdateTime || '-' }}
+                </span>
             </div>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.min.js"></script>
-    
-    <script type="module">
-        import { CONFIG_DEFAULTS, JSONBinAPI, Utils } from './common.js';
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <script>
+        /**
+         * Standardkonfigurationswerte. Diese werden durch URL-Parameter oder LocalStorage überschrieben.
+         */
+        const CONFIG_DEFAULTS = {
+            API_BASE_URL: 'https://api.jsonbin.io/v3/b',
+            BIN_COLLECTION_NAME: 'SR2025',
+            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
+            MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
+            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
+            TOTAL_GROUPS: 15, // Gesamtzahl der Gruppen
+            TOTAL_BUSES: 3 // Gesamtzahl der Busse
+        };
+
+        /**
+         * Dienstprogrammklasse für die Verwaltung von JSONBin.io API-Interaktionen
+         * Behandelt alle CRUD-Operationen mit ordnungsgemäßer Fehlerbehandlung
+         */
+        class JSONBinAPI {
+            constructor(config) {
+                this.config = config;
+                this.headers = {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': config.MASTER_KEY,
+                    'X-Access-Key': config.ACCESS_KEY
+                };
+            }
+
+            /**
+             * Aktuelle Daten von JSONBin abrufen
+             * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt
+             */
+            async getData() {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
+                        method: 'GET',
+                        headers: this.headers
+                    });
+
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorBody}`);
+                    }
+
+                    const result = await response.json();
+                    return result.record || {};
+                } catch (error) {
+                    console.error('Fehler beim Abrufen der Daten von JSONBin:', error);
+                    throw error;
+                }
+            }
+        }
+
+        /**
+         * Dienstprogrammfunktionen für gängige Operationen
+         */
+        const Utils = {
+            /**
+             * Aktuelles Datum im Format YYYY-MM-DD abrufen
+             * @returns {string} Formatiertes Datumszeichenfolge
+             */
+            getCurrentDateString() {
+                return new Date().toISOString().split('T')[0];
+            },
+
+            /**
+             * Datum zur Anzeige formatieren
+             * @param {string} dateString - Datum im Format YYYY-MM-DD
+             * @returns {string} Formatiertes Datumszeichenfolge
+             */
+            formatDateForDisplay(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('de-DE', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            },
+
+            /**
+             * Uhrzeit zur Anzeige formatieren
+             * @returns {string} Aktuelle Uhrzeit im Format HH:MM:SS
+             */
+            getCurrentTimeForDisplay() {
+                return new Date().toLocaleTimeString('de-DE');
+            },
+
+            /**
+             * Warnmeldung für den Benutzer anzeigen
+             * @param {string} message - Anzuzeigende Nachricht
+             * @param {string} type - Warntyp (success, danger, warning, info)
+             */
+            showAlert(message, type = 'info') {
+                const alertContainer = document.getElementById('alertContainer');
+                if (!alertContainer) return;
+
+                alertContainer.innerHTML = '';
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                alertDiv.role = 'alert';
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                alertContainer.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    const bsAlert = bootstrap.Alert.getInstance(alertDiv) || new bootstrap.Alert(alertDiv);
+                    bsAlert.close();
+                }, 5000);
+            },
+
+            /**
+             * Konfigurationsparameter von URL oder LocalStorage laden.
+             * URL-Parameter haben Vorrang. Fehlende Parameter verwenden Standardwerte.
+             * Alle geladenen/Standardparameter werden im LocalStorage gespeichert.
+             * @returns {Object} Ein Objekt, das die geladene Konfiguration oder eine Fehlermeldung enthält.
+             */
+            loadConfig: function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const config = {};
+                const missingParams = [];
+
+                const paramMap = {
+                    'TOTAL_GROUPS': 'config_total_groups',
+                    'TOTAL_BUSES': 'config_total_buses',
+                    'MASTER_KEY': 'config_bin_master_key',
+                    'ACCESS_KEY': 'config_bin_access_key',
+                    'BIN_COLLECTION_NAME': 'config_bin_collection',
+                    'BIN_ID': 'config_bin_id'
+                };
+
+                for (const urlParam in paramMap) {
+                    const lsKey = paramMap[urlParam];
+                    let value = urlParams.get(urlParam) || localStorage.getItem(lsKey);
+
+                    if (value !== null && value !== '') {
+                        if (urlParam === 'TOTAL_GROUPS' || urlParam === 'TOTAL_BUSES') {
+                            config[urlParam] = parseInt(value, 10);
+                        } else {
+                            config[urlParam] = value;
+                        }
+                        localStorage.setItem(lsKey, value);
+                    } else {
+                        if (CONFIG_DEFAULTS.hasOwnProperty(urlParam)) {
+                            config[urlParam] = CONFIG_DEFAULTS[urlParam];
+                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]);
+                        } else {
+                            missingParams.push(urlParam);
+                        }
+                    }
+                }
+                
+                config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
+
+                if (missingParams.length > 0) {
+                    return { config: null, error: `Es fehlen wesentliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass diese über die URL übergeben oder in index.html festgelegt werden.` };
+                }
+                
+                return { config: config, error: null };
+            }
+        };
 
         const { createApp } = Vue;
 
         createApp({
             data() {
                 return {
-                    formData: {
-                        bus_number: 1,
-                        kinder_count: 0,
-                        betreuer_count: 0
-                    },
-                    currentDateTime: '',
-                    isLoading: true, // Initial loading state
-                    currentDate: '', // For localStorage keying
-                    isConfigLoaded: false,
-                    config: {}, // Loaded config from common.js
-                    api: null,  // JSONBinAPI instance
-                    total_buses: CONFIG_DEFAULTS.TOTAL_BUSES // Initial fallback, updated from config
+                    currentDate: Utils.getCurrentDateString(),
+                    busesData: {},
+                    totalBusCount: 0, // Wird dynamisch aus der Konfiguration geladen
+                    loadingInitialData: true,
+                    api: null, // API-Instanz wird nach dem Laden der Konfiguration initialisiert
+                    lastUpdateTime: null,
+                    showHeaderInfo: true,
+                    isConfigLoaded: false, // Flag für den Konfigurationsladestatus
+                    config: null // Hier wird die geladene Konfiguration gespeichert
                 };
             },
-            
-            mounted() {
-                this.initializeBusPage();
+
+            computed: {
+                formattedCurrentDate() {
+                    return Utils.formatDateForDisplay(this.currentDate);
+                },
+                
+                totalChildren() {
+                    let total = 0;
+                    Object.values(this.busesData).forEach(bus => {
+                        if (bus.kinder_count !== null && bus.kinder_count !== undefined) {
+                            total += bus.kinder_count;
+                        }
+                    });
+                    return total;
+                },
+                
+                totalBetreuer() {
+                    let total = 0;
+                    Object.values(this.busesData).forEach(bus => {
+                        if (bus.betreuer_count !== null && bus.betreuer_count !== undefined) {
+                            total += bus.betreuer_count;
+                        }
+                    });
+                    return total;
+                },
+                
+                activeBusesCount() {
+                    return Object.keys(this.busesData).length;
+                },
+                
+                hasBusData() {
+                    return Object.keys(this.busesData).length > 0;
+                },
+                
+                totalBusRange() {
+                    // Sicherstellen, dass die Konfiguration geladen ist, bevor auf TOTAL_BUSES zugegriffen wird
+                    if (this.isConfigLoaded && this.config && this.config.TOTAL_BUSES) {
+                        return Array.from({ length: this.config.TOTAL_BUSES }, (_, i) => i + 1);
+                    }
+                    return []; // Leeres Array zurückgeben, wenn Konfiguration nicht geladen ist
+                },
+                
+                allBusesHaveData() {
+                    // Prüfen, ob alle Busse (basierend auf totalBusCount) Daten haben
+                    if (!this.isConfigLoaded || !this.config || this.config.TOTAL_BUSES === 0) {
+                        return false; // Kann nicht prüfen, wenn Konfiguration nicht geladen oder keine Busse definiert sind
+                    }
+                    for (let i = 1; i <= this.config.TOTAL_BUSES; i++) {
+                        const busData = this.getBusData(i);
+                        // Ein Bus gilt als "Daten vorhanden", wenn kinder_count explizit gesetzt ist (auch 0)
+                        if (busData.kinder_count === null || busData.kinder_count === undefined) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
             },
-            
+
+            mounted() {
+                // Initialisiert die Bus-Übersichtsseite
+                this.initializeBusOverviewPage();
+                
+                // Header-Info nach 3 Sekunden automatisch ausblenden
+                setTimeout(() => {
+                    this.showHeaderInfo = false;
+                }, 3000);
+            },
+
             methods: {
                 /**
-                 * Стандартизированная инициализация страницы для Vue-компонентов
-                 * Загружает конфигурацию и инициализирует API, затем загружает данные автобуса.
+                 * Initialisiert die Bus-Übersichtsseite: lädt Konfiguration und Daten.
                  */
-                async initializeBusPage() {
-                    this.isLoading = true;
-                    console.log('Инициализация страницы b_bus.html...');
+                async initializeBusOverviewPage() {
+                    // Konfiguration laden
+                    const { config, error } = Utils.loadConfig();
+
+                    if (error) {
+                        Utils.showAlert(error, 'danger');
+                        this.isConfigLoaded = false;
+                        // Optional: Zurück zur Anmeldeseite, wenn Konfiguration fehlt
+                        setTimeout(() => {
+                            window.location.href = 'a_login.html';
+                        }, 3000);
+                        return;
+                    }
+
+                    this.config = config; // Geladene Konfiguration speichern
+                    this.api = new JSONBinAPI(this.config); // API-Instanz mit geladener Konfiguration initialisieren
+                    this.isConfigLoaded = true; // Konfiguration als geladen markieren
+                    this.totalBusCount = this.config.TOTAL_BUSES; // Busanzahl aus der Konfiguration setzen
+
+                    // Daten laden, nachdem die Konfiguration erfolgreich geladen wurde
+                    await this.loadBusData(false);
+                },
+
+                getBusData(busNumber) {
+                    return this.busesData[busNumber.toString()] || {
+                        kinder_count: null,
+                        betreuer_count: null,
+                        betreuer_name: null,
+                        timestamp: null
+                    };
+                },
+
+                async loadBusData(silent = false) {
+                    if (!this.isConfigLoaded) {
+                        // Wenn die Konfiguration nicht geladen ist, versuchen Sie nicht, Daten zu laden
+                        if (!silent) {
+                            Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Daten können nicht abgerufen werden.', 'danger');
+                        }
+                        this.loadingInitialData = false; // Ladespinner ausblenden
+                        return;
+                    }
+
+                    try {
+                        if (!silent) {
+                            this.loadingInitialData = true;
+                        }
+
+                        const fullBinData = await this.api.getData();
+                        this.lastUpdateTime = Utils.getCurrentTimeForDisplay();
+
+                        const todayData = fullBinData[this.currentDate];
+
+                        if (todayData && todayData.buses) {
+                            this.busesData = JSON.parse(JSON.stringify(todayData.buses));
+                        } else {
+                            this.busesData = {};
+                        }
+
+                        if (!silent) {
+                            Utils.showAlert('Bus-Daten erfolgreich aktualisiert!', 'success');
+                        }
+
+                    } catch (error) {
+                        console.error('Fehler beim Laden der Busdaten:', error); // Deutsche Fehlermeldung
+                        Utils.showAlert('Datenaktualisierung fehlgeschlagen. Netzwerkproblem?', 'danger');
+                        this.busesData = {};
+                    } finally {
+                        this.loadingInitialData = false;
+                    }
+                },
+
+                getStatusIndicator(busData) {
+                    if (busData.kinder_count === null || busData.kinder_count === undefined) {
+                        return '<span class="status-indicator status-inactive" title="Keine Daten"></span>';
+                    }
+                    return '<span class="status-indicator status-ok" title="Daten verfügbar"></span>';
+                },
+
+                formatCount(count) {
+                    if (count === null || count === undefined) {
+                        return '<span class="count-null">Nicht gesetzt</span>';
+                    }
+                    return `<span class="count-value">${count}</span>`;
+                },
+
+                formatBetreuerName(name) {
+                    if (!name) {
+                        return '<span class="count-null">Unbekannt</span>';
+                    }
+                    return `<span class="betreuer-name">${name}</span>`;
+                },
+
+                formatTimestamp(timestamp) {
+                    if (!timestamp) {
+                        return '<span class="count-null">-</span>';
+                    }
                     
-                    const success = Utils.initializePage(this); // Инициализация из common.js
-
-                    if (success) {
-                        this.total_buses = this.config.TOTAL_BUSES; // Обновляем total_buses из загруженного конфига
-                        console.log('Конфигурация успешно загружена:', this.config);
-                        this.currentDate = Utils.getCurrentDateString(); // Устанавливаем текущую дату
-                        this.loadDataFromLocalStorage(); // Загружаем данные из localStorage
-                        await this.loadBusData(); // Загружаем данные с сервера после инициализации
-                    } else {
-                        console.error('Ошибка инициализации страницы.');
-                        Utils.showAlert('Fehler beim Laden der Konfiguration. Die Seite kann nicht richtig funktionieren.', 'danger');
-                    }
-                    this.updateDateTime();
-                    this.startClock();
-                    this.isLoading = false; // Set loading to false after all initial data is loaded
-                },
-
-                /**
-                 * Загружает данные по автобусу с JSONBin.io.
-                 */
-                async loadBusData() {
-                    if (!this.api || !this.isConfigLoaded) {
-                        Utils.showAlert('API-Client nicht initialisiert oder Konfiguration nicht geladen.', 'danger');
-                        return;
-                    }
-
-                    this.isLoading = true;
                     try {
-                        const allData = await this.api.getData();
-                        const dailyBusData = allData.buses && allData.buses[this.currentDate];
-                        
-                        if (dailyBusData) {
-                            const busInfo = dailyBusData.find(bus => bus.bus_number === this.formData.bus_number);
-                            if (busInfo) {
-                                this.formData.kinder_count = busInfo.kinder_count;
-                                this.formData.betreuer_count = busInfo.betreuer_count;
-                                Utils.showAlert(`Daten für Bus ${this.formData.bus_number} geladen.`, 'success');
-                            } else {
-                                this.formData.kinder_count = 0;
-                                this.formData.betreuer_count = 0;
-                                Utils.showAlert(`Keine Daten für Bus ${this.formData.bus_number} am ${this.currentDate} gefunden.`, 'info');
-                            }
-                        } else {
-                            this.formData.kinder_count = 0;
-                            this.formData.betreuer_count = 0;
-                            Utils.showAlert(`Keine Busdaten für ${this.currentDate} gefunden.`, 'info');
-                        }
+                        const date = new Date(timestamp);
+                        const timeString = date.toLocaleTimeString('de-DE', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                        });
+                        return `<span class="timestamp">${timeString}</span>`;
                     } catch (error) {
-                        console.error('Fehler beim Laden der Busdaten:', error);
-                        Utils.showAlert('Fehler beim Laden der Busdaten: ' + error.message, 'danger');
-                    } finally {
-                        this.isLoading = false;
+                        return '<span class="count-null">-</span>';
                     }
                 },
 
-                /**
-                 * Сохраняет данные по автобусу на JSONBin.io.
-                 */
-                async saveBusData() {
-                    if (!this.api || !this.isConfigLoaded) {
-                        Utils.showAlert('API-Client nicht initialisiert oder Konfiguration nicht geladen.', 'danger');
-                        return;
-                    }
-
-                    this.isLoading = true;
-                    try {
-                        let allData = await this.api.getData();
-                        
-                        if (!allData.buses) {
-                            allData.buses = {};
-                        }
-                        
-                        if (!allData.buses[this.currentDate]) {
-                            allData.buses[this.currentDate] = [];
-                        }
-
-                        // Find existing bus entry
-                        let busEntryIndex = allData.buses[this.currentDate].findIndex(
-                            bus => bus.bus_number === this.formData.bus_number
-                        );
-
-                        if (busEntryIndex !== -1) {
-                            // Update existing entry
-                            allData.buses[this.currentDate][busEntryIndex] = { ...this.formData };
-                        } else {
-                            // Add new entry
-                            allData.buses[this.currentDate].push({ ...this.formData });
-                        }
-
-                        await this.api.updateData(allData);
-                        Utils.showAlert('Busdaten erfolgreich gespeichert!', 'success');
-                        this.saveDataToLocalStorage(); // Save to local storage after successful save to bin
-                    } catch (error) {
-                        console.error('Fehler beim Speichern der Busdaten:', error);
-                        Utils.showAlert('Fehler beim Speichern der Busdaten: ' + error.message, 'danger');
-                    } finally {
-                        this.isLoading = false;
-                    }
-                },
-
-                /**
-                 * Сохраняет выбранные данные по автобусу в localStorage.
-                 */
-                saveDataToLocalStorage() {
-                    localStorage.setItem(`last_selected_bus_number_${this.currentDate}`, this.formData.bus_number);
-                    localStorage.setItem(`BusKinderCount_${this.currentDate}_${this.formData.bus_number}`, this.formData.kinder_count);
-                    localStorage.setItem(`BusBetreuerCount_${this.currentDate}_${this.formData.bus_number}`, this.formData.betreuer_count);
-                    console.log('Busdaten im LocalStorage gespeichert.');
-                },
-
-                /**
-                 * Загружает сохраненные данные по автобусу из localStorage.
-                 */
-                loadDataFromLocalStorage() {
-                    const savedBusNumber = localStorage.getItem(`last_selected_bus_number_${this.currentDate}`);
-                    if (savedBusNumber) {
-                        this.formData.bus_number = parseInt(savedBusNumber);
-                        
-                        const savedKinderCount = localStorage.getItem(`BusKinderCount_${this.currentDate}_${this.formData.bus_number}`);
-                        if (savedKinderCount !== null) {
-                            this.formData.kinder_count = parseInt(savedKinderCount);
-                        } else {
-                            this.formData.kinder_count = 0; // Reset if no data found for current bus and date
-                        }
-                        
-                        const savedBetreuerCount = localStorage.getItem(`BusBetreuerCount_${this.currentDate}_${this.formData.bus_number}`);
-                        if (savedBetreuerCount !== null) {
-                            this.formData.betreuer_count = parseInt(savedBetreuerCount);
-                        } else {
-                            this.formData.betreuer_count = 0; // Reset if no data found for current bus and date
-                        }
-                        console.log('Busdaten aus LocalStorage geladen.');
-                    } else {
-                        console.log('Keine Busdaten im LocalStorage für heute gefunden. Standardwerte werden verwendet.');
-                        this.formData.kinder_count = 0;
-                        this.formData.betreuer_count = 0;
-                    }
-                    // After loading from localStorage, try to load from the bin (which might override or confirm localStorage data)
-                    this.loadBusData();
-                },
-
-                /**
-                 * Возвращает пользователя на страницу администратора.
-                 */
                 goBack() {
-                    Utils.navigateTo('a_login.html', this);
-                },
-
-                /**
-                 * Обновляет текущие дату и время.
-                 */
-                updateDateTime() {
-                    this.currentDateTime = Utils.getCurrentDateTime();
-                },
-
-                /**
-                 * Запускает часы для обновления времени каждую минуту.
-                 */
-                startClock() {
-                    this.updateDateTime();
-                    setInterval(() => {
-                        this.updateDateTime();
-                    }, 60000);
+                    window.history.back();
                 }
             }
         }).mount('#app');

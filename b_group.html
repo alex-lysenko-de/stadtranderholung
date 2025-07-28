@@ -5,485 +5,726 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gruppe verwalten - Stadtranderholung</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="main.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /**
- * Стили для управления группой (b_group.html)
- */
-
-/* Основные настройки контейнера */
-body {
-    padding: 30px 0;
-}
-
-/* Стили для основного контейнера группы */
-.main-container {
-    max-width: 550px;
-    margin: 0 auto;
-    padding: 30px;
-}
-
-/* Стили для карточки группы */
-.group-card {
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-    padding: 30px;
-}
-
-/* Стили для иконок */
-.icon {
-    font-size: 2.5rem;
-    margin-bottom: 15px;
-    color: #4CAF50;
-}
-
-/* Адаптация таблиц для группы */
-.table-responsive {
-    margin-top: 20px;
-}
-
-.table .btn {
-    padding: .3rem .6rem;
-    font-size: .8rem;
-}
-
-/* Прогресс-бар */
-.progress {
-    height: 25px;
-    margin-top: 15px;
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.progress-bar {
-    background-color: #4CAF50;
-    color: white;
-    font-weight: bold;
-    font-size: 0.9em;
-    text-align: center;
-    line-height: 25px;
-}
-
-/* Стили кнопок действий */
-.btn-action {
-    width: 100%;
-    margin-bottom: 10px;
-    font-weight: bold;
-}
-
-.btn-add {
-    background-color: #28a745;
-    border-color: #28a745;
-    color: white;
-}
-
-.btn-add:hover {
-    background-color: #218838;
-    border-color: #1e7e34;
-}
-
-.btn-remove {
-    background-color: #dc3545;
-    border-color: #dc3545;
-    color: white;
-}
-
-.btn-remove:hover {
-    background-color: #c82333;
-    border-color: #bd2130;
-}
-
-.btn-toggle-status {
-    background-color: #007bff;
-    border-color: #007bff;
-    color: white;
-}
-
-.btn-toggle-status:hover {
-    background-color: #0069d9;
-    border-color: #0062cc;
-}
-
-.btn-calc {
-    background-color: #ffc107;
-    border-color: #ffc107;
-    color: #212529;
-}
-
-.btn-calc:hover {
-    background-color: #e0a800;
-    border-color: #d39e00;
-}
-
-.btn-back {
-    background-color: #6c757d;
-    border-color: #6c757d;
-    color: white;
-}
-
-.btn-back:hover {
-    background-color: #5a6268;
-    border-color: #545b62;
-}
-
-/* Стили для неактивных детей */
-.child-inactive {
-    text-decoration: line-through;
-    color: #888;
-}
-
-/* Общие стили текста */
-h3 {
-    color: #333;
-    margin-bottom: 20px;
-}
-
-p {
-    color: #555;
-}
-
-/* Адаптивность для мобильных устройств */
-@media (max-width: 768px) {
-    .main-container {
-        padding: 15px;
-    }
-    
-    .group-card {
-        padding: 20px;
-        border-radius: 15px;
-    }
-    
-    .icon {
-        font-size: 2rem;
-    }
-    
-    .btn-action {
-        font-size: 0.9rem;
-    }
-    
-    .table .btn {
-        padding: .2rem .5rem;
-        font-size: .75rem;
-    }
-}
+        /* Allgemeine Stile für Hintergrund und Schriftarten */
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 30px 0; /* Erhöhter oberer und unterer Abstand */
+        }
+        /* Stile für den Hauptcontainer, Zentrierung und maximale Breite */
+        .main-container {
+            max-width: 550px; /* Erhöhte maximale Breite */
+            margin: 0 auto;
+            padding: 30px; /* Erhöhter Innenabstand */
+        }
+        /* Stile für Gruppenkarten, Schatten und abgerundete Ecken */
+        .group-card {
+            background: white;
+            border-radius: 20px; /* Erhöhter Eckenradius */
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25); /* Verstärkter Schatten */
+            margin-bottom: 30px; /* Erhöhter Abstand zwischen den Karten */
+            overflow: hidden; /* Für korrekte abgerundete Ecken */
+        }
+        /* Stile für den Kartenkopf */
+        .card-header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border-radius: 20px 20px 0 0; /* Entspricht dem border-radius der group-card */
+            text-align: center;
+            padding: 25px; /* Erhöhter Innenabstand des Kopfes */
+            font-size: 1.5rem; /* Erhöhte Schriftgröße */
+        }
+        /* Stile für den Kartenkörper */
+        .card-body {
+            padding: 25px; /* Erhöhter Innenabstand des Kartenkörpers */
+        }
+        /* Allgemeine Stile für Schaltflächen */
+        .btn-primary, .btn-secondary, .btn-outline-primary {
+            border-radius: 12px; /* Erhöhter Eckenradius der Schaltflächen */
+            padding: 14px 20px; /* Erhöhte Abstände der Schaltflächen */
+            font-weight: bold;
+            font-size: 1.1rem; /* Erhöhte Schriftgröße der Schaltflächen */
+            transition: all 0.3s ease; /* Sanfter Übergang hinzugefügt */
+        }
+        /* Stile für die Hauptschaltfläche (Primary) */
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            border: none;
+        }
+        /* Stile für die sekundäre Schaltfläche (Secondary) */
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            border: none;
+        }
+        /* Stile für die Umriss-Schaltfläche (Outline) */
+        .btn-outline-primary {
+            border: 2px solid #4CAF50;
+            color: #4CAF50;
+            background-color: transparent;
+        }
+        .btn-outline-primary:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+        /* Stile für Eingabefelder */
+        .form-control {
+            border-radius: 12px; /* Erhöhter Eckenradius der Eingabefelder */
+            border: 2px solid #dee2e6; /* Deutlichere Umrandung */
+            padding: 15px; /* Erhöhter Innenabstand der Eingabefelder */
+            font-size: 1.2rem; /* Erhöhte Schriftgröße der Eingabefelder */
+            text-align: center;
+        }
+        .form-control:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 0.25rem rgba(76, 175, 80, 0.25);
+        }
+        /* Stile für große Eingabefelder und Schaltflächen in Eingabegruppen */
+        .input-group-lg > .form-control,
+        .input-group-lg > .btn {
+            padding: 0.85rem 1.2rem; /* Anpassung für input-group-lg */
+            font-size: 1.25rem;
+            border-radius: 12px;
+        }
+        .input-group-lg .btn {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        /* Stile für den Ladespinner */
+        .loading-spinner {
+            display: inline-block; /* Sicherstellen, dass der Spinner bei Bedarf sichtbar ist */
+            vertical-align: middle;
+            margin-right: .5em;
+        }
+        /* Stile für die Betreuerliste */
+        .betreuer-list {
+            background: #f1f3f5; /* Etwas stärkerer Hintergrund */
+            border-radius: 12px;
+            padding: 20px; /* Erhöhter Abstand */
+            margin-top: 20px; /* Erhöhter oberer Abstand */
+        }
+        /* Stile für ein einzelnes Betreuer-Element */
+        .betreuer-item {
+            background: white;
+            border-radius: 10px; /* Erhöhter Eckenradius */
+            padding: 10px 15px; /* Erhöhte Abstände */
+            margin: 8px 0; /* Erhöhter Abstand zwischen den Elementen */
+            border-left: 5px solid #4CAF50; /* Deutlicherer Streifen */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* Leichter Schatten hinzugefügt */
+            font-size: 1.1rem; /* Erhöhte Schriftgröße */
+        }
+        /* Stile für die Anzeige der Kinderanzahl */
+        .count-display {
+            font-size: 2.5rem; /* Deutlich erhöhte Schriftgröße */
+            font-weight: bold;
+            color: #4CAF50;
+            text-align: center;
+            margin: 15px 0; /* Erhöhter Abstand */
+            cursor: pointer; /* Zeigt an, dass das Element anklickbar ist */
+        }
+        .count-null {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 1.5rem; /* Reduzierte Größe für "Nicht gesetzt" */
+        }
+        /* Stile für Eingabefeld-Labels */
+        .form-label {
+            font-weight: 600; /* Fettere Schrift für Labels */
+            margin-bottom: 8px; /* Abstand unter dem Label */
+            display: block; /* Damit das Label die gesamte Breite einnimmt */
+            text-align: center; /* Textausrichtung zentriert */
+            font-size: 1rem; /* Standard-Schriftgröße für das Label */
+            color: #495057; /* Dunklere Textfarbe */
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <div class="main-container">
             <div class="group-card">
-                <div id="alertContainer"></div>
-
-                <div class="text-center mb-4">
-                    <div class="icon">👥</div>
-                    <h3>Gruppe {{ groupNumber }}</h3>
-                    <p>Betreuer: {{ betreuerName }}</p>
-                    <p>Aktuelle Zeit: {{ currentDateTime }}</p>
+                <div class="card-header">
+                    <h2 class="mb-0">{{ groupTitle }}</h2>
+                    <p class="mb-0 mt-2">{{ formattedCurrentDate }}</p>
                 </div>
+            </div>
 
-                <div v-if="loading" class="text-center my-4">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p>Daten werden geladen...</p>
-                </div>
+            <div id="alertContainer"></div>
 
-                <div v-else-if="!isConfigLoaded" class="text-center my-4 text-danger">
-                    <p>Konfiguration konnte nicht geladen werden. Bitte versuchen Sie es erneut.</p>
-                    <button class="btn btn-primary" @click="initializePage">Erneut versuchen</button>
-                </div>
-
-                <div v-else>
-                    <div class="progress mb-3">
-                        <div class="progress-bar" role="progressbar" :style="{ width: progressWidth }" :aria-valuenow="activeChildrenCount" aria-valuemin="0" :aria-valuemax="totalChildrenCount">
-                            {{ activeChildrenCount }} / {{ totalChildrenCount }} Kinder anwesend
+            <div class="group-card">
+                <div class="card-body">
+                    <h5 class="card-title text-center mb-4">Anzahl Kinder</h5>
+                    <div class="mb-4">
+                        <label for="kinderAnzahl" class="form-label">
+                            Anzahl Kinder am Morgen (erhalten von Eltern)
+                        </label>
+                        <div v-if="bKinderAnzahl_EditMode" class="input-group input-group-lg">
+                            <input type="number" class="form-control text-center" id="kinderAnzahl"
+                                   min="0" max="20" placeholder="0" v-model.number="groupData.KinderAnzahl">
+                            <button class="btn btn-primary" type="button" @click="saveKinderAnzahl" :disabled="isSavingKinderAnzahl || !isConfigLoaded">
+                                <span v-if="isSavingKinderAnzahl" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Speichern
+                            </button>
+                        </div>
+                        <div v-else class="count-display" @click="bKinderAnzahl_EditMode = true">
+                            <span class="count-null" v-if="groupData.KinderAnzahl === null">Nicht gesetzt</span>
+                            <span v-else>{{ groupData.KinderAnzahl }}</span>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="newChildName" class="form-label">Neues Kind hinzufügen:</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="newChildName" v-model="newChildName" placeholder="Name des Kindes" @keyup.enter="addChild">
-                            <button class="btn btn-add" @click="addChild" :disabled="!newChildName.trim()">Hinzufügen</button>
+                    <div class="mb-4">
+                        <label for="kinderAnzahlNow" class="form-label">
+                            Aktuelle Anzahl Kinder (nach Nachzählung)
+                        </label>
+                        <div v-if="bKinderAnzahlNow_EditMode" class="input-group input-group-lg">
+                            <input type="number" class="form-control text-center" id="kinderAnzahlNow"
+                                   min="0" max="20" placeholder="0" v-model.number="groupData.KinderAnzahlNow">
+                            <button class="btn btn-primary" type="button" @click="saveKinderAnzahlNow" :disabled="isSavingKinderAnzahlNow || !isConfigLoaded">
+                                <span v-if="isSavingKinderAnzahlNow" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Aktualisieren
+                            </button>
+                        </div>
+                        <div v-else class="count-display" @click="bKinderAnzahlNow_EditMode = true">
+                            <span class="count-null" v-if="groupData.KinderAnzahlNow === null">Nicht gesetzt</span>
+                            <span v-else>{{ groupData.KinderAnzahlNow }}</span>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th class="text-center">Aktionen</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(child, index) in children" :key="index" :class="{ 'child-inactive': !child.active }">
-                                    <td>{{ child.name }}</td>
-                                    <td class="text-center">
-                                        <button class="btn btn-toggle-status btn-sm me-1" @click="toggleChildStatus(index)">
-                                            <i :class="child.active ? 'fas fa-toggle-on' : 'fas fa-toggle-off'"></i>
-                                        </button>
-                                        <button class="btn btn-remove btn-sm" @click="removeChild(index)">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr v-if="children.length === 0">
-                                    <td colspan="2" class="text-center">Noch keine Kinder in dieser Gruppe.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="d-grid gap-2 mt-4">
-                        <button class="btn btn-calc btn-action" @click="navigateToCalc">
-                            📊 Ausflugsübersicht
+            <div class="group-card">
+                <div class="card-body">
+                    <!--<h5 class="card-title text-center mb-4">Aktionen</h5>-->
+                    <div class="d-grid gap-3">
+                        <button class="btn btn-secondary d-none" @click="navigateToChildrenEdit" :disabled="!isConfigLoaded">
+                            Liste der Kinder bearbeiten
                         </button>
-                        <button class="btn btn-back btn-action" @click="goBack">
-                            ⬅️ Zurück zur Anmeldung
+                        <button class="btn btn-secondary d-none" @click="navigateToCalculation" :disabled="!isConfigLoaded">
+                            Rechnen
                         </button>
+                        <button class="btn btn-outline-primary mt-3" @click="goBack"> Zurück </button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
+        </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    
-    <script type="module">
-        import { CONFIG_DEFAULTS, JSONBinAPI, Utils } from './common.js';
 
+    <script>
+        /**
+         * Standardkonfigurationswerte. Diese werden durch URL-Parameter oder LocalStorage überschrieben.
+         */
+        const CONFIG_DEFAULTS = {
+            API_BASE_URL: 'https://api.jsonbin.io/v3/b',
+            BIN_COLLECTION_NAME: 'SR2025',
+            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
+            MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
+            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
+            TOTAL_GROUPS: 15,
+            TOTAL_BUSES: 3
+        };
+
+        /**
+         * Dienstprogrammklasse für die Verwaltung von JSONBin.io API-Interaktionen
+         * Behandelt alle CRUD-Operationen mit ordnungsgemäßer Fehlerbehandlung
+         */
+        class JSONBinAPI {
+            constructor(config) {
+                this.config = config;
+                // Header enthalten jetzt Access-Key für Schreiboperationen
+                this.headers = {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': config.MASTER_KEY,
+                    'X-Access-Key': config.ACCESS_KEY // Access-Key für PUT-Anfragen einbeziehen
+                };
+            }
+
+            /**
+             * Aktuelle Daten von JSONBin abrufen
+             * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt
+             */
+            async getData() {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
+                        method: 'GET',
+                        headers: {
+                            'X-Master-Key': this.config.MASTER_KEY,
+                            // Access-Key wird normalerweise für GET-Anfragen nicht benötigt, kann aber aus Konsistenzgründen sicher enthalten sein
+                            'X-Access-Key': this.config.ACCESS_KEY
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    return result.record || {}; // Sicherstellen, dass ein leeres Objekt zurückgegeben wird, wenn der Datensatz null/undefiniert ist
+                } catch (error) {
+                    console.error('Fehler beim Abrufen der Daten von JSONBin:', error);
+                    return {}; // Leeres Objekt bei Fehler zurückgeben, um Anwendungsabstürze zu verhindern
+                }
+            }
+
+            /**
+             * Daten in JSONBin aktualisieren (PUT-Operation)
+             * @param {Object} data - Vollständige Datenstruktur zum Speichern
+             * @returns {Promise<boolean>} Erfolgsstatus
+             */
+            async updateData(data) {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}`, {
+                        method: 'PUT',
+                        headers: this.headers, // Header mit Access-Key für PUT verwenden
+                        body: JSON.stringify(data)
+                    });
+
+                    if (!response.ok) {
+                        // Versuch, die Fehlermeldung aus der Antwort zu lesen
+                        const errorData = await response.json();
+                        throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorData.message || 'Unbekannter Fehler'}`);
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error('Fehler beim Aktualisieren der Daten in JSONBin:', error);
+                    return false;
+                }
+            }
+        }
+
+        /**
+         * Dienstprogrammfunktionen für allgemeine Operationen
+         */
+        const Utils = {
+            /**
+             * Aktuelles Datum im Format YYYY-MM-DD abrufen
+             * @returns {string} Formatiertes Datumszeichenfolge
+             */
+            getCurrentDate() {
+                return new Date().toISOString().split('T')[0];
+            },
+
+            /**
+             * URL-Parameter nach Namen abrufen
+             * @param {string} name - Parametername
+             * @returns {string|null} Parameterwert oder null
+             */
+            getURLParameter(name) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(name);
+            },
+
+            /**
+             * Temporäre Nachricht für den Benutzer anzeigen
+             * @param {string} message - Anzuzeigende Nachricht
+             * @param {string} type - Bootstrap-Alert-Typ (success, danger, warning, info)
+             */
+            showAlert(message, type = 'info') {
+                const alertContainer = document.getElementById('alertContainer');
+                if (!alertContainer) return; // Sicherstellen, dass der Container existiert
+
+                // Bestehende Warnungen löschen
+                alertContainer.innerHTML = '';
+                const alertHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show mb-4" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                alertContainer.innerHTML = alertHtml;
+                // Warnung nach 5 Sekunden automatisch ausblenden
+                setTimeout(() => {
+                    const alertElement = alertContainer.querySelector('.alert');
+                    if (alertElement) {
+                        const bsAlert = bootstrap.Alert.getInstance(alertElement) || new bootstrap.Alert(alertElement);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            },
+
+            /**
+             * Konfigurationsparameter von URL oder LocalStorage laden.
+             * URL-Parameter haben Vorrang. Fehlende Parameter verwenden Standardwerte.
+             * Alle geladenen/Standardparameter werden im LocalStorage gespeichert.
+             * @returns {Object} Ein Objekt, das die geladene Konfiguration oder eine Fehlermeldung enthält.
+             */
+            loadConfig: function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const config = {};
+                const missingParams = [];
+
+                // Alle erwarteten Parameter und deren LocalStorage-Schlüssel definieren
+                const paramMap = {
+                    'TOTAL_GROUPS': 'config_total_groups',
+                    'TOTAL_BUSES': 'config_total_buses',
+                    'MASTER_KEY': 'config_bin_master_key',
+                    'ACCESS_KEY': 'config_bin_access_key',
+                    'BIN_COLLECTION_NAME': 'config_bin_collection',
+                    'BIN_ID': 'config_bin_id'
+                };
+
+                for (const urlParam in paramMap) {
+                    const lsKey = paramMap[urlParam];
+                    let value = urlParams.get(urlParam) || localStorage.getItem(lsKey);
+
+                    if (value !== null && value !== '') {
+                        // Spezielle Behandlung für numerische Parameter
+                        if (urlParam === 'TOTAL_GROUPS' || urlParam === 'TOTAL_BUSES') {
+                            config[urlParam] = parseInt(value, 10);
+                        } else {
+                            config[urlParam] = value;
+                        }
+                        // Im LocalStorage speichern, wenn es von der URL kam oder einfach sicherstellen, dass es dort ist
+                        localStorage.setItem(lsKey, value);
+                    } else {
+                        // Prüfen, ob ein Standardwert in CONFIG_DEFAULTS existiert
+                        if (CONFIG_DEFAULTS.hasOwnProperty(urlParam)) {
+                            config[urlParam] = CONFIG_DEFAULTS[urlParam];
+                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]); // Standardwert im LS speichern
+                        } else {
+                            missingParams.push(urlParam);
+                        }
+                    }
+                }
+                
+                // API_BASE_URL ist eine Konstante und wird nicht über URL/LocalStorage übergeben
+                config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
+
+                if (missingParams.length > 0) {
+                    return { config: null, error: `Es fehlen wesentliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass diese über die URL übergeben oder in index.html festgelegt werden.` };
+                }
+                
+                return { config: config, error: null };
+            }
+        };
+
+        /**
+         * Hauptanwendung zur Gruppenverwaltung mit Vue.js 3
+         * Verwaltet die Anzeige von Gruppendaten und die Verwaltung der Kinderanzahl
+         */
         const { createApp } = Vue;
 
         createApp({
             data() {
                 return {
-                    betreuerName: Utils.getStoredBetreuerName() || 'Unbekannt',
-                    groupNumber: Utils.getStoredGroupNumber() || '', // Should be set during login
-                    children: [],
-                    newChildName: '',
-                    loading: true, // Initially true while loading data
-                    currentDateTime: '',
-                    isConfigLoaded: false,
-                    config: {}, // Loaded config from common.js
-                    api: null,  // JSONBinAPI instance
+                    groupNumber: null,
+                    currentDate: '',
+                    groupData: {
+                        Betreuer: [],
+                        KinderAnzahl: null,
+                        KinderAnzahlNow: null
+                    },
+                    bKinderAnzahl_EditMode: true,
+                    bKinderAnzahlNow_EditMode: true,
+                    isSavingKinderAnzahl: false,
+                    isSavingKinderAnzahlNow: false,
+                    isLoadingBetreuer: true,
+                    api: null, // API-Instanz wird nach dem Laden der Konfiguration initialisiert
+                    groupTitle: 'Gruppe wird geladen...',
+                    formattedCurrentDate: '',
+                    isConfigLoaded: false, // Flag für den Konfigurationsladestatus
+                    config: {} // Hier wird die geladene Konfiguration gespeichert
                 };
             },
-            
-            computed: {
-                totalChildrenCount() {
-                    return this.children.length;
-                },
-                activeChildrenCount() {
-                    return this.children.filter(child => child.active).length;
-                },
-                progressWidth() {
-                    if (this.totalChildrenCount === 0) return '0%';
-                    return ((this.activeChildrenCount / this.totalChildrenCount) * 100).toFixed(0) + '%';
-                }
-            },
-            
+
             mounted() {
-                this.initializePage();
-                this.startClock();
+                // Wird beim Mounten der Komponente (Seitenladung) aufgerufen
+                this.initializeGroup();
             },
-            
+
             methods: {
                 /**
-                 * Стандартизированная инициализация страницы для Vue-компонентов
-                 * Загружает конфигурацию и инициализирует API, затем загружает данные группы
+                 * Initialisiert die Gruppenseite: Ruft die Gruppennummer aus der URL ab,
+                 * lädt KinderAnzahl aus dem localStorage und lädt Betreuer von JSONBin.
                  */
-                async initializePage() {
-                    this.loading = true; // Set loading state
-                    console.log('Инициализация страницы b_group.html...');
-                    const success = Utils.initializePage(this); // Инициализация из common.js
+                async initializeGroup() {
+                    // Konfiguration laden
+                    const { config, error } = Utils.loadConfig();
 
-                    if (success) {
-                        console.log('Конфигурация успешно загружена:', this.config);
-                        // Ensure groupNumber is available before fetching data
-                        if (!this.groupNumber) {
-                            Utils.showAlert('Gruppennummer nicht gefunden. Bitte loggen Sie sich erneut ein.', 'danger');
-                            this.loading = false;
-                            this.navigateTo('b_login.html'); // Redirect to login if group number is missing
-                            return;
-                        }
-                        await this.fetchGroupData();
-                    } else {
-                        console.error('Ошибка инициализации страницы.');
-                        Utils.showAlert('Fehler beim Laden der Konfiguration. Die Seite kann nicht richtig funktionieren.', 'danger');
-                        this.loading = false;
-                    }
-                    this.updateDateTime();
-                },
-
-                /**
-                 * Получает данные группы из JSONBin.io
-                 */
-                async fetchGroupData() {
-                    if (!this.api) {
-                        Utils.showAlert('API-Client nicht initialisiert.', 'danger');
-                        this.loading = false;
+                    if (error) {
+                        Utils.showAlert(error, 'danger');
+                        this.isConfigLoaded = false;
+                        // Optional: Zurück zur Anmeldeseite, wenn Konfiguration fehlt
+                        setTimeout(() => {
+                            window.location.href = 'b_login.html';
+                        }, 3000);
                         return;
                     }
-                    this.loading = true;
-                    try {
-                        const allData = await this.api.getData();
-                        const groupData = allData.groups.find(g => g.groupNumber === parseInt(this.groupNumber));
-                        
-                        if (groupData) {
-                            this.children = groupData.children || [];
-                            Utils.showAlert('Gruppendaten erfolgreich geladen.', 'success');
-                        } else {
-                            this.children = [];
-                            Utils.showAlert(`Gruppe ${this.groupNumber} nicht gefunden oder keine Kinderdaten vorhanden.`, 'warning');
+
+                    this.config = config; // Geladene Konfiguration speichern
+                    this.api = new JSONBinAPI(this.config); // API-Instanz mit geladener Konfiguration initialisieren
+                    this.isConfigLoaded = true; // Konfiguration als geladen markieren
+
+                    this.groupNumber = Utils.getURLParameter('gr');
+                    this.currentDate = Utils.getCurrentDate();
+                    this.formattedCurrentDate = this.formatDate(this.currentDate);
+
+                    if (!this.groupNumber) {
+                        Utils.showAlert('Gruppennummer nicht gefunden. Bitte über die Anmeldung zugreifen.', 'danger');
+                        setTimeout(() => {
+                            window.location.href = 'b_login.html';
+                        }, 3000);
+                        return;
+                    }
+
+                    this.groupTitle = `Gruppe ${this.groupNumber}`;
+
+                    // KinderAnzahl aus localStorage laden
+                    this.loadKinderAnzahlFromLocalStorage();
+
+                    // Bearbeitungsmodus für KinderAnzahl festlegen: wenn Wert null ist, im Bearbeitungsmodus
+                    this.bKinderAnzahl_EditMode = this.groupData.KinderAnzahl === null;
+                    // Bearbeitungsmodus für KinderAnzahlNow festlegen: wenn Wert null ist, im Bearbeitungsmodus
+                    this.bKinderAnzahlNow_EditMode = this.groupData.KinderAnzahlNow === null;
+
+
+                    // Betreuerdaten von JSONBin laden (werden nicht angezeigt, sind aber zur Aufrechterhaltung der Datenstruktur erforderlich)
+                    await this.loadBetreuerDataFromJSONBin();
+                },
+
+                /**
+                 * Lädt den Wert von KinderAnzahl aus dem localStorage.
+                 * Schlüssel im localStorage: `${currentDate}-${groupNumber}-KinderAnzahl`.
+                 */
+                loadKinderAnzahlFromLocalStorage() {
+                    const storageKey = `${this.currentDate}-${this.groupNumber}-KinderAnzahl`;
+                    const storedValue = localStorage.getItem(storageKey);
+                    if (storedValue !== null) {
+                        // Als Zahl parsen, falls ein Wert vorhanden ist
+                        this.groupData.KinderAnzahl = parseInt(storedValue, 10);
+                        if (isNaN(this.groupData.KinderAnzahl)) {
+                            this.groupData.KinderAnzahl = null; // Wenn keine Zahl, zurücksetzen
                         }
-                    } catch (error) {
-                        console.error('Ошибка при получении данных группы:', error);
-                        Utils.showAlert('Fehler beim Laden der Gruppendaten: ' + error.message, 'danger');
-                    } finally {
-                        this.loading = false;
+                    } else {
+                        this.groupData.KinderAnzahl = null; // Wenn nicht im localStorage, auf null setzen
                     }
+                    console.log(`KinderAnzahl aus localStorage geladen (${storageKey}):`, this.groupData.KinderAnzahl);
                 },
 
                 /**
-                 * Добавляет нового ребенка в список группы и обновляет данные на сервере.
+                 * Lädt Gruppendaten (hauptsächlich Betreuer) von JSONBin.io.
+                 * KinderAnzahl und KinderAnzahlNow werden NICHT von JSONBin abgerufen.
                  */
-                async addChild() {
-                    const name = this.newChildName.trim();
-                    if (!name) return;
-
-                    this.loading = true;
+                async loadBetreuerDataFromJSONBin() {
+                    this.isLoadingBetreuer = true; // Ladespinner anzeigen
                     try {
-                        // Optimistic update
-                        const newChild = { name: name, active: true };
-                        this.children.push(newChild);
-                        this.newChildName = ''; // Clear input field
+                        const data = await this.api.getData();
 
-                        // Update data on JSONBin
-                        await this.updateGroupChildrenOnServer();
-                        Utils.showAlert(`${name} wurde hinzugefügt.`, 'success');
-                    } catch (error) {
-                        console.error('Fehler beim Hinzufügen des Kindes:', error);
-                        Utils.showAlert('Fehler beim Hinzufügen des Kindes: ' + error.message, 'danger');
-                        // Revert optimistic update if error
-                        this.children = this.children.filter(child => child.name !== name || !child.active);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-
-                /**
-                 * Удаляет ребенка из списка группы и обновляет данные на сервере.
-                 * @param {number} index - Индекс ребенка в массиве children.
-                 */
-                async removeChild(index) {
-                    if (!confirm('Sind Sie sicher, dass Sie dieses Kind entfernen möchten?')) return;
-
-                    this.loading = true;
-                    const removedChild = this.children[index];
-                    try {
-                        // Optimistic update
-                        this.children.splice(index, 1);
-
-                        // Update data on JSONBin
-                        await this.updateGroupChildrenOnServer();
-                        Utils.showAlert(`${removedChild.name} wurde entfernt.`, 'info');
-                    } catch (error) {
-                        console.error('Fehler beim Entfernen des Kindes:', error);
-                        Utils.showAlert('Fehler beim Entfernen des Kindes: ' + error.message, 'danger');
-                        // Revert optimistic update if error
-                        this.children.splice(index, 0, removedChild);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-
-                /**
-                 * Переключает статус активности ребенка и обновляет данные на сервере.
-                 * @param {number} index - Индекс ребенка в массиве children.
-                 */
-                async toggleChildStatus(index) {
-                    this.loading = true;
-                    const child = this.children[index];
-                    const originalStatus = child.active;
-                    try {
-                        // Optimistic update
-                        child.active = !child.active;
-
-                        // Update data on JSONBin
-                        await this.updateGroupChildrenOnServer();
-                        Utils.showAlert(`${child.name} Status auf ${child.active ? 'anwesend' : 'abwesend'} geändert.`, 'success');
-                    } catch (error) {
-                        console.error('Fehler beim Umschalten des Status:', error);
-                        Utils.showAlert('Fehler beim Umschalten des Status: ' + error.message, 'danger');
-                        // Revert optimistic update if error
-                        child.active = originalStatus;
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-
-                /**
-                 * Обновляет данные о детях конкретной группы на JSONBin.io.
-                 */
-                async updateGroupChildrenOnServer() {
-                    try {
-                        let allData = await this.api.getData();
-                        let groupIndex = allData.groups.findIndex(g => g.groupNumber === parseInt(this.groupNumber));
-
-                        if (groupIndex !== -1) {
-                            allData.groups[groupIndex].children = this.children;
+                        // Prüfen, ob der Eintrag für das aktuelle Datum und die Gruppe existiert
+                        if (data && data[this.currentDate] && data[this.currentDate].groups && data[this.currentDate].groups[this.groupNumber]) {
+                            // Nur die Betreuerliste aus den JSONBin-Daten aktualisieren
+                            // KinderAnzahl und KinderAnzahlNow werden beim Laden von JSONBin IGNORIERT.
+                            // Sie werden über localStorage bzw. direkte Benutzereingabe verwaltet.
+                            this.groupData.Betreuer = data[this.currentDate].groups[this.groupNumber].Betreuer || [];
                         } else {
-                            // If group not found, add it with current children
-                            allData.groups.push({
-                                groupNumber: parseInt(this.groupNumber),
-                                children: this.children
+                            // Wenn keine Daten für das aktuelle Datum/die Gruppe vorhanden sind, leere Betreuerliste initialisieren
+                            this.groupData.Betreuer = [];
+
+                            // Wenn dies der erste Ladevorgang für eine neue Gruppe/einen neuen Tag ist, leere Struktur in JSONBin speichern
+                            console.log('Keine vorhandenen Daten für Gruppe/Tag in JSONBin. Struktur wird initialisiert.');
+                            const updatedData = {
+                                ...data, // Bestehende Daten/Daten beibehalten
+                                [this.currentDate]: {
+                                    ... (data[this.currentDate] || { groups: {}, buses: {} }), // Sicherstellen, dass das Objekt für das aktuelle Datum existiert und 'buses' enthält
+                                    groups: {
+                                        ... (data[this.currentDate] ? data[this.currentDate].groups : {}),
+                                        // Gruppe initialisieren, aber KinderAnzahl und KinderAnzahlNow bleiben null (da sie nicht von JSONBin geladen werden)
+                                        [this.groupNumber]: {
+                                            Betreuer: [],
+                                            KinderAnzahl: null,
+                                            KinderAnzahlNow: null
+                                        }
+                                    }
+                                }
+                            };
+                            // An den Server senden, ohne auf Antwort zu warten, um die Benutzeroberfläche nicht zu blockieren
+                            this.api.updateData(updatedData).then(success => {
+                                if (!success) console.error('Fehler beim Initialisieren der leeren Gruppendatenstruktur in JSONBin.');
                             });
                         }
-                        await this.api.updateData(allData);
                     } catch (error) {
-                        console.error('Fehler beim Speichern der Gruppendaten:', error);
-                        throw new Error('Speichern der Daten fehlgeschlagen: ' + error.message); // Propagate error
+                        console.error('Fehler beim Laden der Gruppendaten (Betreuer):', error);
+                        Utils.showAlert('Fehler beim Laden der Betreuerdaten.', 'danger');
+                    } finally {
+                        this.isLoadingBetreuer = false; // Immer auf false setzen nach dem Versuch
                     }
                 },
 
                 /**
-                 * Перенаправляет на страницу калькулятора, передавая номер группы.
-                 * Теперь использует localStorage для передачи данных.
+                 * Speichert KinderAnzahl (Morgenzählung) in JSONBin und localStorage.
                  */
-                navigateToCalc() {
-                    Utils.storeCurrentGroupNumber(this.groupNumber); // Save group number to localStorage
-                    Utils.navigateTo('group_calc.html', this);
+                async saveKinderAnzahl() {
+                    // Eingabe validieren
+                    if (this.groupData.KinderAnzahl !== null && (isNaN(this.groupData.KinderAnzahl) || this.groupData.KinderAnzahl < 0 || this.groupData.KinderAnzahl > 20)) {
+                        Utils.showAlert('Bitte geben Sie eine gültige Anzahl zwischen 0 und 20 ein.', 'warning');
+                        return;
+                    }
+
+                    this.isSavingKinderAnzahl = true; // Speicherspinner anzeigen
+                    try {
+                        // KinderAnzahl-Feld in JSONBin aktualisieren
+                        const success = await this.updateGroupFieldInJSONBin('KinderAnzahl', this.groupData.KinderAnzahl);
+
+                        if (success) {
+                            Utils.showAlert('Anzahl Kinder am Morgen gespeichert!', 'success');
+                            // Zusätzlich im localStorage speichern
+                            const storageKey = `${this.currentDate}-${this.groupNumber}-KinderAnzahl`;
+                            localStorage.setItem(storageKey, this.groupData.KinderAnzahl);
+                            console.log(`KinderAnzahl im localStorage gespeichert (${storageKey}):`, this.groupData.KinderAnzahl);
+
+                            this.bKinderAnzahl_EditMode = false; // Nach erfolgreichem Speichern in den Anzeigemodus wechseln
+                        } else {
+                            Utils.showAlert('Fehler beim Speichern der Daten.', 'danger');
+                        }
+                    } catch (error) {
+                        console.error('Fehler beim Speichern von KinderAnzahl:', error);
+                        Utils.showAlert('Unerwarteter Fehler aufgetreten.', 'danger');
+                    } finally {
+                        this.isSavingKinderAnzahl = false; // Spinner ausblenden
+                    }
                 },
 
                 /**
-                 * Возвращается на предыдущую страницу.
+                 * Speichert KinderAnzahlNow (aktuelle Zählung) in JSONBin.
+                 * KinderAnzahlNow wird nicht im localStorage gespeichert, da es immer manuell eingegeben wird.
+                 */
+                async saveKinderAnzahlNow() {
+                    // Eingabe validieren
+                    if (this.groupData.KinderAnzahlNow !== null && (isNaN(this.groupData.KinderAnzahlNow) || this.groupData.KinderAnzahlNow < 0 || this.groupData.KinderAnzahlNow > 20)) {
+                        Utils.showAlert('Bitte geben Sie eine gültige Anzahl zwischen 0 und 20 ein.', 'warning');
+                        return;
+                    }
+
+                    this.isSavingKinderAnzahlNow = true; // Speicherspinner anzeigen
+                    try {
+                        // KinderAnzahlNow-Feld in JSONBin aktualisieren
+                        const success = await this.updateGroupFieldInJSONBin('KinderAnzahlNow', this.groupData.KinderAnzahlNow);
+
+                        if (success) {
+                            Utils.showAlert('Aktuelle Anzahl Kinder aktualisiert!', 'success');
+                            // Nach erfolgreichem Speichern in den Anzeigemodus wechseln
+                            this.bKinderAnzahlNow_EditMode = false;
+                        } else {
+                            Utils.showAlert('Fehler beim Speichern der Daten.', 'danger');
+                        }
+                    } catch (error) {
+                        console.error('Fehler beim Speichern von KinderAnzahlNow:', error);
+                        Utils.showAlert('Unerwarteter Fehler aufgetreten.', 'danger');
+                    } finally {
+                        this.isSavingKinderAnzahlNow = false; // Spinner ausblenden
+                    }
+                },
+
+                /**
+                 * Aktualisiert ein bestimmtes Feld in den Gruppendaten in JSONBin.
+                 * Diese Funktion ruft den gesamten Bin ab, aktualisiert die Daten der spezifischen Gruppe für heute,
+                 * und führt dann eine PUT-Anfrage aus, um den gesamten Bin zu aktualisieren.
+                 * @param {string} field - Name des zu aktualisierenden Feldes (z.B. 'KinderAnzahl', 'KinderAnzahlNow')
+                 * @param {any} value - Neuer Wert für das Feld
+                 * @returns {Promise<boolean>} Erfolgsstatus
+                 */
+                async updateGroupFieldInJSONBin(field, value) {
+                    try {
+                        // 1. Gesamte aktuelle Datenstruktur von JSONBin.io abrufen
+                        const currentData = await this.api.getData();
+
+                        // 2. Sicherstellen, dass die erforderlichen verschachtelten Objekte für das aktuelle Datum und die Gruppe existieren
+                        if (!currentData[this.currentDate]) {
+                            currentData[this.currentDate] = { groups: {}, buses: {} }; // Sicherstellen, dass auch 'buses' initialisiert wird
+                        }
+                        if (!currentData[this.currentDate].groups) {
+                            currentData[this.currentDate].groups = {};
+                        }
+                        if (!currentData[this.currentDate].groups[this.groupNumber]) {
+                            // Wenn die Gruppe nicht existiert, mit Standardwerten initialisieren
+                            currentData[this.currentDate].groups[this.groupNumber] = {
+                                Betreuer: [],
+                                KinderAnzahl: null,
+                                KinderAnzahlNow: null
+                            };
+                        }
+
+                        // 3. Das spezifische Feld für die aktuelle Gruppe und das Datum aktualisieren
+                        currentData[this.currentDate].groups[this.groupNumber][field] = value;
+
+                        // 4. Die aktualisierte Datenstruktur zurück an JSONBin.io senden
+                        const success = await this.api.updateData(currentData);
+
+                        if (success) {
+                            // Bei Erfolg das lokale reaktive groupData-Objekt aktualisieren
+                            // Dies stellt sicher, dass Änderungen sofort in der Benutzeroberfläche angezeigt werden
+                            this.groupData[field] = value;
+                            return true;
+                        } else {
+                            console.error(`Fehler beim Aktualisieren des Feldes ${field} in JSONBin.`);
+                            return false;
+                        }
+                    } catch (error) {
+                        console.error(`Fehler in updateGroupFieldInJSONBin für ${field}:`, error);
+                        return false;
+                    }
+                },
+
+                /**
+                 * Navigiert zur Seite zur Bearbeitung von Kindern
+                 */
+                navigateToChildrenEdit() {
+                    if (!this.isConfigLoaded) {
+                        Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Navigation nicht möglich.', 'danger');
+                        return;
+                    }
+                    window.location.href = `group_edit.html?gr=${this.groupNumber}`;
+                },
+
+                /**
+                 * Navigiert zur Berechnungsseite
+                 */
+                navigateToCalculation() {
+                    if (!this.isConfigLoaded) {
+                        Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Navigation nicht möglich.', 'danger');
+                        return;
+                    }
+                    window.location.href = `group_calc.html?gr=${this.groupNumber}`;
+                },
+
+                /**
+                 * Zurück zur vorherigen Seite (Anmeldung oder Admin-Übersicht)
                  */
                 goBack() {
-                    Utils.navigateTo('b_login.html', this); // Go back to login
+                    window.history.back();
                 },
 
                 /**
-                 * Обновить текущие дату и время
+                 * Datum für die Anzeige formatieren
+                 * @param {string} dateString - Datum im Format YYYY-MM-DD
+                 * @returns {string} Formatierte Datumszeichenfolge
                  */
-                updateDateTime() {
-                    this.currentDateTime = Utils.getCurrentDateTime();
-                },
-
-                /**
-                 * Запускает часы для обновления времени каждую минуту
-                 */
-                startClock() {
-                    this.updateDateTime();
-                    setInterval(() => {
-                        this.updateDateTime();
-                    }, 60000);
+                formatDate(dateString) {
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('de-DE', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
                 }
             }
         }).mount('#app');
+
+        /**
+         * Seiteninitialisierung nach dem Laden des DOM
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            // Font Awesome für Icons
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css';
+            document.head.appendChild(link);
+
+            console.log('Gruppenseite DOM geladen.');
+        });
     </script>
 </body>
 </html>
