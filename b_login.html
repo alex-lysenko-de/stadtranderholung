@@ -64,34 +64,28 @@
                     <p class="mb-0 mt-2">Stadtranderholung 2025</p>
                 </div>
                 <div class="card-body p-4">
-                    <!-- Alert container for success/error messages -->
+                    <!-- Container für Erfolgs-/Fehlermeldungen -->
                     <div id="alertContainer"></div>
                     
-                    <!-- Изменено: Добавлено @submit.prevent="handleSubmit" к форме -->
                     <form id="loginForm" @submit.prevent="handleSubmit">
                         <div class="mb-3">
                             <label for="currentDate" class="form-label">Datum</label>
-                            <!-- Изменено: Добавлено v-model="currentDate" -->
                             <input type="date" class="form-control" id="currentDate" v-model="currentDate" readonly>
                         </div>
                         
                         <div class="mb-3">
                             <label for="betreuerName" class="form-label">Ihr Name (Betreuer)</label>
-                            <!-- Изменено: Добавлено v-model="betreuerName" -->
                             <input type="text" class="form-control" id="betreuerName" 
                                    v-model="betreuerName" placeholder="Geben Sie Ihren Namen ein" required>
                         </div>
                         
                         <div class="mb-4">
                             <label for="groupNumber" class="form-label">Gruppennummer</label>
-                            <!-- Изменено: Добавлено v-model="groupNumber" -->
                             <select class="form-control" id="groupNumber" v-model="groupNumber" required>
                                 <option value="">Wählen Sie eine Gruppe</option>
-                                <!-- Generate options for groups -->
                                 <template v-for="i in totalGroups">
                                     <option :value="i">Gruppe {{ i }}</option>
                                 </template>
-                                <!-- Изменено: Используется v-for для генерации групп -->
                             </select>
                         </div>
                         
@@ -115,21 +109,21 @@
     
     <script>
         /**
-         * Configuration object containing API credentials and endpoints
-         * Centralized configuration for easy maintenance
+         * Standardkonfigurationswerte. Diese werden durch URL-Parameter oder LocalStorage überschrieben.
          */
-        const CONFIG = {
+        const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
-            BIN_ID: '68834e6e7b4b8670d8a712d0',
+            BIN_COLLECTION_NAME: 'SR2025',
+            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
             MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
             ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
-            TOTAL_GROUPS: 5
-
+            TOTAL_GROUPS: 15,
+            TOTAL_BUSES: 3
         };
 
         /**
-         * Utility class for managing JSONBin.io API interactions
-         * Handles all CRUD operations with proper error handling
+         * Dienstprogrammklasse für die Verwaltung von JSONBin.io API-Interaktionen
+         * Behandelt alle CRUD-Operationen mit ordnungsgemäßer Fehlerbehandlung
          */
         class JSONBinAPI {
             constructor(config) {
@@ -142,8 +136,8 @@
             }
 
             /**
-             * Fetch current data from JSONBin
-             * @returns {Promise<Object>} Current data structure or empty object
+             * Aktuelle Daten von JSONBin abrufen
+             * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt
              */
             async getData() {
                 try {
@@ -153,21 +147,21 @@
                     });
                     
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        throw new Error(`HTTP-Fehler! Status: ${response.status}`);
                     }
                     
                     const result = await response.json();
                     return result.record || {};
                 } catch (error) {
-                    console.error('Error fetching data from JSONBin:', error);
-                    return {}; // Return empty object if fetch fails
+                    console.error('Fehler beim Abrufen der Daten von JSONBin:', error);
+                    return {}; // Leeres Objekt zurückgeben, wenn der Abruf fehlschlägt
                 }
             }
 
             /**
-             * Update data in JSONBin
-             * @param {Object} data - Complete data structure to save
-             * @returns {Promise<boolean>} Success status
+             * Daten in JSONBin aktualisieren
+             * @param {Object} data - Vollständige Datenstruktur zum Speichern
+             * @returns {Promise<boolean>} Erfolgsstatus
              */
             async updateData(data) {
                 try {
@@ -178,65 +172,65 @@
                     });
                     
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        throw new Error(`HTTP-Fehler! Status: ${response.status}`);
                     }
                     
                     return true;
                 } catch (error) {
-                    console.error('Error updating data in JSONBin:', error);
+                    console.error('Fehler beim Aktualisieren der Daten in JSONBin:', error);
                     return false;
                 }
             }
         }
 
         /**
-         * Utility functions for common operations
+         * Dienstprogrammfunktionen für allgemeine Operationen
          */
         const Utils = {
             /**
-             * Get current date in YYYY-MM-DD format
-             * @returns {string} Formatted date string
+             * Aktuelles Datum im Format YYYY-MM-DD abrufen
+             * @returns {string} Formatiertes Datumszeichenfolge
              */
             getCurrentDate() {
                 return new Date().toISOString().split('T')[0];
             },
 
             /**
-             * Get stored Betreuer name from localStorage
-             * @returns {string|null} Stored name or null
+             * Gespeicherten Betreuer-Namen aus dem localStorage abrufen
+             * @returns {string|null} Gespeicherter Name oder null
              */
             getStoredBetreuerName() {
                 return localStorage.getItem('betreuer_name');
             },
 
             /**
-             * Store Betreuer name in localStorage for future convenience
-             * @param {string} name - Betreuer name to store
+             * Betreuer-Namen im localStorage speichern
+             * @param {string} name - Zu speichernder Betreuer-Name
              */
             storeBetreuerName(name) {
                 localStorage.setItem('betreuer_name', name);
             },
 
             /**
-             * Store group number in localStorage for future convenience
-             * @param {string} groupNumber - Group number to store
+             * Gruppennummer im localStorage speichern
+             * @param {string} groupNumber - Zu speichernde Gruppennummer
              */ 
             storeGroupNumber(groupNumber) {
                 localStorage.setItem('group_number', groupNumber);
             },  
 
             /**
-             * Get stored group number from localStorage
-             * @returns {string|null} Stored group number or null
+             * Gespeicherte Gruppennummer aus dem localStorage abrufen
+             * @returns {string|null} Gespeicherte Gruppennummer oder null
              */
             getStoredGroupNumber() {
                 return localStorage.getItem('group_number');
             },  
 
             /**
-             * Show alert message to user
-             * @param {string} message - Message to display
-             * @param {string} type - Alert type (success, danger, warning, info)
+             * Warnmeldung für den Benutzer anzeigen
+             * @param {string} message - Anzuzeigende Nachricht
+             * @param {string} type - Warnungstyp (success, danger, warning, info)
              */
             showAlert(message, type = 'info') {
                 const alertContainer = document.getElementById('alertContainer');
@@ -247,12 +241,73 @@
                     </div>
                 `;
                 alertContainer.innerHTML = alertHtml;
+                // Warnung nach 5 Sekunden ausblenden
+                setTimeout(() => {
+                    if (alertContainer.firstChild) {
+                        alertContainer.firstChild.remove();
+                    }
+                }, 5000);
+            },
+
+            /**
+             * Konfigurationsparameter von URL oder LocalStorage laden.
+             * URL-Parameter haben Vorrang. Fehlende Parameter verwenden Standardwerte.
+             * Alle geladenen/Standardparameter werden im LocalStorage gespeichert.
+             * @returns {Object} Ein Objekt, das die geladene Konfiguration oder eine Fehlermeldung enthält.
+             */
+            loadConfig: function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const config = {};
+                const missingParams = [];
+
+                // Alle erwarteten Parameter und deren LocalStorage-Schlüssel definieren
+                const paramMap = {
+                    'TOTAL_GROUPS': 'config_total_groups',
+                    'TOTAL_BUSES': 'config_total_buses',
+                    'MASTER_KEY': 'config_bin_master_key',
+                    'ACCESS_KEY': 'config_bin_access_key',
+                    'BIN_COLLECTION_NAME': 'config_bin_collection',
+                    'BIN_ID': 'config_bin_id'
+                };
+
+                for (const urlParam in paramMap) {
+                    const lsKey = paramMap[urlParam];
+                    let value = urlParams.get(urlParam) || localStorage.getItem(lsKey);
+
+                    if (value !== null && value !== '') {
+                        // Spezielle Behandlung für numerische Parameter
+                        if (urlParam === 'TOTAL_GROUPS' || urlParam === 'TOTAL_BUSES') {
+                            config[urlParam] = parseInt(value, 10);
+                        } else {
+                            config[urlParam] = value;
+                        }
+                        // Im LocalStorage speichern, wenn es von der URL kam oder einfach sicherstellen, dass es dort ist
+                        localStorage.setItem(lsKey, value);
+                    } else {
+                        // Prüfen, ob ein Standardwert in CONFIG_DEFAULTS existiert
+                        if (CONFIG_DEFAULTS.hasOwnProperty(urlParam)) {
+                            config[urlParam] = CONFIG_DEFAULTS[urlParam];
+                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]); // Standardwert im LS speichern
+                        } else {
+                            missingParams.push(urlParam);
+                        }
+                    }
+                }
+                
+                // API_BASE_URL ist eine Konstante und wird nicht über URL/LocalStorage übergeben
+                config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
+
+                if (missingParams.length > 0) {
+                    return { config: null, error: `Es fehlen wesentliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass diese über die URL übergeben oder in index.html festgelegt werden.` };
+                }
+                
+                return { config: config, error: null };
             }
         };
 
         /**
-         * Main Login Application using Vue.js 3
-         * Handles user authentication and data submission to JSONBin
+         * Hauptanmeldeanwendung mit Vue.js 3
+         * Verwaltet die Benutzerauthentifizierung und Datenübermittlung an JSONBin
          */
         const { createApp } = Vue;
 
@@ -260,11 +315,13 @@
             data() {
                 return {
                     currentDate: '',
-                    totalGroups: CONFIG.TOTAL_GROUPS,
+                    totalGroups: CONFIG_DEFAULTS.TOTAL_GROUPS, // Anfangsstandard, wird durch geladene Konfiguration überschrieben
+                    totalBuses: CONFIG_DEFAULTS.TOTAL_BUSES, // totalBuses zu den Daten hinzufügen
                     betreuerName: '',
                     groupNumber: '',
                     isLoading: false,
-                    api: new JSONBinAPI(CONFIG)
+                    api: null, // API nach dem Laden der Konfiguration initialisieren
+                    isConfigLoaded: false // Flag, um zu prüfen, ob die Konfiguration erfolgreich geladen wurde
                 };
             },
             
@@ -274,109 +331,123 @@
             
             methods: {
                 /**
-                 * Initialize form with current date and stored name
+                 * Formular mit aktuellem Datum und gespeichertem Namen initialisieren und Konfiguration laden.
                  */
                 initializeForm() {
-                    // Set current date automatically
+                    const { config, error } = Utils.loadConfig();
+
+                    if (error) {
+                        Utils.showAlert(error, 'danger');
+                        this.isConfigLoaded = false;
+                        return; // Initialisierung stoppen, wenn Konfiguration fehlt
+                    }
+
+                    // Die geladene Konfiguration in der Vue-Instanz speichern
+                    this.config = config; 
+                    this.api = new JSONBinAPI(this.config);
+                    this.isConfigLoaded = true; // Konfiguration als geladen markieren
+
                     this.currentDate = Utils.getCurrentDate();
-                    // Удалено: document.getElementById('currentDate').value = this.currentDate;
+                    this.totalGroups = this.config.TOTAL_GROUPS; // Geladene Gesamtgruppen verwenden
+                    this.totalBuses = this.config.TOTAL_BUSES; // Geladene Gesamtbusse verwenden
                     
-                    // Load stored Betreuer name if available
+                    // Gespeicherten Betreuer-Namen laden, falls verfügbar
                     const storedName = Utils.getStoredBetreuerName();
                     if (storedName) {
                         this.betreuerName = storedName;
-                        // Удалено: document.getElementById('betreuerName').value = storedName;
                     }
-                    // Load stored group number if available
-                    const storedGroupNumber = Utils.getStoredGroupNumber();
 
-                    // Проверяем URL на наличие GET-параметра 'gr'
+                    // Gruppennummer aus URL priorisieren, dann LocalStorage
                     const urlParams = new URLSearchParams(window.location.search);
                     const groupNumberFromUrl = urlParams.get('gr');
                     if (groupNumberFromUrl) {
                         this.groupNumber = groupNumberFromUrl;
-                    } else if (storedGroupNumber) {
-                        this.groupNumber = storedGroupNumber;
                     } else {
-                        this.groupNumber = ''; // Default to empty if no stored value
+                        const storedGroupNumber = Utils.getStoredGroupNumber();
+                        if (storedGroupNumber) {
+                            this.groupNumber = storedGroupNumber;
+                        } else {
+                            this.groupNumber = ''; // Standardmäßig leer, wenn kein gespeicherter Wert vorhanden ist
+                        }
                     }
-
                 },
+
                 /**
-                 * Navigate to bus page
-                 * Redirects to b_bus.html
+                 * Zur Busseite navigieren.
+                 * Leitet zu b_bus.html weiter.
                  */
                 goToBusPage() {
-                    // check if betreuerName is empty
+                    if (!this.isConfigLoaded) {
+                        Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Bitte überprüfen Sie die URL-Parameter oder gehen Sie zur Konfigurationsseite (index.html).', 'danger');
+                        return;
+                    }
                     if (!this.betreuerName) {
                         Utils.showAlert('Bitte geben Sie Ihren Namen ein, bevor Sie zum Bus gehen.', 'warning');
                         return;
                     }
-                    // Store name for future convenience
+                    // Namen für zukünftige Verwendung speichern
                     Utils.storeBetreuerName(this.betreuerName);
-                    // Redirect to bus page     
-                    window.location.href = 'b_bus.html';
+                    
+                    // Weiterleitung zu b_bus.html ohne URL-Parameter (Module lesen aus LocalStorage)
+                    window.location.href = `b_bus.html`;
                 },  
 
                 /**
-                 * Handle form submission
-                 * Validates input, saves data to JSONBin, and redirects to group page
-                 * @param {Event} event - Form submit event
+                 * Formularübermittlung verwalten
+                 * Validiert die Eingabe, speichert Daten in JSONBin und leitet zur Gruppenseite weiter
                  */
-                async handleSubmit(event) {
-                    // event.preventDefault() не нужен, так как @submit.prevent уже делает это
-                    
-                    // Значения уже связаны через v-model, прямое обращение к DOM не требуется
-                    // this.betreuerName = document.getElementById('betreuerName').value.trim();
-                    // this.groupNumber = document.getElementById('groupNumber').value;
-                    
-                    // Validate input
+                async handleSubmit() {
+                    if (!this.isConfigLoaded) {
+                        Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Bitte überprüfen Sie die URL-Parameter oder gehen Sie zur Konfigurationsseite (index.html).', 'danger');
+                        return;
+                    }
+                    // Eingabe validieren
                     if (!this.betreuerName || !this.groupNumber) {
                         Utils.showAlert('Bitte füllen Sie alle Felder aus.', 'warning');
                         return;
                     }
                     
-                    // Show loading state
+                    // Ladezustand anzeigen
                     this.setLoadingState(true);
                     
                     try {
-                        // Store name for future convenience
+                        // Namen und Gruppennummer für zukünftige Verwendung speichern
                         Utils.storeBetreuerName(this.betreuerName);
-
                         Utils.storeGroupNumber(this.groupNumber);
                         
-                        // Submit data to JSONBin
+                        // Daten an JSONBin übermitteln
                         const success = await this.submitLoginData();
                         
                         if (success) {
+                            // Weiterleitung zu b_group.html mit Gruppennummer (Module lesen andere Parameter aus LocalStorage)
                             window.location.href = `b_group.html?gr=${this.groupNumber}`;                          
                         } else {
                             Utils.showAlert('Fehler bei der Anmeldung. Bitte versuchen Sie es erneut.', 'danger');
                         }
                     } catch (error) {
-                        console.error('Login error:', error);
-                        Utils.showAlert('Unerwarteter Fehler aufgetreten. Bitte versuchen Sie es erneut.', 'danger');
+                        console.error('Anmeldefehler:', error);
+                        Utils.showAlert('Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.', 'danger');
                     } finally {
                         this.setLoadingState(false);
                     }
                 },
 
                 /**
-                 * Submit login data to JSONBin
-                 * Creates or updates the data structure with Betreuer assignment
-                 * @returns {Promise<boolean>} Success status
+                 * Anmeldedaten an JSONBin übermitteln
+                 * Erstellt oder aktualisiert die Datenstruktur mit der Betreuerzuweisung
+                 * @returns {Promise<boolean>} Erfolgsstatus
                  */
                 async submitLoginData() {
                     try {
-                        // Get current data from JSONBin
+                        // Aktuelle Daten von JSONBin abrufen
                         const currentData = await this.api.getData();
                         
-                        // Ensure date structure exists
+                        // Sicherstellen, dass die Datumsstruktur existiert, einschließlich des 'buses'-Objekts
                         if (!currentData[this.currentDate]) {
-                            currentData[this.currentDate] = { groups: {} };
+                            currentData[this.currentDate] = { groups: {}, buses: {} };
                         }
                         
-                        // Ensure group structure exists
+                        // Sicherstellen, dass die Gruppenstruktur existiert
                         if (!currentData[this.currentDate].groups[this.groupNumber]) {
                             currentData[this.currentDate].groups[this.groupNumber] = {
                                 Betreuer: [],
@@ -385,23 +456,23 @@
                             };
                         }
                         
-                        // Add Betreuer to group if not already present
+                        // Betreuer zur Gruppe hinzufügen, falls noch nicht vorhanden
                         const groupData = currentData[this.currentDate].groups[this.groupNumber];
                         if (!groupData.Betreuer.includes(this.betreuerName)) {
                             groupData.Betreuer.push(this.betreuerName);
                         }
                         
-                        // Update data in JSONBin
+                        // Daten in JSONBin aktualisieren
                         return await this.api.updateData(currentData);
                     } catch (error) {
-                        console.error('Error submitting login data:', error);
+                        console.error('Fehler beim Übermitteln der Anmeldedaten:', error);
                         return false;
                     }
                 },
 
                 /**
-                 * Set loading state for UI feedback
-                 * @param {boolean} loading - Loading state
+                 * Ladezustand für UI-Feedback festlegen
+                 * @param {boolean} loading - Ladezustand
                  */
                 setLoadingState(loading) {
                     this.isLoading = loading;
@@ -415,15 +486,12 @@
                         submitButton.disabled = true;
                     } else {
                         spinner.style.display = 'none';
-                        buttonText.textContent = 'Anmelden';
+                        buttonText.textContent = 'Zählen';
                         submitButton.disabled = false;
                     }
                 }
             }
         }).mount('#app');  
-        
-        // Удалено: document.addEventListener('DOMContentLoaded', function() { ... });
-        // Эта часть кода больше не нужна, так как Vue обрабатывает событие submit
     </script>
 </body>
 </html>

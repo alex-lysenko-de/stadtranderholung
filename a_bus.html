@@ -221,7 +221,7 @@
             </div>
 
             <!-- Refresh Button (Sticky) -->
-            <button class="btn refresh-btn" @click="loadBusData(false)" :disabled="loadingInitialData">
+            <button class="btn refresh-btn" @click="loadBusData(false)" :disabled="loadingInitialData || !isConfigLoaded">
                 <span v-if="loadingInitialData" class="spinner-border spinner-border-sm me-2"></span>
                 <i v-else class="fas fa-sync-alt me-2"></i>
                 {{ loadingInitialData ? 'Laden...' : 'Aktualisieren' }}
@@ -244,10 +244,16 @@
                     </div>
 
                     <!-- No Data State -->
-                    <div v-else-if="!hasBusData" class="text-center py-5">
+                    <div v-else-if="!hasBusData && isConfigLoaded" class="text-center py-5">
                         <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
                         <h5 class="text-muted">Keine Bus-Daten für heute verfügbar</h5>
                         <p class="text-muted">Noch kein Betreuer hat Bus-Daten heute übermittelt.</p>
+                    </div>
+                    <!-- Configuration Not Loaded State -->
+                    <div v-else-if="!isConfigLoaded" class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Konfiguration konnte nicht geladen werden.</h5>
+                        <p class="text-muted">Bitte gehen Sie zur Anmeldeseite zurück, um die Konfiguration zu laden.</p>
                     </div>
 
                     <!-- Bus Table -->
@@ -305,20 +311,21 @@
 
     <script>
         /**
-         * Configuration object with API credentials and endpoints
-         * Shared configuration with other components
+         * Standardkonfigurationswerte. Diese werden durch URL-Parameter oder LocalStorage überschrieben.
          */
-        const CONFIG = {
+        const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
-            BIN_ID: '68834e6e7b4b8670d8a712d0',
+            BIN_COLLECTION_NAME: 'SR2025',
+            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
             MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
             ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
-            TOTAL_BUSES: 3, // Total number of buses (1-3)
+            TOTAL_GROUPS: 15, // Gesamtzahl der Gruppen
+            TOTAL_BUSES: 3 // Gesamtzahl der Busse
         };
 
         /**
-         * Utility class for managing JSONBin.io API interactions
-         * Handles all CRUD operations with proper error handling
+         * Dienstprogrammklasse für die Verwaltung von JSONBin.io API-Interaktionen
+         * Behandelt alle CRUD-Operationen mit ordnungsgemäßer Fehlerbehandlung
          */
         class JSONBinAPI {
             constructor(config) {
@@ -331,8 +338,8 @@
             }
 
             /**
-             * Retrieve current data from JSONBin
-             * @returns {Promise<Object>} Current data structure or empty object
+             * Aktuelle Daten von JSONBin abrufen
+             * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt
              */
             async getData() {
                 try {
@@ -343,34 +350,34 @@
 
                     if (!response.ok) {
                         const errorBody = await response.text();
-                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorBody}`);
+                        throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorBody}`);
                     }
 
                     const result = await response.json();
                     return result.record || {};
                 } catch (error) {
-                    console.error('Error fetching data from JSONBin:', error);
+                    console.error('Fehler beim Abrufen der Daten von JSONBin:', error);
                     throw error;
                 }
             }
         }
 
         /**
-         * Utility functions for common operations
+         * Dienstprogrammfunktionen für gängige Operationen
          */
         const Utils = {
             /**
-             * Get current date string in YYYY-MM-DD format
-             * @returns {string} Formatted date string
+             * Aktuelles Datum im Format YYYY-MM-DD abrufen
+             * @returns {string} Formatiertes Datumszeichenfolge
              */
             getCurrentDateString() {
                 return new Date().toISOString().split('T')[0];
             },
 
             /**
-             * Format date for display
-             * @param {string} dateString - Date in YYYY-MM-DD format
-             * @returns {string} Formatted date string
+             * Datum zur Anzeige formatieren
+             * @param {string} dateString - Datum im Format YYYY-MM-DD
+             * @returns {string} Formatiertes Datumszeichenfolge
              */
             formatDateForDisplay(dateString) {
                 const date = new Date(dateString);
@@ -383,20 +390,22 @@
             },
 
             /**
-             * Get current time for display
-             * @returns {string} Current time in HH:MM:SS format
+             * Uhrzeit zur Anzeige formatieren
+             * @returns {string} Aktuelle Uhrzeit im Format HH:MM:SS
              */
             getCurrentTimeForDisplay() {
                 return new Date().toLocaleTimeString('de-DE');
             },
 
             /**
-             * Show alert message to user
-             * @param {string} message - Message to display
-             * @param {string} type - Alert type (success, danger, warning, info)
+             * Warnmeldung für den Benutzer anzeigen
+             * @param {string} message - Anzuzeigende Nachricht
+             * @param {string} type - Warntyp (success, danger, warning, info)
              */
             showAlert(message, type = 'info') {
                 const alertContainer = document.getElementById('alertContainer');
+                if (!alertContainer) return;
+
                 alertContainer.innerHTML = '';
                 const alertDiv = document.createElement('div');
                 alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
@@ -411,13 +420,59 @@
                     const bsAlert = bootstrap.Alert.getInstance(alertDiv) || new bootstrap.Alert(alertDiv);
                     bsAlert.close();
                 }, 5000);
+            },
+
+            /**
+             * Konfigurationsparameter von URL oder LocalStorage laden.
+             * URL-Parameter haben Vorrang. Fehlende Parameter verwenden Standardwerte.
+             * Alle geladenen/Standardparameter werden im LocalStorage gespeichert.
+             * @returns {Object} Ein Objekt, das die geladene Konfiguration oder eine Fehlermeldung enthält.
+             */
+            loadConfig: function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const config = {};
+                const missingParams = [];
+
+                const paramMap = {
+                    'TOTAL_GROUPS': 'config_total_groups',
+                    'TOTAL_BUSES': 'config_total_buses',
+                    'MASTER_KEY': 'config_bin_master_key',
+                    'ACCESS_KEY': 'config_bin_access_key',
+                    'BIN_COLLECTION_NAME': 'config_bin_collection',
+                    'BIN_ID': 'config_bin_id'
+                };
+
+                for (const urlParam in paramMap) {
+                    const lsKey = paramMap[urlParam];
+                    let value = urlParams.get(urlParam) || localStorage.getItem(lsKey);
+
+                    if (value !== null && value !== '') {
+                        if (urlParam === 'TOTAL_GROUPS' || urlParam === 'TOTAL_BUSES') {
+                            config[urlParam] = parseInt(value, 10);
+                        } else {
+                            config[urlParam] = value;
+                        }
+                        localStorage.setItem(lsKey, value);
+                    } else {
+                        if (CONFIG_DEFAULTS.hasOwnProperty(urlParam)) {
+                            config[urlParam] = CONFIG_DEFAULTS[urlParam];
+                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]);
+                        } else {
+                            missingParams.push(urlParam);
+                        }
+                    }
+                }
+                
+                config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
+
+                if (missingParams.length > 0) {
+                    return { config: null, error: `Es fehlen wesentliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass diese über die URL übergeben oder in index.html festgelegt werden.` };
+                }
+                
+                return { config: config, error: null };
             }
         };
 
-        /**
-         * Main application for Bus Overview with Vue.js 3
-         * Manages bus data display, aggregation and manual refresh
-         */
         const { createApp } = Vue;
 
         createApp({
@@ -425,11 +480,13 @@
                 return {
                     currentDate: Utils.getCurrentDateString(),
                     busesData: {},
-                    totalBusCount: CONFIG.TOTAL_BUSES,
+                    totalBusCount: 0, // Wird dynamisch aus der Konfiguration geladen
                     loadingInitialData: true,
-                    api: new JSONBinAPI(CONFIG),
+                    api: null, // API-Instanz wird nach dem Laden der Konfiguration initialisiert
                     lastUpdateTime: null,
                     showHeaderInfo: true,
+                    isConfigLoaded: false, // Flag für den Konfigurationsladestatus
+                    config: null // Hier wird die geladene Konfiguration gespeichert
                 };
             },
 
@@ -467,13 +524,21 @@
                 },
                 
                 totalBusRange() {
-                    return Array.from({ length: CONFIG.TOTAL_BUSES }, (_, i) => i + 1);
+                    // Sicherstellen, dass die Konfiguration geladen ist, bevor auf TOTAL_BUSES zugegriffen wird
+                    if (this.isConfigLoaded && this.config && this.config.TOTAL_BUSES) {
+                        return Array.from({ length: this.config.TOTAL_BUSES }, (_, i) => i + 1);
+                    }
+                    return []; // Leeres Array zurückgeben, wenn Konfiguration nicht geladen ist
                 },
                 
                 allBusesHaveData() {
-                    // Check if all buses (1, 2, 3) have data
-                    for (let i = 1; i <= CONFIG.TOTAL_BUSES; i++) {
+                    // Prüfen, ob alle Busse (basierend auf totalBusCount) Daten haben
+                    if (!this.isConfigLoaded || !this.config || this.config.TOTAL_BUSES === 0) {
+                        return false; // Kann nicht prüfen, wenn Konfiguration nicht geladen oder keine Busse definiert sind
+                    }
+                    for (let i = 1; i <= this.config.TOTAL_BUSES; i++) {
                         const busData = this.getBusData(i);
+                        // Ein Bus gilt als "Daten vorhanden", wenn kinder_count explizit gesetzt ist (auch 0)
                         if (busData.kinder_count === null || busData.kinder_count === undefined) {
                             return false;
                         }
@@ -483,16 +548,42 @@
             },
 
             mounted() {
-                // Load data once when page opens
-                this.loadBusData(false);
+                // Initialisiert die Bus-Übersichtsseite
+                this.initializeBusOverviewPage();
                 
-                // Auto-hide header info after 3 seconds
+                // Header-Info nach 3 Sekunden automatisch ausblenden
                 setTimeout(() => {
                     this.showHeaderInfo = false;
                 }, 3000);
             },
 
             methods: {
+                /**
+                 * Initialisiert die Bus-Übersichtsseite: lädt Konfiguration und Daten.
+                 */
+                async initializeBusOverviewPage() {
+                    // Konfiguration laden
+                    const { config, error } = Utils.loadConfig();
+
+                    if (error) {
+                        Utils.showAlert(error, 'danger');
+                        this.isConfigLoaded = false;
+                        // Optional: Zurück zur Anmeldeseite, wenn Konfiguration fehlt
+                        setTimeout(() => {
+                            window.location.href = 'a_login.html';
+                        }, 3000);
+                        return;
+                    }
+
+                    this.config = config; // Geladene Konfiguration speichern
+                    this.api = new JSONBinAPI(this.config); // API-Instanz mit geladener Konfiguration initialisieren
+                    this.isConfigLoaded = true; // Konfiguration als geladen markieren
+                    this.totalBusCount = this.config.TOTAL_BUSES; // Busanzahl aus der Konfiguration setzen
+
+                    // Daten laden, nachdem die Konfiguration erfolgreich geladen wurde
+                    await this.loadBusData(false);
+                },
+
                 getBusData(busNumber) {
                     return this.busesData[busNumber.toString()] || {
                         kinder_count: null,
@@ -503,6 +594,15 @@
                 },
 
                 async loadBusData(silent = false) {
+                    if (!this.isConfigLoaded) {
+                        // Wenn die Konfiguration nicht geladen ist, versuchen Sie nicht, Daten zu laden
+                        if (!silent) {
+                            Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Daten können nicht abgerufen werden.', 'danger');
+                        }
+                        this.loadingInitialData = false; // Ladespinner ausblenden
+                        return;
+                    }
+
                     try {
                         if (!silent) {
                             this.loadingInitialData = true;
@@ -524,7 +624,7 @@
                         }
 
                     } catch (error) {
-                        console.error('Error loading bus data:', error);
+                        console.error('Fehler beim Laden der Busdaten:', error); // Deutsche Fehlermeldung
                         Utils.showAlert('Datenaktualisierung fehlgeschlagen. Netzwerkproblem?', 'danger');
                         this.busesData = {};
                     } finally {

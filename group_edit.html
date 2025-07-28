@@ -4,301 +4,265 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kinderliste bearbeiten - Stadtranderholung</title>
-    <!-- Bootstrap 5.3.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.min.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             padding: 20px 0;
+            color: #333;
         }
         .main-container {
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
         }
-        .edit-card {
-            background: white;
+        .card {
+            border: none;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
         }
         .card-header {
-            background: linear-gradient(135deg, #6f42c1 0%, #5a2d91 100%);
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
             color: white;
-            border-radius: 15px 15px 0 0;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 1.5rem;
             text-align: center;
-            padding: 20px;
+        }
+        .card-body {
+            padding: 2rem;
         }
         .btn-primary {
-            background: linear-gradient(135deg, #6f42c1 0%, #5a2d91 100%);
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
             border: none;
             border-radius: 10px;
-            padding: 12px 20px;
-            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
-        .btn-success {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            border: none;
-            border-radius: 10px;
-            padding: 12px 20px;
-            font-weight: bold;
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
         }
         .btn-danger {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             border: none;
             border-radius: 10px;
-            padding: 8px 12px;
-            font-weight: bold;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
-        .child-item {
-            background: #f8f9fa;
+        .btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(220, 53, 69, 0.3);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            border: none;
             border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-left: 4px solid #6f42c1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
-        .child-name {
-            font-weight: bold;
-            color: #495057;
-        }
-        .child-info {
-            font-size: 0.9rem;
-            color: #6c757d;
-            margin-top: 5px;
-        }
-        .add-child-form {
-            background: #e9ecef;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
+        .btn-secondary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(108, 117, 125, 0.3);
         }
         .form-control {
             border-radius: 10px;
-            border: 2px solid #e9ecef;
-            padding: 12px;
+            border: 2px solid #e0e0e0;
+            padding: 0.75rem 1rem;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
         }
         .form-control:focus {
-            border-color: #6f42c1;
-            box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
         }
-        .coming-soon {
-            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-            color: #212529;
+        .list-group-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 12px 15px;
         }
-        .placeholder-list {
-            max-height: 400px;
-            overflow-y: auto;
+        .list-group-item:last-child {
+            margin-bottom: 0;
+        }
+        .loading-spinner {
+            color: #007bff;
         }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <!-- Header Card -->
-        <div class="edit-card">
-            <div class="card-header">
-                <h2 class="mb-0" id="groupTitle">Kinderliste bearbeiten</h2>
-                <p class="mb-0 mt-2" id="currentDate"></p>
-            </div>
-        </div>
-
-        <!-- Coming Soon Notice -->
-        <div class="coming-soon">
-            <h4><i class="fas fa-construction me-2"></i>Zukünftige Erweiterung</h4>
-            <p class="mb-0">Diese Funktionalität wird in einer späteren Version implementiert. 
-            Derzeit wird eine Basis-Struktur bereitgestellt.</p>
-        </div>
-
-        <!-- Alert Container -->
-        <div id="alertContainer"></div>
-
-        <!-- Add Child Form Card -->
-        <div class="edit-card">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="fas fa-plus me-2"></i>Kind hinzufügen
-                </h5>
-                
-                <div class="add-child-form">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="childFirstName" class="form-label">Vorname</label>
-                            <input type="text" class="form-control" id="childFirstName" 
-                                   placeholder="Max" disabled>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="childLastName" class="form-label">Nachname</label>
-                            <input type="text" class="form-control" id="childLastName" 
-                                   placeholder="Mustermann" disabled>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="childAge" class="form-label">Alter</label>
-                            <input type="number" class="form-control" id="childAge" 
-                                   min="6" max="16" placeholder="10" disabled>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="childParent" class="form-label">Erziehungsberechtigter</label>
-                            <input type="text" class="form-control" id="childParent" 
-                                   placeholder="Anna Mustermann" disabled>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="childNotes" class="form-label">Notizen (optional)</label>
-                        <textarea class="form-control" id="childNotes" rows="2" 
-                                  placeholder="Allergien, besondere Hinweise..." disabled></textarea>
-                    </div>
-                    
-                    <button type="button" class="btn btn-success w-100" disabled>
-                        <i class="fas fa-plus me-2"></i>Kind hinzufügen
-                    </button>
+    <div id="app">
+        <div class="main-container">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-child me-2"></i>
+                        Kinderliste für Gruppe {{ groupNumber }}
+                    </h3>
+                    <p class="mb-0 mt-2">{{ formattedCurrentDate }}</p>
                 </div>
-            </div>
-        </div>
+                <div class="card-body">
+                    <div id="alertContainer"></div>
 
-        <!-- Children List Card -->
-        <div class="edit-card">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="fas fa-list me-2"></i>Kinderliste
-                    <span class="badge bg-secondary ms-2" id="childrenCount">5 Kinder</span>
-                </h5>
-                
-                <div class="placeholder-list" id="childrenList">
-                    <!-- Placeholder children for demonstration -->
-                    <div class="child-item">
-                        <div>
-                            <div class="child-name">Emma Schmidt</div>
-                            <div class="child-info">
-                                <i class="fas fa-birthday-cake me-1"></i>8 Jahre
-                                <i class="fas fa-user ms-3 me-1"></i>Maria Schmidt
-                            </div>
+                    <div v-if="loadingInitialData" class="text-center py-5">
+                        <div class="spinner-border mb-3" role="status">
+                            <span class="visually-hidden">Wird geladen...</span>
                         </div>
-                        <button class="btn btn-danger btn-sm" disabled>
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <p class="text-muted">Lade Kinderdaten...</p>
                     </div>
-                    
-                    <div class="child-item">
-                        <div>
-                            <div class="child-name">Luca Müller</div>
-                            <div class="child-info">
-                                <i class="fas fa-birthday-cake me-1"></i>9 Jahre
-                                <i class="fas fa-user ms-3 me-1"></i>Thomas Müller
-                                <i class="fas fa-info-circle ms-3 me-1"></i>Nussallergie
-                            </div>
-                        </div>
-                        <button class="btn btn-danger btn-sm" disabled>
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="child-item">
-                        <div>
-                            <div class="child-name">Sophie Weber</div>
-                            <div class="child-info">
-                                <i class="fas fa-birthday-cake me-1"></i>7 Jahre
-                                <i class="fas fa-user ms-3 me-1"></i>Lisa Weber
-                            </div>
-                        </div>
-                        <button class="btn btn-danger btn-sm" disabled>
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="child-item">
-                        <div>
-                            <div class="child-name">Noah Fischer</div>
-                            <div class="child-info">
-                                <i class="fas fa-birthday-cake me-1"></i>10 Jahre
-                                <i class="fas fa-user ms-3 me-1"></i>Sandra Fischer
-                                <i class="fas fa-info-circle ms-3 me-1"></i>Braucht Medikamente
-                            </div>
-                        </div>
-                        <button class="btn btn-danger btn-sm" disabled>
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="child-item">
-                        <div>
-                            <div class="child-name">Mia Wagner</div>
-                            <div class="child-info">
-                                <i class="fas fa-birthday-cake me-1"></i>8 Jahre
-                                <i class="fas fa-user ms-3 me-1"></i>Michael Wagner
-                            </div>
-                        </div>
-                        <button class="btn btn-danger btn-sm" disabled>
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Action Buttons Card -->
-        <div class="edit-card">
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <button class="btn btn-primary" onclick="history.back()">
-                        <i class="fas fa-arrow-left me-2"></i>Zurück zur Gruppe
-                    </button>
-                    <button class="btn btn-outline-primary" onclick="window.location.href='admin_overview.html'">
-                        <i class="fas fa-chart-line me-2"></i>Zur Administrator-Übersicht
-                    </button>
+                    <div v-else-if="!isConfigLoaded" class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Konfiguration konnte nicht geladen werden.</h5>
+                        <p class="text-muted">Bitte gehen Sie zur Anmeldeseite zurück, um die Konfiguration zu laden.</p>
+                    </div>
+
+                    <div v-else>
+                        <div class="mb-4">
+                            <label for="newChildName" class="form-label">Neues Kind hinzufügen:</label>
+                            <div class="input-group">
+                                <input type="text" id="newChildName" class="form-control" v-model="newChildName" placeholder="Name des Kindes" @keyup.enter="addChild">
+                                <button class="btn btn-primary" type="button" @click="addChild" :disabled="!newChildName.trim()">
+                                    <i class="fas fa-plus me-2"></i>Hinzufügen
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <h5 class="mb-3">Aktuelle Kinderliste:</h5>
+                        <ul class="list-group">
+                            <li v-if="children.length === 0" class="list-group-item text-center text-muted">
+                                Keine Kinder in dieser Gruppe.
+                            </li>
+                            <li v-for="(child, index) in children" :key="index" class="list-group-item">
+                                {{ child }}
+                                <button class="btn btn-danger btn-sm" @click="removeChild(index)">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button class="btn btn-secondary" @click="goBack">
+                                <i class="fas fa-arrow-left me-2"></i>Zurück
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap 5.3.3 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Vue.js 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    
+
     <script>
         /**
-         * Utility functions for common operations
+         * Standardkonfigurationswerte. Diese werden durch URL-Parameter oder LocalStorage überschrieben.
+         */
+        const CONFIG_DEFAULTS = {
+            API_BASE_URL: 'https://api.jsonbin.io/v3/b',
+            BIN_COLLECTION_NAME: 'SR2025',
+            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
+            MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
+            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
+            TOTAL_GROUPS: 15, // Gesamtzahl der Gruppen
+            TOTAL_BUSES: 3 // Gesamtzahl der Busse
+        };
+
+        /**
+         * Dienstprogrammklasse für die Verwaltung von JSONBin.io API-Interaktionen
+         * Behandelt alle CRUD-Operationen mit ordnungsgemäßer Fehlerbehandlung
+         */
+        class JSONBinAPI {
+            constructor(config) {
+                this.config = config;
+                this.headers = {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': config.MASTER_KEY,
+                    'X-Access-Key': config.ACCESS_KEY
+                };
+            }
+
+            /**
+             * Aktuelle Daten von JSONBin abrufen
+             * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt
+             */
+            async getData() {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
+                        method: 'GET',
+                        headers: this.headers
+                    });
+
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorBody}`);
+                    }
+
+                    const result = await response.json();
+                    return result.record || {};
+                } catch (error) {
+                    console.error('Fehler beim Abrufen der Daten von JSONBin:', error);
+                    throw error;
+                }
+            }
+
+            /**
+             * Daten in JSONBin aktualisieren
+             * @param {Object} data - Vollständige zu speichernde Datenstruktur
+             * @returns {Promise<boolean>} Erfolgsstatus
+             */
+            async updateData(data) {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}`, {
+                        method: 'PUT',
+                        headers: this.headers,
+                        body: JSON.stringify(data)
+                    });
+
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        throw new Error(`HTTP-PUT-Fehler! Status: ${response.status}, Nachricht: ${errorBody}`);
+                    }
+
+                    return true;
+                } catch (error) {
+                    console.error('Fehler beim Aktualisieren der Daten in JSONBin:', error);
+                    throw error;
+                }
+            }
+        }
+
+        /**
+         * Dienstprogrammfunktionen für gängige Operationen
          */
         const Utils = {
             /**
-             * Get current date in YYYY-MM-DD format
-             * @returns {string} Formatted date string
+             * Aktuelles Datum im Format YYYY-MM-DD abrufen
+             * @returns {string} Formatiertes Datumszeichenfolge
              */
-            getCurrentDate() {
+            getCurrentDateString() {
                 return new Date().toISOString().split('T')[0];
             },
 
             /**
-             * Get URL parameter by name
-             * @param {string} name - Parameter name
-             * @returns {string|null} Parameter value or null
+             * Datum zur Anzeige formatieren
+             * @param {string} dateString - Datum im Format YYYY-MM-DD
+             * @returns {string} Formatiertes Datumszeichenfolge
              */
-            getURLParameter(name) {
-                const urlParams = new URLSearchParams(window.location.search);
-                return urlParams.get(name);
-            },
-
-            /**
-             * Format date for display
-             * @param {string} dateString - Date in YYYY-MM-DD format
-             * @returns {string} Formatted date string
-             */
-            formatDate(dateString) {
+            formatDateForDisplay(dateString) {
                 const date = new Date(dateString);
                 return date.toLocaleDateString('de-DE', {
                     weekday: 'long',
@@ -309,290 +273,256 @@
             },
 
             /**
-             * Show alert message to user
-             * @param {string} message - Message to display
-             * @param {string} type - Alert type (success, danger, warning, info)
+             * Warnmeldung für den Benutzer anzeigen
+             * @param {string} message - Anzuzeigende Nachricht
+             * @param {string} type - Warntyp (success, danger, warning, info)
              */
             showAlert(message, type = 'info') {
                 const alertContainer = document.getElementById('alertContainer');
-                const alertHtml = `
-                    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                        ${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
+                if (!alertContainer) return;
+
+                alertContainer.innerHTML = '';
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                alertDiv.role = 'alert';
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 `;
-                alertContainer.innerHTML = alertHtml;
+                alertContainer.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    const bsAlert = bootstrap.Alert.getInstance(alertDiv) || new bootstrap.Alert(alertDiv);
+                    bsAlert.close();
+                }, 5000);
+            },
+
+            /**
+             * Konfigurationsparameter von URL oder LocalStorage laden.
+             * URL-Parameter haben Vorrang. Fehlende Parameter verwenden Standardwerte.
+             * Alle geladenen/Standardparameter werden im LocalStorage gespeichert.
+             * @returns {Object} Ein Objekt, das die geladene Konfiguration oder eine Fehlermeldung enthält.
+             */
+            loadConfig: function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const config = {};
+                const missingParams = [];
+
+                const paramMap = {
+                    'TOTAL_GROUPS': 'config_total_groups',
+                    'TOTAL_BUSES': 'config_total_buses',
+                    'MASTER_KEY': 'config_bin_master_key',
+                    'ACCESS_KEY': 'config_bin_access_key',
+                    'BIN_COLLECTION_NAME': 'config_bin_collection',
+                    'BIN_ID': 'config_bin_id'
+                };
+
+                for (const urlParam in paramMap) {
+                    const lsKey = paramMap[urlParam];
+                    let value = urlParams.get(urlParam) || localStorage.getItem(lsKey);
+
+                    if (value !== null && value !== '') {
+                        if (urlParam === 'TOTAL_GROUPS' || urlParam === 'TOTAL_BUSES') {
+                            config[urlParam] = parseInt(value, 10);
+                        } else {
+                            config[urlParam] = value;
+                        }
+                        localStorage.setItem(lsKey, value);
+                    } else {
+                        if (CONFIG_DEFAULTS.hasOwnProperty(urlParam)) {
+                            config[urlParam] = CONFIG_DEFAULTS[urlParam];
+                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]);
+                        } else {
+                            missingParams.push(urlParam);
+                        }
+                    }
+                }
+                
+                config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
+
+                if (missingParams.length > 0) {
+                    return { config: null, error: `Es fehlen wesentliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass diese über die URL übergeben oder in index.html festgelegt werden.` };
+                }
+                
+                return { config: config, error: null };
             }
         };
 
-        /**
-         * Main Group Edit Application using Vue.js 3
-         * TODO: This is a minimal implementation for initial phase
-         * Future implementation should include:
-         * - Full CRUD operations for children
-         * - Integration with localStorage for child data persistence
-         * - Form validation and error handling
-         * - Integration with group data from JSONBin
-         * - Export/Import functionality for child lists
-         * - Search and filter capabilities
-         * - Photo upload for children identification
-         * - Emergency contact information management
-         */
         const { createApp } = Vue;
 
         createApp({
             data() {
                 return {
                     groupNumber: null,
-                    currentDate: '',
-                    children: [
-                        // TODO: Replace with dynamic data from localStorage
-                        // This placeholder data demonstrates the expected structure
-                        {
-                            id: 1,
-                            firstName: 'Emma',
-                            lastName: 'Schmidt',
-                            age: 8,
-                            parent: 'Maria Schmidt',
-                            notes: ''
-                        },
-                        {
-                            id: 2,
-                            firstName: 'Luca',
-                            lastName: 'Müller',
-                            age: 9,
-                            parent: 'Thomas Müller',
-                            notes: 'Nussallergie'
-                        },
-                        {
-                            id: 3,
-                            firstName: 'Sophie',
-                            lastName: 'Weber',
-                            age: 7,
-                            parent: 'Lisa Weber',
-                            notes: ''
-                        },
-                        {
-                            id: 4,
-                            firstName: 'Noah',
-                            lastName: 'Fischer',
-                            age: 10,
-                            parent: 'Sandra Fischer',
-                            notes: 'Braucht Medikamente'
-                        },
-                        {
-                            id: 5,
-                            firstName: 'Mia',
-                            lastName: 'Wagner',
-                            age: 8,
-                            parent: 'Michael Wagner',
-                            notes: ''
-                        }
-                    ]
+                    currentDate: Utils.getCurrentDateString(),
+                    formattedCurrentDate: '',
+                    children: [], // Liste der Kinder in der Gruppe
+                    newChildName: '',
+                    loadingInitialData: true,
+                    api: null, // API-Instanz wird nach dem Laden der Konfiguration initialisiert
+                    isConfigLoaded: false, // Flag für den Konfigurationsladestatus
+                    config: null // Hier wird die geladene Konfiguration gespeichert
                 };
             },
-            
             mounted() {
                 this.initializePage();
             },
-            
             methods: {
                 /**
-                 * Initialize the edit page
+                 * Initialisiert die Seite: lädt Konfiguration, Gruppennummer und Kinderliste.
                  */
-                initializePage() {
-                    // Get group number from URL parameter
-                    this.groupNumber = Utils.getURLParameter('gr');
-                    this.currentDate = Utils.getCurrentDate();
-                    
-                    if (!this.groupNumber) {
-                        Utils.showAlert('Gruppennummer nicht gefunden. Kehre zur Übersicht zurück.', 'danger');
+                async initializePage() {
+                    // Konfiguration laden
+                    const { config, error } = Utils.loadConfig();
+
+                    if (error) {
+                        Utils.showAlert(error, 'danger');
+                        this.isConfigLoaded = false;
+                        // Optional: Zurück zur Anmeldeseite, wenn Konfiguration fehlt
                         setTimeout(() => {
-                            window.location.href = 'admin_overview.html';
+                            window.location.href = 'b_login.html';
                         }, 3000);
                         return;
                     }
-                    
-                    // Update page title
-                    document.getElementById('groupTitle').textContent = `Kinderliste bearbeiten - Gruppe ${this.groupNumber}`;
-                    document.getElementById('currentDate').textContent = Utils.formatDate(this.currentDate);
-                    
-                    // TODO: Load children data for specific group from localStorage
-                    this.loadChildrenData();
+
+                    this.config = config; // Geladene Konfiguration speichern
+                    this.api = new JSONBinAPI(this.config); // API-Instanz mit geladener Konfiguration initialisieren
+                    this.isConfigLoaded = true; // Konfiguration als geladen markieren
+
+                    this.groupNumber = Utils.getURLParameter('gr');
+                    this.formattedCurrentDate = Utils.formatDateForDisplay(this.currentDate);
+
+                    if (!this.groupNumber) {
+                        Utils.showAlert('Gruppennummer nicht gefunden. Bitte über die Anmeldung zugreifen.', 'danger');
+                        setTimeout(() => {
+                            window.location.href = 'b_login.html';
+                        }, 3000);
+                        return;
+                    }
+
+                    await this.loadChildrenData();
                 },
 
                 /**
-                 * Load children data for the current group
-                 * TODO: Implement localStorage integration
+                 * Lädt die Kinderliste für die aktuelle Gruppe und das aktuelle Datum von JSONBin.
                  */
-                loadChildrenData() {
-                    // TODO: Replace this with actual localStorage implementation
-                    // const storageKey = `group_${this.groupNumber}_children_${this.currentDate}`;
-                    // const storedData = localStorage.getItem(storageKey);
-                    // if (storedData) {
-                    //     this.children = JSON.parse(storedData);
-                    // }
-                    
-                    console.log('TODO: Load children data from localStorage');
-                    console.log(`Storage key would be: group_${this.groupNumber}_children_${this.currentDate}`);
+                async loadChildrenData() {
+                    this.loadingInitialData = true;
+                    try {
+                        const fullBinData = await this.api.getData();
+                        const todayData = fullBinData[this.currentDate];
+
+                        if (todayData && todayData.groups && todayData.groups[this.groupNumber] && todayData.groups[this.groupNumber].Kinder) {
+                            this.children = todayData.groups[this.groupNumber].Kinder;
+                        } else {
+                            this.children = []; // Leere Liste, wenn keine Daten vorhanden sind
+                            // Optional: Initialisiere die Gruppenstruktur, wenn sie nicht existiert
+                            await this.initializeGroupStructure(fullBinData);
+                        }
+                    } catch (error) {
+                        console.error('Fehler beim Laden der Kinderdaten:', error);
+                        Utils.showAlert('Fehler beim Laden der Kinderdaten.', 'danger');
+                        this.children = [];
+                    } finally {
+                        this.loadingInitialData = false;
+                    }
                 },
 
                 /**
-                 * Save children data to localStorage
-                 * TODO: Implement localStorage integration
+                 * Initialisiert die Gruppenstruktur in JSONBin, falls sie nicht existiert.
+                 * @param {Object} currentData - Die gesamte aktuelle Datenstruktur aus JSONBin.
                  */
-                saveChildrenData() {
-                    // TODO: Implement localStorage save functionality
-                    // const storageKey = `group_${this.groupNumber}_children_${this.currentDate}`;
-                    // localStorage.setItem(storageKey, JSON.stringify(this.children));
-                    
-                    console.log('TODO: Save children data to localStorage');
-                    console.log('Data to save:', this.children);
+                async initializeGroupStructure(currentData) {
+                    if (!currentData[this.currentDate]) {
+                        currentData[this.currentDate] = { groups: {}, buses: {} };
+                    }
+                    if (!currentData[this.currentDate].groups[this.groupNumber]) {
+                        currentData[this.currentDate].groups[this.groupNumber] = {
+                            Betreuer: [],
+                            KinderAnzahl: null,
+                            KinderAnzahlNow: null,
+                            Kinder: [] // Initialisiere die Kinderliste
+                        };
+                    }
+                    try {
+                        await this.api.updateData(currentData);
+                        console.log('Gruppenstruktur in JSONBin initialisiert.');
+                    } catch (error) {
+                        console.error('Fehler beim Initialisieren der Gruppenstruktur:', error);
+                    }
                 },
 
                 /**
-                 * Add new child to the list
-                 * TODO: Implement full functionality
+                 * Fügt ein neues Kind zur Liste hinzu und speichert es in JSONBin.
                  */
-                addChild() {
-                    // TODO: Get form data and validate
-                    // TODO: Add child to this.children array
-                    // TODO: Save to localStorage
-                    // TODO: Update UI
-                    
-                    console.log('TODO: Implement addChild functionality');
-                    Utils.showAlert('Funktion wird in zukünftiger Version implementiert.', 'info');
+                async addChild() {
+                    if (!this.newChildName.trim()) {
+                        Utils.showAlert('Bitte geben Sie einen Namen für das Kind ein.', 'warning');
+                        return;
+                    }
+                    const childName = this.newChildName.trim();
+                    if (this.children.includes(childName)) {
+                        Utils.showAlert('Dieses Kind ist bereits in der Liste.', 'warning');
+                        return;
+                    }
+
+                    this.children.push(childName);
+                    this.newChildName = ''; // Eingabefeld leeren
+                    await this.saveChildrenData();
                 },
 
                 /**
-                 * Remove child from the list
-                 * @param {number} childId - ID of child to remove
-                 * TODO: Implement full functionality
+                 * Entfernt ein Kind aus der Liste und speichert die Änderungen in JSONBin.
+                 * @param {number} index - Index des zu entfernenden Kindes.
                  */
-                removeChild(childId) {
-                    // TODO: Confirm deletion with user
-                    // TODO: Remove child from this.children array
-                    // TODO: Save to localStorage
-                    // TODO: Update UI
-                    
-                    console.log('TODO: Implement removeChild functionality for child ID:', childId);
-                    Utils.showAlert('Funktion wird in zukünftiger Version implementiert.', 'info');
+                async removeChild(index) {
+                    const removedChild = this.children.splice(index, 1);
+                    Utils.showAlert(`${removedChild[0]} wurde entfernt.`, 'info');
+                    await this.saveChildrenData();
                 },
 
                 /**
-                 * Edit existing child information
-                 * @param {number} childId - ID of child to edit
-                 * TODO: Implement full functionality
+                 * Speichert die aktuelle Kinderliste in JSONBin.
                  */
-                editChild(childId) {
-                    // TODO: Open edit modal or inline editing
-                    // TODO: Validate and save changes
-                    // TODO: Update localStorage
-                    
-                    console.log('TODO: Implement editChild functionality for child ID:', childId);
-                    Utils.showAlert('Funktion wird in zukünftiger Version implementiert.', 'info');
+                async saveChildrenData() {
+                    try {
+                        const fullBinData = await this.api.getData();
+                        
+                        // Sicherstellen, dass die Struktur existiert
+                        if (!fullBinData[this.currentDate]) {
+                            fullBinData[this.currentDate] = { groups: {}, buses: {} };
+                        }
+                        if (!fullBinData[this.currentDate].groups[this.groupNumber]) {
+                            fullBinData[this.currentDate].groups[this.groupNumber] = {
+                                Betreuer: [],
+                                KinderAnzahl: null,
+                                KinderAnzahlNow: null,
+                                Kinder: []
+                            };
+                        }
+
+                        fullBinData[this.currentDate].groups[this.groupNumber].Kinder = this.children;
+                        const success = await this.api.updateData(fullBinData);
+
+                        if (success) {
+                            Utils.showAlert('Kinderliste erfolgreich gespeichert!', 'success');
+                        } else {
+                            Utils.showAlert('Fehler beim Speichern der Kinderliste.', 'danger');
+                        }
+                    } catch (error) {
+                        console.error('Fehler beim Speichern der Kinderdaten:', error);
+                        Utils.showAlert('Unerwarteter Fehler beim Speichern der Kinderdaten.', 'danger');
+                    }
                 },
 
                 /**
-                 * Search/filter children by name
-                 * @param {string} searchTerm - Search term
-                 * TODO: Implement search functionality
+                 * Navigiert zurück zur vorherigen Seite.
                  */
-                searchChildren(searchTerm) {
-                    // TODO: Filter this.children based on search term
-                    // TODO: Update displayed list
-                    
-                    console.log('TODO: Implement search functionality for term:', searchTerm);
-                },
-
-                /**
-                 * Export children list (e.g., as CSV or PDF)
-                 * TODO: Implement export functionality
-                 */
-                exportChildrenList() {
-                    // TODO: Generate CSV or PDF with children data
-                    // TODO: Include group info, date, Betreuer names
-                    
-                    console.log('TODO: Implement export functionality');
-                    Utils.showAlert('Export-Funktion wird in zukünftiger Version implementiert.', 'info');
-                },
-
-                /**
-                 * Import children list from file
-                 * TODO: Implement import functionality
-                 */
-                importChildrenList() {
-                    // TODO: Allow file upload (CSV, Excel)
-                    // TODO: Parse and validate data
-                    // TODO: Merge with existing data or replace
-                    
-                    console.log('TODO: Implement import functionality');
-                    Utils.showAlert('Import-Funktion wird in zukünftiger Version implementiert.', 'info');
+                goBack() {
+                    window.history.back();
                 }
             }
-        }).mount('body');
-
-        /**
-         * Initialize page when DOM is loaded
-         */
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Group edit page initialized');
-            
-            // TODO: Add event listeners for form interactions
-            // TODO: Add keyboard shortcuts for quick actions
-            // TODO: Add drag-and-drop functionality for reordering children
-            
-            // Placeholder event listeners (currently disabled)
-            const addButton = document.querySelector('.btn-success');
-            if (addButton) {
-                addButton.addEventListener('click', function() {
-                    console.log('Add child button clicked (currently disabled)');
-                });
-            }
-            
-            const deleteButtons = document.querySelectorAll('.btn-danger');
-            deleteButtons.forEach((button, index) => {
-                button.addEventListener('click', function() {
-                    console.log(`Delete child button clicked for index ${index} (currently disabled)`);
-                });
-            });
-        });
-
-        /**
-         * TODO: Future Implementation Plan
-         * 
-         * Phase 1 (Current): Basic HTML structure with placeholder data
-         * - ✓ Page layout and styling
-         * - ✓ Placeholder children list
-         * - ✓ Form structure for adding children
-         * - ✓ Navigation buttons
-         * 
-         * Phase 2: Core Functionality
-         * - localStorage integration for data persistence
-         * - Add/Edit/Delete children functionality
-         * - Form validation and error handling
-         * - Real-time updates to child count
-         * 
-         * Phase 3: Advanced Features
-         * - Search and filter capabilities
-         * - Drag-and-drop reordering
-         * - Photo upload for children
-         * - Emergency contact management
-         * - Notes and special requirements tracking
-         * 
-         * Phase 4: Integration
-         * - Sync with JSONBin for backup
-         * - Integration with group_calc.html for attendance
-         * - Export/Import functionality
-         * - Offline capability with sync when online
-         * 
-         * Phase 5: Enhanced UX
-         * - Barcode/QR code generation for children
-         * - Quick check-in/check-out interface
-         * - Parent contact integration
-         * - Medical information alerts
-         * - Automatic age calculation from birthdate
-         */
+        }).mount('#app');
     </script>
 </body>
 </html>

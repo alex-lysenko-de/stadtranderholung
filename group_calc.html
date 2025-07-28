@@ -3,322 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rechnen - Stadtranderholung</title>
-    <!-- Bootstrap 5.3.3 CSS -->
+    <title>Gruppenberechnung - Stadtranderholung</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.min.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             padding: 20px 0;
+            color: #333;
         }
         .main-container {
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
         }
-        .calc-card {
-            background: white;
+        .card {
+            border: none;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
             margin-bottom: 20px;
         }
         .card-header {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
             color: white;
-            border-radius: 15px 15px 0 0;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 1.5rem;
             text-align: center;
-            padding: 20px;
         }
-        .btn-primary {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        .card-body {
+            padding: 2rem;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
             border: none;
             border-radius: 10px;
-            padding: 12px 20px;
-            font-weight: bold;
-        }
-        .btn-success {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            border: none;
-            border-radius: 10px;
-            padding: 12px 20px;
-            font-weight: bold;
-        }
-        .child-item {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-left: 4px solid #17a2b8;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
             transition: all 0.3s ease;
         }
-        .child-item.present {
-            background: #d4edda;
-            border-left-color: #28a745;
+        .btn-secondary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(108, 117, 125, 0.3);
         }
-        .child-item.absent {
-            background: #f8d7da;
-            border-left-color: #dc3545;
-            opacity: 0.7;
-        }
-        .child-name {
-            font-weight: bold;
-            color: #495057;
-        }
-        .child-info {
-            font-size: 0.9rem;
-            color: #6c757d;
-            margin-top: 5px;
-        }
-        .attendance-checkbox {
-            transform: scale(1.5);
-            margin-right: 10px;
-        }
-        .summary-card {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .summary-count {
+        .data-display {
             font-size: 2rem;
             font-weight: bold;
-            margin: 10px 0;
-        }
-        .coming-soon {
-            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-            color: #212529;
-            border-radius: 10px;
-            padding: 20px;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 1rem;
         }
-        .children-list {
-            max-height: 500px;
-            overflow-y: auto;
-        }
-        .select-all-container {
-            background: #e9ecef;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
+        .data-label {
+            font-weight: 600;
+            color: #495057;
             text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        .difference-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+        .difference-positive {
+            color: #dc3545; /* Rot für fehlende Kinder */
+        }
+        .difference-negative {
+            color: #28a745; /* Grün für mehr Kinder */
+        }
+        .difference-zero {
+            color: #007bff; /* Blau für keine Differenz */
+        }
+        .loading-spinner {
+            color: #007bff;
+        }
+        .count-null {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 1.5rem;
         }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <!-- Header Card -->
-        <div class="calc-card">
-            <div class="card-header">
-                <h2 class="mb-0" id="groupTitle">Anwesenheit prüfen</h2>
-                <p class="mb-0 mt-2" id="currentDate"></p>
-            </div>
-        </div>
-
-        <!-- Coming Soon Notice -->
-        <div class="coming-soon">
-            <h4><i class="fas fa-calculator me-2"></i>Zukünftige Erweiterung</h4>
-            <p class="mb-0">Diese Rechenfunktionalität wird in einer späteren Version vollständig implementiert. 
-            Derzeit wird eine Basis-Struktur bereitgestellt.</p>
-        </div>
-
-        <!-- Alert Container -->
-        <div id="alertContainer"></div>
-
-        <!-- Summary Card -->
-        <div class="summary-card" id="summaryCard">
-            <div class="row">
-                <div class="col-6">
-                    <h5>Anwesend</h5>
-                    <div class="summary-count" id="presentCount">5</div>
+    <div id="app">
+        <div class="main-container">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-calculator me-2"></i>
+                        Berechnung für Gruppe {{ groupNumber }}
+                    </h3>
+                    <p class="mb-0 mt-2">{{ formattedCurrentDate }}</p>
                 </div>
-                <div class="col-6">
-                    <h5>Abwesend</h5>
-                    <div class="summary-count" id="absentCount">0</div>
-                </div>
-            </div>
-            <hr class="bg-white">
-            <h4>Gesamt: <span id="totalCount">5</span> Kinder</h4>
-        </div>
+                <div class="card-body">
+                    <div id="alertContainer"></div>
 
-        <!-- Select All Controls -->
-        <div class="calc-card">
-            <div class="card-body">
-                <div class="select-all-container">
-                    <h6>Schnellauswahl</h6>
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-success btn-sm" id="selectAllBtn" disabled>
-                            <i class="fas fa-check-double me-1"></i>Alle anwesend
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" id="clearAllBtn" disabled>
-                            <i class="fas fa-times me-1"></i>Alle abwesend
-                        </button>
+                    <div v-if="loadingInitialData" class="text-center py-5">
+                        <div class="spinner-border mb-3" role="status">
+                            <span class="visually-hidden">Wird geladen...</span>
+                        </div>
+                        <p class="text-muted">Lade Gruppendaten...</p>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Children Attendance List Card -->
-        <div class="calc-card">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="fas fa-clipboard-check me-2"></i>Anwesenheitsliste
-                </h5>
-                
-                <div class="children-list" id="childrenList">
-                    <!-- Placeholder children for demonstration -->
-                    <div class="child-item present">
-                        <div>
-                            <div class="child-name">Emma Schmidt</div>
-                            <div class="child-info">
-                                <i class="fas fa-birthday-cake me-1"></i>8 Jahre
-                                <i class="fas fa-user ms-3 me-1"></i>Maria Schmidt
-                            </div>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input attendance-checkbox" type="checkbox" 
-                                   id="child1" checked disabled>
-                            <label class="form-check-label" for="child1">
-                                Anwesend
-                            </label>
-                        </div>
+                    <div v-else-if="!isConfigLoaded" class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Konfiguration konnte nicht geladen werden.</h5>
+                        <p class="text-muted">Bitte gehen Sie zur Anmeldeseite zurück, um die Konfiguration zu laden.</p>
                     </div>
-                    
-                    <div class="child-item present">
-                        <div>
-                            <div class="child-name">Luca Müller</div>
-                            <div class="child-info">
-                                <i class="fas fa-birthday-cake me-1"></i>9 Jahre
-                                <i class="fas fa-user ms-3 me-1"></i>Thomas Müller
-                                <i class="fas fa-exclamation-triangle ms-3 me-1 text-warning"></i>Nussallergie
-                            </div>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input attendance-checkbox" type="checkbox" 
-                                   id="child2" checked disabled>
-                            <label class="form-check-label" for="child2">
-                                Anwesend
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="child-item present">
-                        <div>
-                            <div class="child-name">Sophie Weber</div>
-                            <div class="child-info">
-                                <i class="fas fa-birthday-cake me-1"></i>7 Jahre
-                                <i class="fas fa-user ms-3 me-1"></i>Lisa Weber
-                            </div>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input attendance-checkbox" type="checkbox" 
-                                   id="child3" checked disabled>
-                            <label class="form-check-label" for="child3">
-                                Anwesend
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="child-item present">
-                        <div>
-                            <div class="child-name">Noah Fischer</div>
-                            <div class="child-info">
-                                <i class="fas fa-birthday-cake me-1"></i>10 Jahre
-                                <i class="fas fa-user ms-3 me-1"></i>Sandra Fischer
-                                <i class="fas fa-pills ms-3 me-1 text-info"></i>Medikamente
-                            </div>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input attendance-checkbox" type="checkbox" 
-                                   id="child4" checked disabled>
-                            <label class="form-check-label" for="child4">
-                                Anwesend
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="child-item present">
-                        <div>
-                            <div class="child-name">Mia Wagner</div>
-                            <div class="child-info">
-                                <i class="fas fa-birthday-cake me-1"></i>8 Jahre
-                                <i class="fas fa-user ms-3 me-1"></i>Michael Wagner
-                            </div>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input attendance-checkbox" type="checkbox" 
-                                   id="child5" checked disabled>
-                            <label class="form-check-label" for="child5">
-                                Anwesend
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Action Buttons Card -->
-        <div class="calc-card">
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <button class="btn btn-success btn-lg" id="saveAttendanceBtn" disabled>
-                        <i class="fas fa-save me-2"></i>Anwesenheit speichern
-                    </button>
-                    <button class="btn btn-primary" onclick="history.back()">
-                        <i class="fas fa-arrow-left me-2"></i>Zurück zur Gruppe
-                    </button>
-                    <button class="btn btn-outline-primary" onclick="window.location.href='admin_overview.html'">
-                        <i class="fas fa-chart-line me-2"></i>Zur Administrator-Übersicht
-                    </button>
+                    <div v-else>
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <div class="data-label">Kinder am Morgen:</div>
+                                <div class="data-display">
+                                    <span v-if="groupData.KinderAnzahl === null" class="count-null">Nicht gesetzt</span>
+                                    <span v-else>{{ groupData.KinderAnzahl }}</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="data-label">Aktuelle Kinderanzahl:</div>
+                                <div class="data-display">
+                                    <span v-if="groupData.KinderAnzahlNow === null" class="count-null">Nicht gesetzt</span>
+                                    <span v-else>{{ groupData.KinderAnzahlNow }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="difference-display">
+                            <div class="data-label">Differenz:</div>
+                            <div :class="['data-display', differenceClass]">
+                                <span v-if="difference === null" class="count-null">N/A</span>
+                                <span v-else-if="difference > 0">
+                                    <i class="fas fa-minus-circle me-2"></i>{{ difference }} Kind(er) fehlen
+                                </span>
+                                <span v-else-if="difference < 0">
+                                    <i class="fas fa-plus-circle me-2"></i>{{ Math.abs(difference) }} Kind(er) mehr
+                                </span>
+                                <span v-else>
+                                    <i class="fas fa-check-circle me-2"></i>Keine Differenz
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button class="btn btn-secondary" @click="goBack">
+                                <i class="fas fa-arrow-left me-2"></i>Zurück
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap 5.3.3 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Vue.js 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    
+
     <script>
         /**
-         * Utility functions for common operations
+         * Standardkonfigurationswerte. Diese werden durch URL-Parameter oder LocalStorage überschrieben.
+         */
+        const CONFIG_DEFAULTS = {
+            API_BASE_URL: 'https://api.jsonbin.io/v3/b',
+            BIN_COLLECTION_NAME: 'SR2025',
+            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
+            MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
+            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
+            TOTAL_GROUPS: 15, // Gesamtzahl der Gruppen
+            TOTAL_BUSES: 3 // Gesamtzahl der Busse
+        };
+
+        /**
+         * Dienstprogrammklasse für die Verwaltung von JSONBin.io API-Interaktionen
+         * Behandelt alle CRUD-Operationen mit ordnungsgemäßer Fehlerbehandlung
+         */
+        class JSONBinAPI {
+            constructor(config) {
+                this.config = config;
+                this.headers = {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': config.MASTER_KEY,
+                    'X-Access-Key': config.ACCESS_KEY
+                };
+            }
+
+            /**
+             * Aktuelle Daten von JSONBin abrufen
+             * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt
+             */
+            async getData() {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
+                        method: 'GET',
+                        headers: this.headers
+                    });
+
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorBody}`);
+                    }
+
+                    const result = await response.json();
+                    return result.record || {};
+                } catch (error) {
+                    console.error('Fehler beim Abrufen der Daten von JSONBin:', error);
+                    throw error;
+                }
+            }
+        }
+
+        /**
+         * Dienstprogrammfunktionen für gängige Operationen
          */
         const Utils = {
             /**
-             * Get current date in YYYY-MM-DD format
-             * @returns {string} Formatted date string
+             * Aktuelles Datum im Format YYYY-MM-DD abrufen
+             * @returns {string} Formatiertes Datumszeichenfolge
              */
-            getCurrentDate() {
+            getCurrentDateString() {
                 return new Date().toISOString().split('T')[0];
             },
 
             /**
-             * Get URL parameter by name
-             * @param {string} name - Parameter name
-             * @returns {string|null} Parameter value or null
+             * Datum zur Anzeige formatieren
+             * @param {string} dateString - Datum im Format YYYY-MM-DD
+             * @returns {string} Formatiertes Datumszeichenfolge
              */
-            getURLParameter(name) {
-                const urlParams = new URLSearchParams(window.location.search);
-                return urlParams.get(name);
-            },
-
-            /**
-             * Format date for display
-             * @param {string} dateString - Date in YYYY-MM-DD format
-             * @returns {string} Formatted date string
-             */
-            formatDate(dateString) {
+            formatDateForDisplay(dateString) {
                 const date = new Date(dateString);
                 return date.toLocaleDateString('de-DE', {
                     weekday: 'long',
@@ -329,401 +245,185 @@
             },
 
             /**
-             * Show alert message to user
-             * @param {string} message - Message to display
-             * @param {string} type - Alert type (success, danger, warning, info)
+             * Warnmeldung für den Benutzer anzeigen
+             * @param {string} message - Anzuzeigende Nachricht
+             * @param {string} type - Warntyp (success, danger, warning, info)
              */
             showAlert(message, type = 'info') {
                 const alertContainer = document.getElementById('alertContainer');
-                const alertHtml = `
-                    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                        ${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
+                if (!alertContainer) return;
+
+                alertContainer.innerHTML = '';
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                alertDiv.role = 'alert';
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 `;
-                alertContainer.innerHTML = alertHtml;
+                alertContainer.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    const bsAlert = bootstrap.Alert.getInstance(alertDiv) || new bootstrap.Alert(alertDiv);
+                    bsAlert.close();
+                }, 5000);
+            },
+
+            /**
+             * Konfigurationsparameter von URL oder LocalStorage laden.
+             * URL-Parameter haben Vorrang. Fehlende Parameter verwenden Standardwerte.
+             * Alle geladenen/Standardparameter werden im LocalStorage gespeichert.
+             * @returns {Object} Ein Objekt, das die geladene Konfiguration oder eine Fehlermeldung enthält.
+             */
+            loadConfig: function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const config = {};
+                const missingParams = [];
+
+                const paramMap = {
+                    'TOTAL_GROUPS': 'config_total_groups',
+                    'TOTAL_BUSES': 'config_total_buses',
+                    'MASTER_KEY': 'config_bin_master_key',
+                    'ACCESS_KEY': 'config_bin_access_key',
+                    'BIN_COLLECTION_NAME': 'config_bin_collection',
+                    'BIN_ID': 'config_bin_id'
+                };
+
+                for (const urlParam in paramMap) {
+                    const lsKey = paramMap[urlParam];
+                    let value = urlParams.get(urlParam) || localStorage.getItem(lsKey);
+
+                    if (value !== null && value !== '') {
+                        if (urlParam === 'TOTAL_GROUPS' || urlParam === 'TOTAL_BUSES') {
+                            config[urlParam] = parseInt(value, 10);
+                        } else {
+                            config[urlParam] = value;
+                        }
+                        localStorage.setItem(lsKey, value);
+                    } else {
+                        if (CONFIG_DEFAULTS.hasOwnProperty(urlParam)) {
+                            config[urlParam] = CONFIG_DEFAULTS[urlParam];
+                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]);
+                        } else {
+                            missingParams.push(urlParam);
+                        }
+                    }
+                }
+                
+                config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
+
+                if (missingParams.length > 0) {
+                    return { config: null, error: `Es fehlen wesentliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass diese über die URL übergeben oder in index.html festgelegt werden.` };
+                }
+                
+                return { config: config, error: null };
             }
         };
 
-        /**
-         * Main Group Calculation Application using Vue.js 3
-         * TODO: This is a minimal implementation for initial phase
-         * Future implementation should include:
-         * - Integration with children data from localStorage
-         * - Real-time attendance tracking
-         * - Automatic calculation and sync with JSONBin
-         * - Quick check-in/check-out functionality
-         * - Time tracking for attendance
-         * - Offline capability with sync when online
-         * - Emergency attendance reports
-         * - Integration with parent notification system
-         */
         const { createApp } = Vue;
 
         createApp({
             data() {
                 return {
                     groupNumber: null,
-                    currentDate: '',
-                    children: [
-                        // TODO: Replace with dynamic data from localStorage
-                        // This placeholder data demonstrates the expected structure
-                        {
-                            id: 1,
-                            firstName: 'Emma',
-                            lastName: 'Schmidt',
-                            age: 8,
-                            parent: 'Maria Schmidt',
-                            notes: '',
-                            present: true,
-                            checkInTime: null,
-                            checkOutTime: null
-                        },
-                        {
-                            id: 2,
-                            firstName: 'Luca',
-                            lastName: 'Müller',
-                            age: 9,
-                            parent: 'Thomas Müller',
-                            notes: 'Nussallergie',
-                            present: true,
-                            checkInTime: null,
-                            checkOutTime: null
-                        },
-                        {
-                            id: 3,
-                            firstName: 'Sophie',
-                            lastName: 'Weber',
-                            age: 7,
-                            parent: 'Lisa Weber',
-                            notes: '',
-                            present: true,
-                            checkInTime: null,
-                            checkOutTime: null
-                        },
-                        {
-                            id: 4,
-                            firstName: 'Noah',
-                            lastName: 'Fischer',
-                            age: 10,
-                            parent: 'Sandra Fischer',
-                            notes: 'Braucht Medikamente',
-                            present: true,
-                            checkInTime: null,
-                            checkOutTime: null
-                        },
-                        {
-                            id: 5,
-                            firstName: 'Mia',
-                            lastName: 'Wagner',
-                            age: 8,
-                            parent: 'Michael Wagner',
-                            notes: '',
-                            present: true,
-                            checkInTime: null,
-                            checkOutTime: null
-                        }
-                    ],
-                    presentCount: 5,
-                    absentCount: 0,
-                    totalCount: 5
+                    currentDate: Utils.getCurrentDateString(),
+                    formattedCurrentDate: '',
+                    groupData: {
+                        KinderAnzahl: null,
+                        KinderAnzahlNow: null,
+                    },
+                    loadingInitialData: true,
+                    api: null, // API-Instanz wird nach dem Laden der Konfiguration initialisiert
+                    isConfigLoaded: false, // Flag für den Konfigurationsladestatus
+                    config: null // Hier wird die geladene Konfiguration gespeichert
                 };
             },
-            
+            computed: {
+                difference() {
+                    if (this.groupData.KinderAnzahl === null || this.groupData.KinderAnzahlNow === null) {
+                        return null;
+                    }
+                    return this.groupData.KinderAnzahl - this.groupData.KinderAnzahlNow;
+                },
+                differenceClass() {
+                    if (this.difference === null) return '';
+                    if (this.difference > 0) return 'difference-positive';
+                    if (this.difference < 0) return 'difference-negative';
+                    return 'difference-zero';
+                }
+            },
             mounted() {
                 this.initializePage();
             },
-            
             methods: {
                 /**
-                 * Initialize the calculation page
+                 * Initialisiert die Seite: lädt Konfiguration, Gruppennummer und Gruppendaten.
                  */
-                initializePage() {
-                    // Get group number from URL parameter
-                    this.groupNumber = Utils.getURLParameter('gr');
-                    this.currentDate = Utils.getCurrentDate();
-                    
-                    if (!this.groupNumber) {
-                        Utils.showAlert('Gruppennummer nicht gefunden. Kehre zur Übersicht zurück.', 'danger');
+                async initializePage() {
+                    // Konfiguration laden
+                    const { config, error } = Utils.loadConfig();
+
+                    if (error) {
+                        Utils.showAlert(error, 'danger');
+                        this.isConfigLoaded = false;
+                        // Optional: Zurück zur Anmeldeseite, wenn Konfiguration fehlt
                         setTimeout(() => {
-                            window.location.href = 'admin_overview.html';
+                            window.location.href = 'b_login.html';
                         }, 3000);
                         return;
                     }
-                    
-                    // Update page title
-                    document.getElementById('groupTitle').textContent = `Anwesenheit prüfen - Gruppe ${this.groupNumber}`;
-                    document.getElementById('currentDate').textContent = Utils.formatDate(this.currentDate);
-                    
-                    // TODO: Load children data for specific group from localStorage
-                    this.loadChildrenData();
-                    this.updateAttendanceSummary();
+
+                    this.config = config; // Geladene Konfiguration speichern
+                    this.api = new JSONBinAPI(this.config); // API-Instanz mit geladener Konfiguration initialisieren
+                    this.isConfigLoaded = true; // Konfiguration als geladen markieren
+
+                    this.groupNumber = Utils.getURLParameter('gr');
+                    this.formattedCurrentDate = Utils.formatDateForDisplay(this.currentDate);
+
+                    if (!this.groupNumber) {
+                        Utils.showAlert('Gruppennummer nicht gefunden. Bitte über die Anmeldung zugreifen.', 'danger');
+                        setTimeout(() => {
+                            window.location.href = 'b_login.html';
+                        }, 3000);
+                        return;
+                    }
+
+                    await this.loadGroupData();
                 },
 
                 /**
-                 * Load children data for the current group
-                 * TODO: Implement localStorage integration
+                 * Lädt die KinderAnzahl und KinderAnzahlNow für die aktuelle Gruppe und das aktuelle Datum von JSONBin.
                  */
-                loadChildrenData() {
-                    // TODO: Replace this with actual localStorage implementation
-                    // const storageKey = `group_${this.groupNumber}_children_${this.currentDate}`;
-                    // const storedData = localStorage.getItem(storageKey);
-                    // if (storedData) {
-                    //     this.children = JSON.parse(storedData);
-                    // }
-                    
-                    console.log('TODO: Load children data from localStorage');
-                    console.log(`Storage key would be: group_${this.groupNumber}_children_${this.currentDate}`);
+                async loadGroupData() {
+                    this.loadingInitialData = true;
+                    try {
+                        const fullBinData = await this.api.getData();
+                        const todayData = fullBinData[this.currentDate];
+
+                        if (todayData && todayData.groups && todayData.groups[this.groupNumber]) {
+                            const group = todayData.groups[this.groupNumber];
+                            this.groupData.KinderAnzahl = group.KinderAnzahl !== undefined ? group.KinderAnzahl : null;
+                            this.groupData.KinderAnzahlNow = group.KinderAnzahlNow !== undefined ? group.KinderAnzahlNow : null;
+                        } else {
+                            this.groupData.KinderAnzahl = null;
+                            this.groupData.KinderAnzahlNow = null;
+                        }
+                    } catch (error) {
+                        console.error('Fehler beim Laden der Gruppendaten:', error);
+                        Utils.showAlert('Fehler beim Laden der Gruppendaten.', 'danger');
+                    } finally {
+                        this.loadingInitialData = false;
+                    }
                 },
 
                 /**
-                 * Toggle attendance for a specific child
-                 * @param {number} childId - ID of child to toggle
-                 * TODO: Implement full functionality
+                 * Navigiert zurück zur vorherigen Seite.
                  */
-                toggleAttendance(childId) {
-                    // TODO: Find child by ID and toggle present status
-                    // TODO: Update timestamps for check-in/check-out
-                    // TODO: Save to localStorage
-                    // TODO: Update summary counts
-                    // TODO: Update visual state of child item
-                    
-                    console.log('TODO: Implement toggleAttendance for child ID:', childId);
-                    this.updateAttendanceSummary();
-                },
-
-                /**
-                 * Mark all children as present
-                 * TODO: Implement full functionality
-                 */
-                selectAll() {
-                    // TODO: Set all children.present = true
-                    // TODO: Update check-in times
-                    // TODO: Save to localStorage
-                    // TODO: Update UI
-                    
-                    console.log('TODO: Implement selectAll functionality');
-                    Utils.showAlert('Funktion wird in zukünftiger Version implementiert.', 'info');
-                },
-
-                /**
-                 * Mark all children as absent
-                 * TODO: Implement full functionality
-                 */
-                clearAll() {
-                    // TODO: Set all children.present = false
-                    // TODO: Clear check-in times, set check-out times
-                    // TODO: Save to localStorage
-                    // TODO: Update UI
-                    
-                    console.log('TODO: Implement clearAll functionality');
-                    Utils.showAlert('Funktion wird in zukünftiger Version implementiert.', 'info');
-                },
-
-                /**
-                 * Update attendance summary counts
-                 */
-                updateAttendanceSummary() {
-                    this.presentCount = this.children.filter(child => child.present).length;
-                    this.absentCount = this.children.length - this.presentCount;
-                    this.totalCount = this.children.length;
-                    
-                    // Update DOM elements
-                    document.getElementById('presentCount').textContent = this.presentCount;
-                    document.getElementById('absentCount').textContent = this.absentCount;
-                    document.getElementById('totalCount').textContent = this.totalCount;
-                },
-
-                /**
-                 * Save attendance data and update group count
-                 * TODO: Implement full functionality with JSONBin integration
-                 */
-                saveAttendance() {
-                    // TODO: Calculate final count based on present children
-                    // TODO: Update KinderAnzahlNow in JSONBin for the group
-                    // TODO: Save detailed attendance to localStorage
-                    // TODO: Show success message
-                    // TODO: Optionally redirect back to group page
-                    
-                    console.log('TODO: Implement saveAttendance functionality');
-                    console.log('Current present count:', this.presentCount);
-                    console.log('Attendance data:', this.children.map(child => ({
-                        name: `${child.firstName} ${child.lastName}`,
-                        present: child.present
-                    })));
-                    
-                    Utils.showAlert('Funktion wird in zukünftiger Version implementiert.', 'info');
-                },
-
-                /**
-                 * Generate attendance report
-                 * TODO: Implement reporting functionality
-                 */
-                generateReport() {
-                    // TODO: Create PDF or printable report
-                    // TODO: Include timestamps, notes, special requirements
-                    // TODO: Format for official documentation
-                    
-                    console.log('TODO: Implement generateReport functionality');
-                },
-
-                /**
-                 * Quick check-in for multiple children at once
-                 * TODO: Implement batch operations
-                 */
-                quickCheckIn(childIds) {
-                    // TODO: Batch update multiple children as present
-                    // TODO: Record current timestamp for all
-                    // TODO: Update UI and save data
-                    
-                    console.log('TODO: Implement quickCheckIn for IDs:', childIds);
-                },
-
-                /**
-                 * Handle emergency attendance (mark specific child as missing)
-                 * @param {number} childId - ID of missing child
-                 * TODO: Implement emergency procedures
-                 */
-                markAsMissing(childId) {
-                    // TODO: Set special "missing" status (different from just absent)
-                    // TODO: Trigger administrator notification
-                    // TODO: Log emergency event with timestamp
-                    // TODO: Potentially integrate with emergency contact system
-                    
-                    console.log('TODO: Implement emergency missing child procedure for ID:', childId);
+                goBack() {
+                    window.history.back();
                 }
             }
-        }).mount('body');
-
-        /**
-         * Initialize page when DOM is loaded
-         */
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Group calculation page initialized');
-            
-            // TODO: Add event listeners for attendance checkboxes
-            // TODO: Add keyboard shortcuts for quick operations
-            // TODO: Add auto-save functionality
-            
-            // Placeholder event listeners (currently disabled)
-            const saveButton = document.getElementById('saveAttendanceBtn');
-            if (saveButton) {
-                saveButton.addEventListener('click', function() {
-                    console.log('Save attendance button clicked (currently disabled)');
-                });
-            }
-            
-            const selectAllButton = document.getElementById('selectAllBtn');
-            if (selectAllButton) {
-                selectAllButton.addEventListener('click', function() {
-                    console.log('Select all button clicked (currently disabled)');
-                });
-            }
-            
-            const clearAllButton = document.getElementById('clearAllBtn');
-            if (clearAllButton) {
-                clearAllButton.addEventListener('click', function() {
-                    console.log('Clear all button clicked (currently disabled)');
-                });
-            }
-            
-            // TODO: Add real-time clock for tracking check-in/check-out times
-            // TODO: Add sound notifications for attendance changes
-            // TODO: Add visual indicators for children with special needs
-        });
-
-        /**
-         * TODO: Future Implementation Plan
-         * 
-         * Phase 1 (Current): Basic HTML structure with placeholder data
-         * - ✓ Page layout and styling
-         * - ✓ Placeholder children list with checkboxes
-         * - ✓ Summary calculations display
-         * - ✓ Quick selection buttons
-         * 
-         * Phase 2: Core Functionality
-         * - localStorage integration for children data
-         * - Real-time attendance toggle functionality
-         * - Automatic count calculation and updates
-         * - Integration with JSONBin for KinderAnzahlNow updates
-         * 
-         * Phase 3: Advanced Features
-         * - Time tracking for check-in/check-out
-         * - Emergency missing child procedures
-         * - Batch operations for quick attendance
-         * - Offline capability with sync when online
-         * 
-         * Phase 4: Integration & Reporting
-         * - PDF report generation for attendance
-         * - Integration with parent notification system
-         * - Sync with administrator overview in real-time
-         * - Backup and restore attendance data
-         * 
-         * Phase 5: Enhanced UX & Safety
-         * - Barcode/QR code scanning for quick check-in
-         * - Photo verification for child identification
-         * - Voice commands for hands-free operation
-         * - Automatic alerts for missing children
-         * - Integration with medical information system
-         * 
-         * Data Structure for localStorage:
-         * {
-         *   groupNumber: "1",
-         *   date: "2025-07-26",
-         *   children: [
-         *     {
-         *       id: 1,
-         *       firstName: "Emma",
-         *       lastName: "Schmidt",
-         *       age: 8,
-         *       parent: "Maria Schmidt",
-         *       emergencyContact: "0123456789",
-         *       medicalNotes: "Nussallergie",
-         *       present: true,
-         *       checkInTime: "2025-07-26T08:30:00",
-         *       checkOutTime: null,
-         *       photoUrl: "base64-encoded-image",
-         *       qrCode: "unique-child-qr-code"
-         *     }
-         *   ],
-         *   lastUpdate: "2025-07-26T10:15:00",
-         *   betreuerName: "Max Mustermann"
-         * }
-         * 
-         * JSONBin Integration Points:
-         * 1. Save final count to group.KinderAnzahlNow
-         * 2. Optional: Backup detailed attendance data
-         * 3. Trigger administrator notifications for discrepancies
-         * 4. Log emergency events for audit trail
-         * 
-         * Security Considerations:
-         * - Encrypt sensitive child data in localStorage
-         * - Implement access controls for attendance modification
-         * - Audit trail for all attendance changes
-         * - Secure transmission of data to JSONBin
-         * - Privacy compliance for child data handling
-         * 
-         * Performance Optimization:
-         * - Lazy loading for large child lists
-         * - Efficient rendering for real-time updates
-         * - Caching strategies for offline capability
-         * - Debounced auto-save to prevent data loss
-         * - Optimized data structures for quick lookups
-         * 
-         * Accessibility Features:
-         * - Screen reader compatibility
-         * - High contrast mode for visual impairments
-         * - Large touch targets for mobile devices
-         * - Keyboard navigation support
-         * - Voice feedback for attendance confirmation
-         * 
-         * Error Handling:
-         * - Graceful degradation when offline
-         * - Data validation before saving
-         * - Conflict resolution for simultaneous updates
-         * - Recovery mechanisms for corrupted data
-         * - User-friendly error messages and guidance
-         */
+        }).mount('#app');
     </script>
 </body>
 </html>

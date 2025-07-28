@@ -161,8 +161,20 @@
                                     <input type="text" id="year" class="form-control" v-model="formData.year" required>
                                 </div>
                                 <div class="mb-3">
+                                    <label for="totalGroups" class="form-label">Gesamtanzahl Gruppen:</label>
+                                    <input type="number" id="totalGroups" class="form-control" v-model.number="formData.total_groups" min="1" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="totalBuses" class="form-label">Gesamtanzahl Busse:</label>
+                                    <input type="number" id="totalBuses" class="form-control" v-model.number="formData.total_buses" min="1" required>
+                                </div>
+                                <div class="mb-3">
                                     <label for="binCollection" class="form-label">Bin Collection Name (JSONBin.io):</label>
                                     <input type="text" id="binCollection" class="form-control" v-model="formData.bin_collection" placeholder="z.B. SR2025" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="binId" class="form-label">Bin ID (JSONBin.io):</label>
+                                    <input type="text" id="binId" class="form-control" v-model="formData.bin_id" required>
                                 </div>
                                 <div class="mb-3">
                                     <label for="binMasterKey" class="form-label">Master Key (JSONBin.io):</label>
@@ -234,13 +246,17 @@
                 return {
                     formData: {
                         year: new Date().getFullYear().toString(),
-                        bin_collection: '',
-                        bin_master_key: '',
-                        bin_access_key: '',
+                        total_groups: 15, 
+                        total_buses: 3,
+                        bin_collection: 'SR2025',
+                        // New default value for BIN_ID
+                        bin_id: '68834e6e7b4b8670d8a712d0', 
+                        bin_master_key: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
+                        bin_access_key: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
                         base_url: 'https://raw.githack.com/alex-lysenko-de/stadtranderholung/main/'
                     },
                     generatedUrl: '',
-                    qrCodeInstance: null, // To store the QRCode.js instance
+                    qrCodeInstance: null,
                     showSuccess: false,
                     successMessage: '',
                     showError: false,
@@ -263,16 +279,19 @@
                     for (const key in this.formData) {
                         const savedValue = localStorage.getItem(`config_${key}`);
                         if (savedValue !== null) {
-                            this.formData[key] = savedValue;
+                            if (key === 'total_groups' || key === 'total_buses') {
+                                this.formData[key] = parseInt(savedValue, 10);
+                            } else {
+                                this.formData[key] = savedValue;
+                            }
                         }
                     }
                 },
                 generateUrl(is_admin) {
-                    // Basic validation for essential fields
-                    if (!this.formData.year || !this.formData.bin_collection || !this.formData.bin_master_key || !this.formData.bin_access_key || !this.formData.base_url) {
+                    if (!this.formData.year || !this.formData.bin_collection || !this.formData.bin_master_key || !this.formData.bin_access_key || !this.formData.base_url || !this.formData.total_groups || !this.formData.total_buses || !this.formData.bin_id) { // Added bin_id validation
                         this.showNotification('Bitte füllen Sie alle erforderlichen Felder aus, um eine URL zu generieren.', 'error');
                         this.generatedUrl = '';
-                        this.clearQrCode(); // Clear any existing QR code before returning
+                        this.clearQrCode();
                         return;
                     }
 
@@ -280,27 +299,23 @@
                         year: this.formData.year,
                         collection: this.formData.bin_collection,
                         masterkey: this.formData.bin_master_key,
-                        bin_access_key: this.formData.bin_access_key
+                        bin_access_key: this.formData.bin_access_key,
+                        TOTAL_GROUPS: this.formData.total_groups,
+                        TOTAL_BUSES: this.formData.total_buses,
+                        BIN_ID: this.formData.bin_id // Pass BIN_ID as URL parameter
                     });
                     const page = is_admin ? "a_login.html" : "b_login.html";
                     const url = `${this.formData.base_url}${page}?${params.toString()}`;
                     this.generatedUrl = url;
                     
-                    // Use $nextTick to ensure the DOM element for QR code is rendered
                     this.$nextTick(() => {
                         this.renderQrCode(this.generatedUrl);
                     });
                 },
                 renderQrCode(url) {
-                    // Clear the container before generating a new QR code
-                    // This is crucial to prevent multiple QR codes or errors if element is reused
                     const qrcodeDiv = this.$refs.qrcodeContainer;
                     if (qrcodeDiv) {
-                        qrcodeDiv.innerHTML = ''; // Clear previous content (canvas/table)
-                        
-                        // If an instance exists, clear it. Otherwise, create a new one.
-                        // We recreate the instance each time to ensure it works correctly
-                        // especially after v-if transitions or manual clearing.
+                        qrcodeDiv.innerHTML = '';
                         this.qrCodeInstance = new QRCode(qrcodeDiv, {
                             text: url,
                             width: 256,
@@ -309,25 +324,20 @@
                             colorLight : "#ffffff",
                             correctLevel : QRCode.CorrectLevel.H
                         });
-                        // No need for makeCode(url) if text is provided in constructor.
-                        // However, makeCode is useful if you want to change the QR code content later without recreating the instance.
                     }
                 },
                 clearQrCode() {
                     if (this.qrCodeInstance) {
-                        this.qrCodeInstance.clear(); // Clear the QR code canvas/table
-                        // It's often good practice to also nullify the instance if you're recreating it
+                        this.qrCodeInstance.clear();
                         this.qrCodeInstance = null;
                     }
-                    // Also ensure the div is empty if the instance was not created
                     const qrcodeDiv = this.$refs.qrcodeContainer;
                     if (qrcodeDiv) {
                         qrcodeDiv.innerHTML = '';
                     }
                 },
                 showAdminLoginUrl() {
-                    // Ensure the results block is shown
-                    this.generatedUrl = ''; // Temporarily clear to ensure re-render and QR code clear
+                    this.generatedUrl = '';
                     this.clearQrCode();
                     this.generateUrl(true);
                     if (this.generatedUrl) {
@@ -335,8 +345,7 @@
                     }
                 },
                 showBetreuerLoginUrl() {
-                    // Ensure the results block is shown
-                    this.generatedUrl = ''; // Temporarily clear to ensure re-render and QR code clear
+                    this.generatedUrl = '';
                     this.clearQrCode();
                     this.generateUrl(false);
                     if (this.generatedUrl) {
@@ -354,25 +363,31 @@
                             this.showNotification('Fehler beim Teilen der URL. Bitte manuell kopieren.', 'error');
                         });
                     } else {
-                        // Fallback for browsers that do not support navigator.share
                         this.copyToClipboard();
                         this.showNotification('Teilen nicht unterstützt. URL wurde in die Zwischenablage kopiert.', 'info');
                     }
                 },
                 copyToClipboard() {
                     if (this.generatedUrl) {
-                        navigator.clipboard.writeText(this.generatedUrl)
-                            .then(() => {
-                                this.showNotification('URL in die Zwischenablage kopiert!', 'success');
-                            })
-                            .catch(err => {
-                                console.error('Failed to copy: ', err);
-                                this.showNotification('Fehler beim Kopieren in die Zwischenablage.', 'error');
-                            });
+                        const textarea = document.createElement('textarea');
+                        textarea.value = this.generatedUrl;
+                        textarea.style.position = 'fixed';
+                        textarea.style.left = '-9999px';
+                        document.body.appendChild(textarea);
+                        textarea.focus();
+                        textarea.select();
+                        try {
+                            document.execCommand('copy');
+                            this.showNotification('URL in die Zwischenablage kopiert!', 'success');
+                        } catch (err) {
+                            console.error('Failed to copy: ', err);
+                            this.showNotification('Fehler beim Kopieren in die Zwischenablage.', 'error');
+                        } finally {
+                            document.body.removeChild(textarea);
+                        }
                     }
                 },
                 showNotification(message, type) {
-                    // Reset alerts
                     this.showSuccess = false;
                     this.showError = false;
 

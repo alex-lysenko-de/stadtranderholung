@@ -94,33 +94,33 @@
                     <p class="mb-0 mt-2">Stadtranderholung 2025</p>
                 </div>
                 <div class="navigation-section">
-                    <!-- Alert container for success/error messages -->
+                    <!-- Container für Erfolgs-/Fehlermeldungen -->
                     <div id="alertContainer"></div>
                     
-                    <!-- Parameters Info (only shown if parameters were loaded) -->
-                    <div v-if="hasParameters" class="parameters-info">
+                    <!-- Parameterinformationen (nur anzeigen, wenn Parameter geladen wurden) -->
+                    <div v-if="hasParameters && isConfigLoaded" class="parameters-info">
                         <h6 class="mb-2">📋 Geladene Parameter:</h6>
                         <div v-for="(value, key) in loadedParameters" :key="key" class="parameter-item">
                             <strong>{{ key }}:</strong> {{ value }}
                         </div>
                     </div>
                     
-                    <!-- Main Navigation Buttons -->
+                    <!-- Hauptnavigationsschaltflächen -->
                     <div class="d-grid gap-2">
-                        <button @click="navigateTo('a_overview.html')" class="btn btn-primary nav-button">
+                        <button @click="navigateTo('a_overview.html')" class="btn btn-primary nav-button" :disabled="!isConfigLoaded">
                             📊 Gruppen Übersicht
                         </button>
                         
-                        <button @click="navigateTo('a_bus.html')" class="btn btn-primary nav-button">
+                        <button @click="navigateTo('a_bus.html')" class="btn btn-primary nav-button" :disabled="!isConfigLoaded">
                             🚌 Bus Übersicht
                         </button>
                         
-                        <button @click="navigateTo('b_login.html')" class="btn btn-info nav-button">
+                        <button @click="navigateTo('b_login.html')" class="btn btn-info nav-button" :disabled="!isConfigLoaded">
                             👤 Betreuer Login
                         </button>
                     </div>
                     
-                    <!-- Additional Info Section -->
+                    <!-- Zusätzlicher Informationsbereich -->
                     <div class="mt-4 text-center">
                         <small class="text-muted">
                             Aktuelle Zeit: {{ currentDateTime }}
@@ -138,12 +138,25 @@
     
     <script>
         /**
-         * Utility functions for common operations
+         * Standardkonfigurationswerte. Diese werden durch URL-Parameter oder LocalStorage überschrieben.
+         */
+        const CONFIG_DEFAULTS = {
+            API_BASE_URL: 'https://api.jsonbin.io/v3/b',
+            BIN_COLLECTION_NAME: 'SR2025',
+            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
+            MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
+            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
+            TOTAL_GROUPS: 15,
+            TOTAL_BUSES: 3
+        };
+
+        /**
+         * Dienstprogrammfunktionen für allgemeine Operationen
          */
         const Utils = {
             /**
-             * Get current date and time in readable format
-             * @returns {string} Formatted date and time string
+             * Aktuelles Datum und Uhrzeit in lesbarem Format abrufen
+             * @returns {string} Formatiertes Datums- und Uhrzeitzeichenfolge
              */
             getCurrentDateTime() {
                 const now = new Date();
@@ -157,34 +170,9 @@
             },
 
             /**
-             * Parse URL parameters and save them to localStorage
-             * @returns {Object} Object containing all parsed parameters
-             */
-            parseAndSaveUrlParameters() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const parameters = {};
-                
-                // Iterate through all URL parameters
-                urlParams.forEach((value, key) => {
-                    // Decode the value in case it's URL encoded
-                    const decodedValue = decodeURIComponent(value);
-                    
-                    // Save to localStorage
-                    localStorage.setItem(key, decodedValue);
-                    
-                    // Store in our return object
-                    parameters[key] = decodedValue;
-                    
-                    console.log(`Saved parameter: ${key} = ${decodedValue}`);
-                });
-                
-                return parameters;
-            },
-
-            /**
-             * Show alert message to user
-             * @param {string} message - Message to display
-             * @param {string} type - Alert type (success, danger, warning, info)
+             * Warnmeldung für den Benutzer anzeigen
+             * @param {string} message - Anzuzeigende Nachricht
+             * @param {string} type - Warnungstyp (success, danger, warning, info)
              */
             showAlert(message, type = 'info') {
                 const alertContainer = document.getElementById('alertContainer');
@@ -196,21 +184,73 @@
                 `;
                 alertContainer.innerHTML = alertHtml;
                 
-                // Auto-hide success messages after 3 seconds
-                if (type === 'success') {
-                    setTimeout(() => {
-                        const alert = alertContainer.querySelector('.alert');
-                        if (alert) {
-                            alert.remove();
+                // Warnung nach 5 Sekunden ausblenden
+                setTimeout(() => {
+                    if (alertContainer.firstChild) {
+                        alertContainer.firstChild.remove();
+                    }
+                }, 5000);
+            },
+
+            /**
+             * Konfigurationsparameter von URL oder LocalStorage laden.
+             * URL-Parameter haben Vorrang. Fehlende Parameter verwenden Standardwerte.
+             * Alle geladenen/Standardparameter werden im LocalStorage gespeichert.
+             * @returns {Object} Ein Objekt, das die geladene Konfiguration oder eine Fehlermeldung enthält.
+             */
+            loadConfig: function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const config = {};
+                const missingParams = [];
+
+                // Alle erwarteten Parameter und deren LocalStorage-Schlüssel definieren
+                const paramMap = {
+                    'TOTAL_GROUPS': 'config_total_groups',
+                    'TOTAL_BUSES': 'config_total_buses',
+                    'MASTER_KEY': 'config_bin_master_key',
+                    'ACCESS_KEY': 'config_bin_access_key',
+                    'BIN_COLLECTION_NAME': 'config_bin_collection',
+                    'BIN_ID': 'config_bin_id'
+                };
+
+                for (const urlParam in paramMap) {
+                    const lsKey = paramMap[urlParam];
+                    let value = urlParams.get(urlParam) || localStorage.getItem(lsKey);
+
+                    if (value !== null && value !== '') {
+                        // Spezielle Behandlung für numerische Parameter
+                        if (urlParam === 'TOTAL_GROUPS' || urlParam === 'TOTAL_BUSES') {
+                            config[urlParam] = parseInt(value, 10);
+                        } else {
+                            config[urlParam] = value;
                         }
-                    }, 3000);
+                        // Im LocalStorage speichern, wenn es von der URL kam oder einfach sicherstellen, dass es dort ist
+                        localStorage.setItem(lsKey, value);
+                    } else {
+                        // Prüfen, ob ein Standardwert in CONFIG_DEFAULTS existiert
+                        if (CONFIG_DEFAULTS.hasOwnProperty(urlParam)) {
+                            config[urlParam] = CONFIG_DEFAULTS[urlParam];
+                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]); // Standardwert im LS speichern
+                        } else {
+                            missingParams.push(urlParam);
+                        }
+                    }
                 }
+                
+                // API_BASE_URL ist eine Konstante und wird nicht über URL/LocalStorage übergeben
+                config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
+
+                if (missingParams.length > 0) {
+                    return { config: null, error: `Es fehlen wesentliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass diese über die URL übergeben oder in index.html festgelegt werden.` };
+                }
+                
+                return { config: config, error: null };
             }
         };
 
         /**
-         * Main Admin Login Application using Vue.js 3
-         * Handles parameter parsing and navigation
+         * Haupt-Admin-Anmeldeanwendung mit Vue.js 3
+         * Verwaltet die Parameteranalyse und Navigation
          */
         const { createApp } = Vue;
 
@@ -219,7 +259,9 @@
                 return {
                     currentDateTime: '',
                     loadedParameters: {},
-                    hasParameters: false
+                    hasParameters: false,
+                    isConfigLoaded: false, // Flag, um den Konfigurationsladestatus zu verfolgen
+                    config: {} // Hier wird die geladene Konfiguration gespeichert
                 };
             },
             
@@ -230,54 +272,75 @@
             
             methods: {
                 /**
-                 * Initialize the application
-                 * Parse URL parameters and set up initial state
+                 * Initialisiert die Anwendung
+                 * Analysiert URL-Parameter und richtet den Anfangszustand ein
                  */
                 initializeApp() {
-                    console.log('Initializing Admin Login...');
+                    console.log('Administrator-Anmeldung wird initialisiert...');
                     
-                    // Parse and save URL parameters
-                    this.loadedParameters = Utils.parseAndSaveUrlParameters();
+                    const { config, error } = Utils.loadConfig();
+
+                    if (error) {
+                        Utils.showAlert(error, 'danger');
+                        this.isConfigLoaded = false;
+                        return; // Initialisierung stoppen, wenn Konfiguration fehlt
+                    }
+
+                    this.config = config; // Geladene Konfiguration speichern
+                    this.isConfigLoaded = true; // Konfiguration als geladen markieren
+
+                    // Anzeigen der geladenen Parameter im UI
+                    this.loadedParameters = {};
+                    for (const key in this.config) {
+                        // Filtern von internen Konfigurationsschlüsseln, die nicht angezeigt werden sollen
+                        if (key !== 'API_BASE_URL') { 
+                            this.loadedParameters[key] = this.config[key];
+                        }
+                    }
                     this.hasParameters = Object.keys(this.loadedParameters).length > 0;
                     
-                    // Show success message if parameters were loaded
                     if (this.hasParameters) {
                         const paramCount = Object.keys(this.loadedParameters).length;
                         Utils.showAlert(
                             `${paramCount} Parameter erfolgreich geladen und gespeichert.`, 
                             'success'
                         );
-                        console.log('Loaded parameters:', this.loadedParameters);
+                        console.log('Geladene Parameter:', this.loadedParameters);
                     }
                     
-                    // Set initial time
+                    // Aktuelle Zeit einstellen
                     this.updateDateTime();
                 },
 
                 /**
-                 * Navigate to specified page
-                 * @param {string} page - Target page filename
+                 * Navigiert zur angegebenen Seite
+                 * @param {string} page - Dateiname der Zielseite
                  */
                 navigateTo(page) {
-                    console.log(`Navigating to: ${page}`);
+                    if (!this.isConfigLoaded) {
+                        Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Navigation nicht möglich.', 'danger');
+                        return;
+                    }
+                    console.log(`Navigiere zu: ${page}`);
+                    // Navigation ohne URL-Parameter, da Module aus LocalStorage lesen sollen
                     window.location.href = page;
                 },
 
                 /**
-                 * Update current date and time display
+                 * Aktuelles Datum und Uhrzeit aktualisieren
                  */
                 updateDateTime() {
                     this.currentDateTime = Utils.getCurrentDateTime();
                 },
 
                 /**
-                 * Start the clock to update time every minute
+                 * Startet die Uhr, um die Zeit jede Minute zu aktualisieren
                  */
                 startClock() {
-                    // Update immediately
+                    // Sofort aktualisieren
                     this.updateDateTime();
                     
-                    // Update every minute
+                    // Jede Minute aktualisieren
                     setInterval(() => {
                         this.updateDateTime();
                     }, 60000);

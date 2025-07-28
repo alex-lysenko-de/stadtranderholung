@@ -11,14 +11,14 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px 0; /* Default padding for desktop */
+            padding: 20px 0; /* Standard-Padding für Desktop */
         }
         .main-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
-        /* Removed .overview-card for the header */
+        /* .overview-card für den Header entfernt */
         .total-summary {
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             color: white;
@@ -37,7 +37,7 @@
         }
         .action-buttons {
             display: flex;
-            gap: 10px; /* Space between buttons */
+            gap: 10px; /* Abstand zwischen den Schaltflächen */
             margin-bottom: 20px;
         }
         .refresh-btn,
@@ -49,7 +49,7 @@
             font-size: 1.3rem;
             font-weight: bold;
             color: white;
-            flex-grow: 1; /* Allows buttons to take equal width */
+            flex-grow: 1; /* Ermöglicht den Schaltflächen, gleiche Breite einzunehmen */
         }
         .refresh-btn:hover,
         .recount-btn:hover {
@@ -70,14 +70,14 @@
             border: none;
             font-weight: bold;
             padding: 15px;
-            white-space: nowrap; /* Prevent wrapping in headers */
+            white-space: nowrap; /* Verhindert Zeilenumbruch in Headern */
         }
         .table tbody td {
             padding: 3px;
             vertical-align: middle;
             text-align: center;
             border-top: 1px solid #dee2e6;
-            white-space: nowrap; /* Keep content on one line for better table flow on desktop */
+            white-space: nowrap; /* Inhalt auf einer Zeile halten für besseren Tabellenfluss auf dem Desktop */
         }
         .group-number {
             font-weight: bold;
@@ -118,7 +118,7 @@
             margin: 2px;
             display: inline-block;
             font-size: 0.85rem;
-            white-space: nowrap; /* Prevent internal wrapping */
+            white-space: nowrap; /* Verhindert internen Zeilenumbruch */
         }
         .group-inactive {
             opacity: 0.5;
@@ -138,10 +138,10 @@
             border-radius: 10px;
             padding: 15px;
             margin-bottom: 20px;
-            font-size: 1.5em; /* Increased font size for this section */
+            font-size: 1.5em; /* Erhöhte Schriftgröße für diesen Abschnitt */
         }
         .missing-children-alert h5 {
-            font-size: 1.6em; /* Slightly larger heading for prominence */
+            font-size: 1.6em; /* Etwas größere Überschrift für Hervorhebung */
         }
         .status-indicator {
             width: 12px;
@@ -163,44 +163,44 @@
             background-color: #6c757d;
         }
 
-        /* Mobile Adjustments */
+        /* Mobile Anpassungen */
         @media (max-width: 767px) {
             body {
-                padding-top: 10px; /* Reduced top padding on mobile */
+                padding-top: 10px; /* Reduziertes oberes Padding auf Mobilgeräten */
             }
-            /* Hide desktop header elements on mobile */
+            /* Desktop-Header-Elemente auf Mobilgeräten ausblenden */
             .desktop-only {
                 display: none !important;
             }
-            /* Ensure mobile-only elements are shown */
+            /* Sicherstellen, dass nur mobile Elemente angezeigt werden */
             .mobile-only {
-                display: block !important; /* or flex, inline-block as appropriate */
+                display: block !important; /* oder flex, inline-block je nach Bedarf */
             }
 
             .total-summary {
                 padding: 15px;
             }
             .total-count {
-                font-size: 4rem; /* Smaller font on mobile */
+                font-size: 4rem; /* Kleinere Schrift auf Mobilgeräten */
             }
             .action-buttons {
-                flex-direction: column; /* Stack buttons vertically on mobile */
+                flex-direction: column; /* Schaltflächen auf Mobilgeräten vertikal stapeln */
                 gap: 5px;
             }
             .refresh-btn,
             .recount-btn {
-                padding: 12px 20px; /* Slightly smaller buttons */
+                padding: 12px 20px; /* Etwas kleinere Schaltflächen */
                 font-size: 1.3rem;
             }
             .table-responsive {
-                border-radius: 0; /* Remove border-radius for full width tables */
+                border-radius: 0; /* border-radius für Tabellen voller Breite entfernen */
             }
-            /* Make table cells wrap for better fit on small screens */
+            /* Tabellenzellen umbrechen, um besser auf kleine Bildschirme zu passen */
             .table tbody td {
                 white-space: normal;
                 word-break: break-word;
             }
-            /* Adjust column widths for mobile, example: */
+            /* Spaltenbreiten für Mobilgeräte anpassen, Beispiel: */
             .table thead th:nth-child(1), .table tbody td:nth-child(1) { width: 5%; } /* Status */
             .table thead th:nth-child(2), .table tbody td:nth-child(2) { width: 15%; } /* Gruppe */
             .table thead th:nth-child(3), .table tbody td:nth-child(3) { width: 15%; } /* Morgen */
@@ -210,10 +210,10 @@
             .table thead th:nth-child(7), .table tbody td:nth-child(7) { width: 10%; } /* Letzte Aktualisierung */
 
             .missing-children-alert {
-                font-size: 1.4em; /* Adjusted to be readable but not too large on small screens */
+                font-size: 1.4em; /* Angepasst, um lesbar, aber nicht zu groß auf kleinen Bildschirmen zu sein */
             }
             .missing-children-alert h5 {
-                font-size: 1.5em; /* Adjusted heading size for mobile */
+                font-size: 1.5em; /* Angepasste Überschriftengröße für Mobilgeräte */
             }
         }
     </style>
@@ -258,11 +258,11 @@
         </div>
 
         <div class="action-buttons">
-            <button class="btn refresh-btn" @click="loadOverviewData(false)" :disabled="recountInitiating || loadingInitialData">
+            <button class="btn refresh-btn" @click="loadOverviewData(false)" :disabled="recountInitiating || loadingInitialData || !isConfigLoaded">
                 <span v-if="loadingInitialData" class="spinner-border spinner-border-sm me-2"></span>
                 <i class="fas fa-sync me-2"></i><span class="button-text">{{ loadingInitialData ? 'Laden...' : 'Aktualisieren' }}</span>
             </button>
-            <button class="btn recount-btn" @click="triggerRecount" :disabled="recountInitiating">
+            <button class="btn recount-btn" @click="triggerRecount" :disabled="recountInitiating || !isConfigLoaded">
                 <span v-if="recountInitiating" class="spinner-border spinner-border-sm me-2"></span>
                 <span class="button-text">{{ recountInitiating ? 'Überprüfung läuft...' : 'Überprüfung durchgeführt' }}</span>
             </button>
@@ -282,10 +282,15 @@
                     <p class="text-muted">Lade Gruppendaten für heute...</p>
                 </div>
 
-                <div v-else-if="!hasGroupsData" class="text-center py-5">
+                <div v-else-if="!hasGroupsData && isConfigLoaded" class="text-center py-5">
                     <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
                     <h5 class="text-muted">Keine Daten für heute verfügbar</h5>
                     <p class="text-muted">Noch kein Betreuer hat sich heute angemeldet.</p>
+                </div>
+                 <div v-else-if="!isConfigLoaded" class="text-center py-5">
+                    <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Konfiguration konnte nicht geladen werden.</h5>
+                    <p class="text-muted">Bitte gehen Sie zur Anmeldeseite zurück, um die Konfiguration zu laden.</p>
                 </div>
 
                 <div v-else class="table-responsive">
@@ -345,15 +350,16 @@
 
     <script>
         /**
-         * Konfigurationsobjekt mit API-Anmeldeinformationen und Endpunkten
-         * Gemeinsame Konfiguration mit anderen Komponenten
+         * Standardkonfigurationswerte. Diese werden durch URL-Parameter oder LocalStorage überschrieben.
          */
-        const CONFIG = {
+        const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
-            BIN_ID: '68834e6e7b4b8670d8a712d0',
+            BIN_COLLECTION_NAME: 'SR2025',
+            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
             MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
-            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMVm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
+            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
             TOTAL_GROUPS: 15, // Gesamtzahl der Gruppen (1-15)
+            TOTAL_BUSES: 3 // Gesamtzahl der Busse
         };
 
         /**
@@ -462,6 +468,8 @@
              */
             showAlert(message, type = 'info') {
                 const alertContainer = document.getElementById('alertContainer');
+                if (!alertContainer) return; // Sicherstellen, dass der Container existiert
+
                 alertContainer.innerHTML = '';
                 const alertDiv = document.createElement('div');
                 alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
@@ -476,6 +484,56 @@
                     const bsAlert = bootstrap.Alert.getInstance(alertDiv) || new bootstrap.Alert(alertDiv);
                     bsAlert.close();
                 }, 5000);
+            },
+
+            /**
+             * Konfigurationsparameter von URL oder LocalStorage laden.
+             * URL-Parameter haben Vorrang. Fehlende Parameter verwenden Standardwerte.
+             * Alle geladenen/Standardparameter werden im LocalStorage gespeichert.
+             * @returns {Object} Ein Objekt, das die geladene Konfiguration oder eine Fehlermeldung enthält.
+             */
+            loadConfig: function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const config = {};
+                const missingParams = [];
+
+                const paramMap = {
+                    'TOTAL_GROUPS': 'config_total_groups',
+                    'TOTAL_BUSES': 'config_total_buses',
+                    'MASTER_KEY': 'config_bin_master_key',
+                    'ACCESS_KEY': 'config_bin_access_key',
+                    'BIN_COLLECTION_NAME': 'config_bin_collection',
+                    'BIN_ID': 'config_bin_id'
+                };
+
+                for (const urlParam in paramMap) {
+                    const lsKey = paramMap[urlParam];
+                    let value = urlParams.get(urlParam) || localStorage.getItem(lsKey);
+
+                    if (value !== null && value !== '') {
+                        if (urlParam === 'TOTAL_GROUPS' || urlParam === 'TOTAL_BUSES') {
+                            config[urlParam] = parseInt(value, 10);
+                        } else {
+                            config[urlParam] = value;
+                        }
+                        localStorage.setItem(lsKey, value);
+                    } else {
+                        if (CONFIG_DEFAULTS.hasOwnProperty(urlParam)) {
+                            config[urlParam] = CONFIG_DEFAULTS[urlParam];
+                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]);
+                        } else {
+                            missingParams.push(urlParam);
+                        }
+                    }
+                }
+                
+                config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
+
+                if (missingParams.length > 0) {
+                    return { config: null, error: `Es fehlen wesentliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass diese über die URL übergeben oder in index.html festgelegt werden.` };
+                }
+                
+                return { config: config, error: null };
             }
         };
 
@@ -496,8 +554,10 @@
                     activeGroups: 0,
                     recountInitiating: false,
                     loadingInitialData: true,
-                    api: new JSONBinAPI(CONFIG),
+                    api: null, // API-Instanz wird nach dem Laden der Konfiguration initialisiert
                     lastUpdateTime: null,
+                    isConfigLoaded: false, // Flag für den Konfigurationsladestatus
+                    config: null // Hier wird die geladene Konfiguration gespeichert
                 };
             },
 
@@ -523,16 +583,45 @@
                     return Object.keys(this.groupsData).length > 0;
                 },
                 totalGroupsRange() {
-                    return Array.from({ length: CONFIG.TOTAL_GROUPS }, (_, i) => i + 1);
+                    // Sicherstellen, dass die Konfiguration geladen ist, bevor auf TOTAL_GROUPS zugegriffen wird
+                    if (this.isConfigLoaded && this.config && this.config.TOTAL_GROUPS) {
+                        return Array.from({ length: this.config.TOTAL_GROUPS }, (_, i) => i + 1);
+                    }
+                    return []; // Leeres Array zurückgeben, wenn Konfiguration nicht geladen ist
                 }
             },
 
             mounted() {
                 // Daten einmal beim Öffnen der Seite laden
-                this.loadOverviewData(false);
+                this.initializeOverviewPage();
             },
 
             methods: {
+                /**
+                 * Initialisiert die Übersichtsseite: lädt Konfiguration und Daten.
+                 */
+                async initializeOverviewPage() {
+                    // Konfiguration laden
+                    const { config, error } = Utils.loadConfig();
+
+                    if (error) {
+                        Utils.showAlert(error, 'danger');
+                        this.isConfigLoaded = false;
+                        // Optional: Zurück zur Anmeldeseite, wenn Konfiguration fehlt
+                        setTimeout(() => {
+                            window.location.href = 'a_login.html';
+                        }, 3000);
+                        return;
+                    }
+
+                    this.config = config; // Geladene Konfiguration speichern
+                    this.api = new JSONBinAPI(this.config); // API-Instanz mit geladener Konfiguration initialisieren
+                    this.isConfigLoaded = true; // Konfiguration als geladen markieren
+
+                    // Daten laden, nachdem die Konfiguration erfolgreich geladen wurde
+                    await this.loadOverviewData(false);
+                },
+
                 getGroupData(groupNumber) {
                     return this.groupsData[groupNumber.toString()] || {
                         Betreuer: [],
@@ -546,6 +635,15 @@
                 },  
 
                 async loadOverviewData(silent = false) {
+                    if (!this.isConfigLoaded) {
+                        // Wenn die Konfiguration nicht geladen ist, versuchen Sie nicht, Daten zu laden
+                        if (!silent) {
+                            Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Daten können nicht abgerufen werden.', 'danger');
+                        }
+                        this.loadingInitialData = false; // Ladespinner ausblenden
+                        return;
+                    }
+
                     try {
                         if (!silent) {
                             this.loadingInitialData = true;
@@ -568,7 +666,7 @@
                         }
 
                     } catch (error) {
-                        console.error('Fehler beim Laden der Übersichtsdaten:', error);
+                        console.error('Fehler beim Laden der Übersichtsdaten:', error); // Deutsche Fehlermeldung
                         if (!silent) {
                             Utils.showAlert('Datenaktualisierung fehlgeschlagen. Netzwerkproblem?', 'danger');
                         }
@@ -584,7 +682,10 @@
                     let tempMissingChildren = [];
                     let tempActiveGroups = 0;
 
-                    for (let i = 1; i <= CONFIG.TOTAL_GROUPS; i++) {
+                    // Sicherstellen, dass this.config und this.config.TOTAL_GROUPS vorhanden sind
+                    const totalGroups = this.config && this.config.TOTAL_GROUPS ? this.config.TOTAL_GROUPS : 0;
+
+                    for (let i = 1; i <= totalGroups; i++) {
                         const groupNumber = i.toString();
                         const groupData = this.getGroupData(groupNumber);
 
@@ -680,6 +781,11 @@
                 },
 
                 async triggerRecount() {
+                    if (!this.isConfigLoaded) {
+                        Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Zählvorgang nicht möglich.', 'danger');
+                        return;
+                    }
+
                     this.recountInitiating = true;
                     Utils.showAlert('Neuer Zählvorgang wird gestartet. Bitte warten...', 'info');
 
@@ -687,7 +793,7 @@
                         const fullBinData = await this.api.getData();
 
                         if (!fullBinData[this.currentDate]) {
-                            fullBinData[this.currentDate] = { groups: {} };
+                            fullBinData[this.currentDate] = { groups: {}, buses: {} }; // Sicherstellen, dass auch 'buses' initialisiert wird
                         }
                         if (!fullBinData[this.currentDate].groups) {
                             fullBinData[this.currentDate].groups = {};
@@ -695,13 +801,10 @@
 
                         let groupsToUpdate = fullBinData[this.currentDate].groups;
 
-                        for (const groupNumber in groupsToUpdate) {
-                            if (Object.prototype.hasOwnProperty.call(groupsToUpdate, groupNumber)) {
-                                groupsToUpdate[groupNumber].KinderAnzahlNow = null;
-                            }
-                        }
+                        // Sicherstellen, dass this.config und this.config.TOTAL_GROUPS vorhanden sind
+                        const totalGroups = this.config && this.config.TOTAL_GROUPS ? this.config.TOTAL_GROUPS : 0;
 
-                        for (let i = 1; i <= CONFIG.TOTAL_GROUPS; i++) {
+                        for (let i = 1; i <= totalGroups; i++) {
                             const groupNumStr = i.toString();
                             if (!groupsToUpdate[groupNumStr]) {
                                 groupsToUpdate[groupNumStr] = {
@@ -718,17 +821,15 @@
 
                         if (success) {
                             Utils.showAlert('Zählvorgang erfolgreich abgeschlossen!', 'success');
-                            // after small delay 3 seconds, goto a_login.html
+                            // Nach kurzer Verzögerung (3 Sekunden) zur a_login.html weiterleiten
                             setTimeout(() => {
                                 location.href = 'a_login.html';
                             }, 3000);
-                            //this.groupsData = JSON.parse(JSON.stringify(groupsToUpdate));
-                            //this.processGroupsData();
                         } else {
                             Utils.showAlert('Fehler beim Starten des Zählvorgangs.', 'danger');
                         }
                     } catch (error) {
-                        console.error('Fehler beim Auslösen der Zählung:', error);
+                        console.error('Fehler beim Auslösen der Zählung:', error); // Deutsche Fehlermeldung
                         Utils.showAlert('Unerwarteter Fehler beim Starten des Zählvorgangs.', 'danger');
                     } finally {
                         setTimeout(() => {
