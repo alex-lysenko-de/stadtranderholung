@@ -91,7 +91,15 @@ export const Utils = {
      * Получить текущую дату в формате YYYY-MM-DD
      * @returns {string} Форматированная строка даты
      */
-    getCurrentDate() {
+    getCurrentDate() { // Existing function, good.
+        return new Date().toISOString().split('T')[0];
+    },
+
+    /**
+     * Получить текущую дату в формате YYYY-MM-DD (то же, что и getCurrentDate, но для ясности)
+     * @returns {string} Форматированная строка даты
+     */
+    getCurrentDateString() { // Added this function
         return new Date().toISOString().split('T')[0];
     },
 
