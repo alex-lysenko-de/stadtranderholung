@@ -175,10 +175,7 @@
                                     <label for="totalBuses" class="form-label">Gesamtanzahl Busse:</label>
                                     <input type="number" id="totalBuses" class="form-control" v-model.number="formData.total_buses" min="1" required>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="binCollection" class="form-label">Bin Collection ID (JSONBin.io):</label>
-                                    <input type="text" id="binCollection" class="form-control" v-model="formData.bin_collection" placeholder="z.B. 68834b4cf7e7a370d1edaefc" required>
-                                </div>
+
                                 <div class="mb-3">
                                     <label for="binId" class="form-label">Config Bin ID (JSONBin.io):</label>
                                     <input type="text" id="binId" class="form-control" v-model="formData.bin_id" placeholder="Leer lassen für automatische Erstellung">
@@ -261,7 +258,6 @@
                         year: new Date().getFullYear().toString(),
                         total_groups: 15, 
                         total_buses: 3,
-                        bin_collection: '68834b4cf7e7a370d1edaefc',
                         bin_id: '', // Empty by default - will be auto-generated
                         bin_master_key: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
                         bin_access_key: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
@@ -343,8 +339,7 @@
                         headers: {
                             'Content-Type': 'application/json',
                             'X-Master-Key': this.formData.bin_master_key,
-                            'X-Bin-Name': name,
-                            'X-Collection-Id': this.formData.bin_collection
+                            'X-Bin-Name': name
                         },
                         body: JSON.stringify(data)
                     });
@@ -400,7 +395,7 @@
                 },
 
                 generateUrl(is_admin) {
-                    if (!this.formData.year || !this.formData.bin_collection || !this.formData.bin_master_key || !this.formData.bin_access_key || !this.formData.base_url || !this.formData.total_groups || !this.formData.total_buses || !this.formData.bin_id) {
+                    if (!this.formData.year || !this.formData.bin_master_key || !this.formData.bin_access_key || !this.formData.base_url || !this.formData.total_groups || !this.formData.total_buses || !this.formData.bin_id) {
                         this.showNotification('Bitte füllen Sie alle erforderlichen Felder aus und speichern Sie die Konfiguration, um eine URL zu generieren.', 'error');
                         this.generatedUrl = '';
                         this.clearQrCode();
@@ -409,7 +404,6 @@
 
                     const params = new URLSearchParams({
                         year: this.formData.year,
-                        collection: this.formData.bin_collection,
                         masterkey: this.formData.bin_master_key,
                         bin_access_key: this.formData.bin_access_key,
                         TOTAL_GROUPS: this.formData.total_groups,
@@ -520,7 +514,7 @@
                     setTimeout(() => {
                         this.showSuccess = false;
                         this.showError = false;
-                    }, 20000);
+                    }, 5000);
                 }
             },
             mounted() {
