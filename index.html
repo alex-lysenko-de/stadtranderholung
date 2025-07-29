@@ -56,7 +56,7 @@
             box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
         }
         .btn-info {
-            background-color: #17a2b8; /* Bootstrap info color */
+            background-color: #17a2b8;
             border: none;
             border-radius: 10px;
             padding: 0.75rem 1.5rem;
@@ -70,7 +70,7 @@
             transform: translateY(-1px);
         }
         .btn-success {
-            background-color: #28a745; /* Bootstrap success color */
+            background-color: #28a745;
             border: none;
             border-radius: 10px;
             padding: 0.75rem 1.5rem;
@@ -110,12 +110,19 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             background-color: white;
-            min-height: 270px; /* To prevent layout shift when QR is generated */
+            min-height: 270px;
         }
-        /* qrcode.js generates a canvas or table directly inside the target div */
         .qr-code canvas, .qr-code table {
             max-width: 100%;
             height: auto;
+        }
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
         }
         @media (max-width: 768px) {
             .container {
@@ -155,7 +162,7 @@
                                 </div>
                             </div>
 
-                            <form @submit.prevent="saveToLocalStorage">
+                            <form @submit.prevent="saveConfiguration" :class="{'loading': isLoading}">
                                 <div class="mb-3">
                                     <label for="year" class="form-label">Jahr:</label>
                                     <input type="text" id="year" class="form-control" v-model="formData.year" required>
@@ -169,12 +176,13 @@
                                     <input type="number" id="totalBuses" class="form-control" v-model.number="formData.total_buses" min="1" required>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="binCollection" class="form-label">Bin Collection Name (JSONBin.io):</label>
-                                    <input type="text" id="binCollection" class="form-control" v-model="formData.bin_collection" placeholder="z.B. SR2025" required>
+                                    <label for="binCollection" class="form-label">Bin Collection ID (JSONBin.io):</label>
+                                    <input type="text" id="binCollection" class="form-control" v-model="formData.bin_collection" placeholder="z.B. 68834b4cf7e7a370d1edaefc" required>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="binId" class="form-label">Bin ID (JSONBin.io):</label>
-                                    <input type="text" id="binId" class="form-control" v-model="formData.bin_id" required>
+                                    <label for="binId" class="form-label">Config Bin ID (JSONBin.io):</label>
+                                    <input type="text" id="binId" class="form-control" v-model="formData.bin_id" placeholder="Leer lassen für automatische Erstellung">
+                                    <small class="form-text text-muted">Wenn leer, wird automatisch ein neuer Config-Bin erstellt</small>
                                 </div>
                                 <div class="mb-3">
                                     <label for="binMasterKey" class="form-label">Master Key (JSONBin.io):</label>
@@ -190,19 +198,25 @@
                                 </div>
 
                                 <div class="d-grid gap-2 mb-4">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="bi bi-save me-2"></i>
-                                        Einstellungen Speichern
+                                    <button type="submit" class="btn btn-primary" :disabled="isLoading">
+                                        <span v-if="isLoading">
+                                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Konfiguration wird erstellt...
+                                        </span>
+                                        <span v-else>
+                                            <i class="bi bi-save me-2"></i>
+                                            Einstellungen Speichern
+                                        </span>
                                     </button>
                                 </div>
                             </form>
 
                             <div class="d-grid gap-2 mb-3">
-                                <button @click="showAdminLoginUrl" class="btn btn-info">
+                                <button @click="showAdminLoginUrl" class="btn btn-info" :disabled="!formData.bin_id">
                                     <i class="bi bi-person-gear me-2"></i>
                                     Admin Login URL anzeigen
                                 </button>
-                                <button @click="showBetreuerLoginUrl" class="btn btn-info">
+                                <button @click="showBetreuerLoginUrl" class="btn btn-info" :disabled="!formData.bin_id">
                                     <i class="bi bi-person me-2"></i>
                                     Betreuer Login URL anzeigen
                                 </button>
@@ -225,7 +239,6 @@
                                     </button>
                                 </div>
                                 <div class="qr-code text-center">
-                                    
                                     <div id="qrcode" ref="qrcodeContainer"></div>
                                 </div>
                             </div>
@@ -248,9 +261,8 @@
                         year: new Date().getFullYear().toString(),
                         total_groups: 15, 
                         total_buses: 3,
-                        bin_collection: 'SR2025',
-                        // New default value for BIN_ID
-                        bin_id: '68834e6e7b4b8670d8a712d0', 
+                        bin_collection: '68834b4cf7e7a370d1edaefc',
+                        bin_id: '', // Empty by default - will be auto-generated
                         bin_master_key: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
                         bin_access_key: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
                         base_url: 'https://raw.githack.com/alex-lysenko-de/stadtranderholung/main/'
@@ -260,21 +272,120 @@
                     showSuccess: false,
                     successMessage: '',
                     showError: false,
-                    errorMessage: ''
+                    errorMessage: '',
+                    isLoading: false
                 };
             },
             methods: {
+                async saveConfiguration() {
+                    this.isLoading = true;
+                    try {
+                        // If BIN_ID is empty, create new configuration
+                        if (!this.formData.bin_id || this.formData.bin_id.trim() === '') {
+                            await this.createNewConfiguration();
+                        }
+                        
+                        // Save to localStorage
+                        this.saveToLocalStorage();
+                        this.showNotification('Konfiguration erfolgreich gespeichert!', 'success');
+                    } catch (error) {
+                        console.error('Configuration save error:', error);
+                        this.showNotification('Fehler beim Speichern der Konfiguration: ' + error.message, 'error');
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                async createNewConfiguration() {
+                    // Step 1: Create config bin
+                    const configBinId = await this.createBin('Configuration', {
+                        TOTAL_GROUPS: this.formData.total_groups,
+                        TOTAL_BUSES: this.formData.total_buses,
+                        GROUP_BIN_IDS: {},
+                        BUS_BIN_IDS: {}
+                    });
+
+                    this.formData.bin_id = configBinId;
+
+                    // Step 2: Create group bins
+                    const groupBinIds = {};
+                    for (let i = 1; i <= this.formData.total_groups; i++) {
+                        const groupData = {
+                            GroupNumber: i,
+                            Kinder: []
+                        };
+                        const groupBinId = await this.createBin(`Group_${i}`, groupData);
+                        groupBinIds[i.toString()] = groupBinId;
+                    }
+
+                    // Step 3: Create bus bins
+                    const busBinIds = {};
+                    for (let i = 1; i <= this.formData.total_buses; i++) {
+                        const busData = {
+                            BusNumber: i
+                        };
+                        const busBinId = await this.createBin(`Bus_${i}`, busData);
+                        busBinIds[i.toString()] = busBinId;
+                    }
+
+                    // Step 4: Update config bin with all bin IDs
+                    await this.updateBin(configBinId, {
+                        TOTAL_GROUPS: this.formData.total_groups,
+                        TOTAL_BUSES: this.formData.total_buses,
+                        GROUP_BIN_IDS: groupBinIds,
+                        BUS_BIN_IDS: busBinIds
+                    });
+                },
+
+                async createBin(name, data) {
+                    const response = await fetch('https://api.jsonbin.io/v3/b', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': this.formData.bin_master_key,
+                            'X-Bin-Name': name,
+                            'X-Collection-Id': this.formData.bin_collection
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`Fehler beim Erstellen von ${name}: ${errorData.message || response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    return result.metadata.id;
+                },
+
+                async updateBin(binId, data) {
+                    const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': this.formData.bin_master_key
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`Fehler beim Aktualisieren von Bin ${binId}: ${errorData.message || response.statusText}`);
+                    }
+
+                    return await response.json();
+                },
+
                 saveToLocalStorage() {
                     try {
                         for (const key in this.formData) {
                             localStorage.setItem(`config_${key}`, this.formData[key]);
                         }
-                        this.showNotification('Einstellungen erfolgreich gespeichert!', 'success');
                     } catch (e) {
-                        this.showNotification('Fehler beim Speichern der Einstellungen.', 'error');
-                        console.error('Local storage save error:', e);
+                        throw new Error('Fehler beim Speichern in LocalStorage: ' + e.message);
                     }
                 },
+
                 loadFromLocalStorage() {
                     for (const key in this.formData) {
                         const savedValue = localStorage.getItem(`config_${key}`);
@@ -287,9 +398,10 @@
                         }
                     }
                 },
+
                 generateUrl(is_admin) {
-                    if (!this.formData.year || !this.formData.bin_collection || !this.formData.bin_master_key || !this.formData.bin_access_key || !this.formData.base_url || !this.formData.total_groups || !this.formData.total_buses || !this.formData.bin_id) { // Added bin_id validation
-                        this.showNotification('Bitte füllen Sie alle erforderlichen Felder aus, um eine URL zu generieren.', 'error');
+                    if (!this.formData.year || !this.formData.bin_collection || !this.formData.bin_master_key || !this.formData.bin_access_key || !this.formData.base_url || !this.formData.total_groups || !this.formData.total_buses || !this.formData.bin_id) {
+                        this.showNotification('Bitte füllen Sie alle erforderlichen Felder aus und speichern Sie die Konfiguration, um eine URL zu generieren.', 'error');
                         this.generatedUrl = '';
                         this.clearQrCode();
                         return;
@@ -302,7 +414,7 @@
                         bin_access_key: this.formData.bin_access_key,
                         TOTAL_GROUPS: this.formData.total_groups,
                         TOTAL_BUSES: this.formData.total_buses,
-                        BIN_ID: this.formData.bin_id // Pass BIN_ID as URL parameter
+                        BIN_ID: this.formData.bin_id
                     });
                     const page = is_admin ? "a_login.html" : "b_login.html";
                     const url = `${this.formData.base_url}${page}?${params.toString()}`;
@@ -312,6 +424,7 @@
                         this.renderQrCode(this.generatedUrl);
                     });
                 },
+
                 renderQrCode(url) {
                     const qrcodeDiv = this.$refs.qrcodeContainer;
                     if (qrcodeDiv) {
@@ -326,6 +439,7 @@
                         });
                     }
                 },
+
                 clearQrCode() {
                     if (this.qrCodeInstance) {
                         this.qrCodeInstance.clear();
@@ -336,6 +450,7 @@
                         qrcodeDiv.innerHTML = '';
                     }
                 },
+
                 showAdminLoginUrl() {
                     this.generatedUrl = '';
                     this.clearQrCode();
@@ -344,6 +459,7 @@
                         this.showNotification('Admin Login URL generiert.', 'success');
                     }
                 },
+
                 showBetreuerLoginUrl() {
                     this.generatedUrl = '';
                     this.clearQrCode();
@@ -352,6 +468,7 @@
                         this.showNotification('Betreuer Login URL generiert.', 'success');
                     }
                 },
+
                 shareUrl() {
                     if (navigator.share && this.generatedUrl) {
                         navigator.share({
@@ -367,6 +484,7 @@
                         this.showNotification('Teilen nicht unterstützt. URL wurde in die Zwischenablage kopiert.', 'info');
                     }
                 },
+
                 copyToClipboard() {
                     if (this.generatedUrl) {
                         const textarea = document.createElement('textarea');
@@ -387,6 +505,7 @@
                         }
                     }
                 },
+
                 showNotification(message, type) {
                     this.showSuccess = false;
                     this.showError = false;
@@ -401,7 +520,7 @@
                     setTimeout(() => {
                         this.showSuccess = false;
                         this.showError = false;
-                    }, 5000);
+                    }, 20000);
                 }
             },
             mounted() {
