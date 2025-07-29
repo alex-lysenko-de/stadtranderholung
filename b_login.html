@@ -109,11 +109,11 @@
         const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
             BIN_COLLECTION_NAME: 'SR2025',
-            [cite_start]BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID, теперь указывает на bin с GROUP_BIN_IDS и BUS_BIN_IDS [cite: 23, 24, 25]
+            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID, теперь указывает на bin с GROUP_BIN_IDS и BUS_BIN_IDS
             MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
             ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
-            [cite_start]TOTAL_GROUPS: 15, // Это значение будет перезаписано из конфигурационного bin [cite: 25]
-            [cite_start]TOTAL_BUSES: 3 // Это значение будет перезаписано из конфигурационного bin [cite: 25]
+            TOTAL_GROUPS: 15, // Это значение будет перезаписано из конфигурационного bin
+            TOTAL_BUSES: 3 // Это значение будет перезаписано из конфигурационного bin
         };
 
         /**
@@ -128,19 +128,19 @@
                     'X-Master-Key': config.MASTER_KEY,
                     'X-Access-Key': config.ACCESS_KEY
                 };
-                 [cite_start]// Здесь будут храниться загруженные GROUP_BIN_IDS и BUS_BIN_IDS [cite: 25]
+                 // Здесь будут храниться загруженные GROUP_BIN_IDS и BUS_BIN_IDS
                 this.groupBinIds = {}; 
                 this.busBinIds = {};
             }
 
             /**
-             * [cite_start]Загружает конфигурацию из главного BIN_ID. [cite: 25, 30]
-             * [cite_start]Этот метод должен быть вызван один раз при инициализации. [cite: 30]
+             * Загружает конфигурацию из главного BIN_ID.
+             * Этот метод должен быть вызван один раз при инициализации.
              * @returns {Promise<boolean>} Статус успеха загрузки конфигурации.
              */
             async loadConfigBins() {
                 try {
-                    [cite_start]const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, { // [cite: 25]
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
                         method: 'GET',
                         headers: { 'X-Master-Key': this.config.MASTER_KEY } // Используем Master Key для чтения конфигурации
                     });
@@ -150,17 +150,17 @@
                     }
                     
                     const result = await response.json();
-                    const configData = result.record; [cite_start]// [cite: 25]
+                    const configData = result.record;
 
-                    [cite_start]if (configData && configData.GROUP_BIN_IDS && configData.BUS_BIN_IDS) { // [cite: 25]
-                        this.groupBinIds = configData.GROUP_BIN_IDS; [cite_start]// [cite: 25]
-                        this.busBinIds = configData.BUS_BIN_IDS; [cite_start]// [cite: 25]
-                        [cite_start]// Обновляем TOTAL_GROUPS и TOTAL_BUSES из конфигурационного bin [cite: 25]
+                    if (configData && configData.GROUP_BIN_IDS && configData.BUS_BIN_IDS) {
+                        this.groupBinIds = configData.GROUP_BIN_IDS;
+                        this.busBinIds = configData.BUS_BIN_IDS;
+                        // Обновляем TOTAL_GROUPS и TOTAL_BUSES из конфигурационного bin
                         this.config.TOTAL_GROUPS = configData.TOTAL_GROUPS; 
                         this.config.TOTAL_BUSES = configData.TOTAL_BUSES; 
                         return true;
                     } else {
-                        throw new Error('Некорректная структура конфигурации в главном bin.'); [cite_start]// [cite: 25]
+                        throw new Error('Некорректная структура конфигурации в главном bin.');
                     }
 
                 } catch (error) {
@@ -171,13 +171,13 @@
 
 
             /**
-             * [cite_start]Получить текущие данные из определенного bin (группы или автобуса). [cite: 30]
-             * [cite_start]@param {string} binId - ID бина, из которого нужно получить данные. [cite: 30]
+             * Получить текущие данные из определенного bin (группы или автобуса).
+             * @param {string} binId - ID бина, из которого нужно получить данные.
              * @returns {Promise<Object>} Текущая структура данных или пустой объект.
              */
-            [cite_start]async getSpecificBinData(binId) { // [cite: 30]
+            async getSpecificBinData(binId) {
                 try {
-                    [cite_start]const response = await fetch(`${this.config.API_BASE_URL}/${binId}/latest`, { // [cite: 30]
+                    const response = await fetch(`${this.config.API_BASE_URL}/${binId}/latest`, {
                         method: 'GET',
                         headers: this.headers
                     });
@@ -195,14 +195,14 @@
             }
 
             /**
-             * [cite_start]Обновить данные в определенном bin (группы или автобуса). [cite: 30]
-             * [cite_start]@param {string} binId - ID бина, который нужно обновить. [cite: 30]
-             * [cite_start]@param {Object} data - Полная структура данных для сохранения. [cite: 30]
+             * Обновить данные в определенном bin (группы или автобуса).
+             * @param {string} binId - ID бина, который нужно обновить.
+             * @param {Object} data - Полная структура данных для сохранения.
              * @returns {Promise<boolean>} Статус успеха.
              */
-            [cite_start]async updateSpecificBinData(binId, data) { // [cite: 30]
+            async updateSpecificBinData(binId, data) {
                 try {
-                    [cite_start]const response = await fetch(`${this.config.API_BASE_URL}/${binId}`, { // [cite: 30]
+                    const response = await fetch(`${this.config.API_BASE_URL}/${binId}`, {
                         method: 'PUT',
                         headers: this.headers,
                         body: JSON.stringify(data)
@@ -352,14 +352,14 @@
             data() {
                 return {
                     currentDate: '',
-                    [cite_start]totalGroups: CONFIG_DEFAULTS.TOTAL_GROUPS, // Начальное значение по умолчанию, будет перезаписано загруженной конфигурацией [cite: 25]
-                    [cite_start]totalBuses: CONFIG_DEFAULTS.TOTAL_BUSES, // totalBuses добавлено к данным [cite: 25]
+                    totalGroups: CONFIG_DEFAULTS.TOTAL_GROUPS, // Начальное значение по умолчанию, будет перезаписано загруженной конфигурацией
+                    totalBuses: CONFIG_DEFAULTS.TOTAL_BUSES, // totalBuses добавлено к данным
                     betreuerName: '',
                     groupNumber: '',
                     isLoading: false,
                     api: null, // API будет инициализировано после загрузки конфигурации
                     isConfigLoaded: false, // Флаг для проверки успешной загрузки конфигурации
-                    [cite_start]remoteConfigLoaded: false // Флаг для проверки успешной загрузки конфигурации из удаленного bin [cite: 25]
+                    remoteConfigLoaded: false // Флаг для проверки успешной загрузки конфигурации из удаленного bin
                 };
             },
             
@@ -385,16 +385,16 @@
                     this.api = new JSONBinAPI(this.config);
                     this.isConfigLoaded = true; // Отмечаем конфигурацию как загруженную
 
-                    [cite_start]// Загружаем GROUP_BIN_IDS и BUS_BIN_IDS из главного конфигурационного bin [cite: 25, 30]
-                    const configBinsLoaded = await this.api.loadConfigBins(); [cite_start]// [cite: 30]
+                    // Загружаем GROUP_BIN_IDS и BUS_BIN_IDS из главного конфигурационного bin
+                    const configBinsLoaded = await this.api.loadConfigBins();
                     if (!configBinsLoaded) {
-                        Utils.showAlert('Не удалось загрузить конфигурационные идентификаторы Bin для групп и автобусов. Пожалуйста, проверьте конфигурацию.', 'danger'); [cite_start]// [cite: 25]
+                        Utils.showAlert('Не удалось загрузить конфигурационные идентификаторы Bin для групп и автобусов. Пожалуйста, проверьте конфигурацию.', 'danger');
                         this.remoteConfigLoaded = false;
                         return;
                     }
                     this.remoteConfigLoaded = true;
-                    this.totalGroups = this.config.TOTAL_GROUPS; [cite_start]// Используем загруженное общее количество групп [cite: 25]
-                    this.totalBuses = this.config.TOTAL_BUSES; [cite_start]// Используем загруженное общее количество автобусов [cite: 25]
+                    this.totalGroups = this.config.TOTAL_GROUPS; // Используем загруженное общее количество групп
+                    this.totalBuses = this.config.TOTAL_BUSES; // Используем загруженное общее количество автобусов
 
                     this.currentDate = Utils.getCurrentDate();
                     
@@ -486,32 +486,32 @@
                  */
                 async submitLoginData() {
                     try {
-                        [cite_start]// Находим BIN_ID для текущей группы [cite: 30]
-                        const groupBinId = this.api.groupBinIds[this.groupNumber]; [cite_start]// [cite: 19]
+                        // Находим BIN_ID для текущей группы
+                        const groupBinId = this.api.groupBinIds[this.groupNumber];
                         if (!groupBinId) {
-                            throw new Error(`BIN_ID для группы ${this.groupNumber} не найден.`); [cite_start]// [cite: 19]
+                            throw new Error(`BIN_ID для группы ${this.groupNumber} не найден.`);
                         }
 
-                        [cite_start]// Получаем текущие данные для этой конкретной группы [cite: 30]
-                        const currentGroupData = await this.api.getSpecificBinData(groupBinId); [cite_start]// [cite: 30]
+                        // Получаем текущие данные для этой конкретной группы
+                        const currentGroupData = await this.api.getSpecificBinData(groupBinId);
                         
-                        [cite_start]// Убедиться, что структура даты существует [cite: 20]
+                        // Убедиться, что структура даты существует
                         if (!currentGroupData[this.currentDate]) {
                             currentGroupData[this.currentDate] = { 
                                 Betreuer: [], 
                                 KinderAnzahl: null, 
                                 KinderAnzahlNow: null 
-                            }; [cite_start]// [cite: 20, 21]
+                            };
                         }
                         
-                        [cite_start]// Добавляем Betreuer к группе, если его там еще нет [cite: 20]
-                        const dateEntry = currentGroupData[this.currentDate]; [cite_start]// [cite: 20]
-                        [cite_start]if (!dateEntry.Betreuer.includes(this.betreuerName)) { // [cite: 20]
-                            dateEntry.Betreuer.push(this.betreuerName); [cite_start]// [cite: 20]
+                        // Добавляем Betreuer к группе, если его там еще нет
+                        const dateEntry = currentGroupData[this.currentDate];
+                        if (!dateEntry.Betreuer.includes(this.betreuerName)) {
+                            dateEntry.Betreuer.push(this.betreuerName);
                         }
                         
-                        [cite_start]// Обновляем данные в JSONBin для конкретного bin группы [cite: 30]
-                        return await this.api.updateSpecificBinData(groupBinId, currentGroupData); [cite_start]// [cite: 30]
+                        // Обновляем данные в JSONBin для конкретного bin группы
+                        return await this.api.updateSpecificBinData(groupBinId, currentGroupData);
                     } catch (error) {
                         console.error('Fehler beim Übermitteln der Anmeldedaten:', error);
                         return false;
