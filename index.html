@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,10 +15,12 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #333;
         }
+
         .container {
             padding-top: 2rem;
             padding-bottom: 2rem;
         }
+
         .card {
             border: none;
             border-radius: 15px;
@@ -25,23 +28,29 @@
             backdrop-filter: blur(10px);
             background: rgba(255, 255, 255, 0.95);
         }
+
         .card-header {
             background: linear-gradient(135deg, #2196F3, #21CBF3);
             color: white;
             border-radius: 15px 15px 0 0 !important;
             padding: 1.5rem;
         }
-        .form-control, .form-select {
+
+        .form-control,
+        .form-select {
             border-radius: 10px;
             border: 2px solid #e0e0e0;
             padding: 0.75rem 1rem;
             font-size: 1.1rem;
             transition: all 0.3s ease;
         }
-        .form-control:focus, .form-select:focus {
+
+        .form-control:focus,
+        .form-select:focus {
             border-color: #2196F3;
             box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
         }
+
         .btn-primary {
             background: linear-gradient(135deg, #2196F3, #21CBF3);
             border: none;
@@ -51,10 +60,12 @@
             font-weight: 600;
             transition: all 0.3s ease;
         }
+
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
         }
+
         .btn-info {
             background-color: #17a2b8;
             border: none;
@@ -65,10 +76,12 @@
             color: white;
             transition: all 0.3s ease;
         }
+
         .btn-info:hover {
             background-color: #138496;
             transform: translateY(-1px);
         }
+
         .btn-success {
             background-color: #28a745;
             border: none;
@@ -79,10 +92,12 @@
             color: white;
             transition: all 0.3s ease;
         }
+
         .btn-success:hover {
             background-color: #218838;
             transform: translateY(-1px);
         }
+
         .btn-outline-secondary {
             border-radius: 10px;
             padding: 0.75rem 1.5rem;
@@ -90,18 +105,22 @@
             font-weight: 600;
             transition: all 0.3s ease;
         }
+
         .alert {
             border-radius: 10px;
             border: none;
         }
+
         .form-label {
             font-weight: 600;
             color: #495057;
             margin-bottom: 0.5rem;
         }
+
         .card-body {
             padding: 2rem;
         }
+
         .qr-code {
             display: flex;
             justify-content: center;
@@ -112,28 +131,44 @@
             background-color: white;
             min-height: 270px;
         }
-        .qr-code canvas, .qr-code table {
+
+        .qr-code canvas,
+        .qr-code table {
             max-width: 100%;
             height: auto;
         }
+
         .spinner-border-sm {
             width: 1rem;
             height: 1rem;
         }
+
         .loading {
             opacity: 0.6;
             pointer-events: none;
         }
+
+        .fixed-alert {
+            position: sticky;
+            top: 20px;
+            z-index: 1050;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding-top: 1rem;
             }
+
             .card-body {
                 padding: 1.5rem;
             }
         }
     </style>
 </head>
+
 <body>
     <div id="app">
         <div class="container">
@@ -148,14 +183,14 @@
                             <p class="mb-0 mt-2">Verwalten Sie die Anwendungs-Einstellungen</p>
                         </div>
                         <div class="card-body">
-                            <div v-if="showSuccess" class="alert alert-success d-flex align-items-center" role="alert">
+                            <div v-if="showSuccess" class="alert alert-success d-flex fixed-alert" role="alert">
                                 <i class="bi bi-check-circle-fill me-2"></i>
                                 <div>
                                     {{ successMessage }}
                                 </div>
                             </div>
-                            
-                            <div v-if="showError" class="alert alert-danger d-flex align-items-center" role="alert">
+
+                            <div v-if="showError" class="alert alert-danger d-flex fixed-alert align-items-center" role="alert">
                                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
                                 <div>
                                     {{ errorMessage }}
@@ -169,35 +204,44 @@
                                 </div>
                                 <div class="mb-3">
                                     <label for="totalGroups" class="form-label">Gesamtanzahl Gruppen:</label>
-                                    <input type="number" id="totalGroups" class="form-control" v-model.number="formData.total_groups" min="1" required>
+                                    <input type="number" id="totalGroups" class="form-control"
+                                        v-model.number="formData.total_groups" min="1" required>
                                 </div>
                                 <div class="mb-3">
                                     <label for="totalBuses" class="form-label">Gesamtanzahl Busse:</label>
-                                    <input type="number" id="totalBuses" class="form-control" v-model.number="formData.total_buses" min="1" required>
+                                    <input type="number" id="totalBuses" class="form-control"
+                                        v-model.number="formData.total_buses" min="1" required>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="binId" class="form-label">Config Bin ID (JSONBin.io):</label>
-                                    <input type="text" id="binId" class="form-control" v-model="formData.bin_id" placeholder="Leer lassen für automatische Erstellung">
-                                    <small class="form-text text-muted">Wenn leer, wird automatisch ein neuer Config-Bin erstellt</small>
+                                    <input type="text" id="binId" class="form-control" v-model="formData.bin_id"
+                                        placeholder="Leer lassen für automatische Erstellung">
+                                    <small class="form-text text-muted">Wenn leer, wird automatisch ein neuer Config-Bin
+                                        erstellt</small>
                                 </div>
                                 <div class="mb-3">
                                     <label for="binMasterKey" class="form-label">Master Key (JSONBin.io):</label>
-                                    <input type="text" id="binMasterKey" class="form-control" v-model="formData.bin_master_key" required>
+                                    <input type="text" id="binMasterKey" class="form-control"
+                                        v-model="formData.bin_master_key" required>
                                 </div>
                                 <div class="mb-3">
                                     <label for="binAccessKey" class="form-label">Access Key (JSONBin.io):</label>
-                                    <input type="text" id="binAccessKey" class="form-control" v-model="formData.bin_access_key" required>
+                                    <input type="text" id="binAccessKey" class="form-control"
+                                        v-model="formData.bin_access_key" required>
                                 </div>
                                 <div class="mb-3">
                                     <label for="baseUrl" class="form-label">Basis-URL (ohne Dateinamen):</label>
-                                    <input type="text" id="baseUrl" class="form-control" v-model="formData.base_url" placeholder="z.B. https://raw.githack.com/alex-lysenko-de/stadtranderholung/main/" required>
+                                    <input type="text" id="baseUrl" class="form-control" v-model="formData.base_url"
+                                        placeholder="z.B. https://raw.githack.com/alex-lysenko-de/stadtranderholung/main/"
+                                        required>
                                 </div>
 
                                 <div class="d-grid gap-2 mb-4">
                                     <button type="submit" class="btn btn-primary" :disabled="isLoading">
                                         <span v-if="isLoading">
-                                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            <span class="spinner-border spinner-border-sm me-2" role="status"
+                                                aria-hidden="true"></span>
                                             Konfiguration wird erstellt...
                                         </span>
                                         <span v-else>
@@ -219,11 +263,13 @@
                                 </button>
                             </div>
 
-                            <div id="results" class="mt-4 p-3 border rounded bg-light" :class="{'d-none': !generatedUrl}">
+                            <div id="results" class="mt-4 p-3 border rounded bg-light"
+                                :class="{'d-none': !generatedUrl}">
                                 <h5 class="mb-3">Generierte Login URL:</h5>
                                 <div class="mb-3">
                                     <label class="form-label">URL:</label>
-                                    <a :href="generatedUrl" target="_blank" class="d-block text-break">{{ generatedUrl }}</a>
+                                    <a :href="generatedUrl" target="_blank" class="d-block text-break">{{ generatedUrl
+                                        }}</a>
                                 </div>
                                 <div class="d-grid gap-2 mb-3">
                                     <button @click="shareUrl" class="btn btn-success">
@@ -246,8 +292,9 @@
         </div>
     </div>
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css"
+        rel="stylesheet">
+
     <script>
         const { createApp } = Vue;
 
@@ -256,7 +303,7 @@
                 return {
                     formData: {
                         year: new Date().getFullYear().toString(),
-                        total_groups: 15, 
+                        total_groups: 15,
                         total_buses: 3,
                         bin_id: '', // Empty by default - will be auto-generated
                         bin_master_key: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
@@ -280,7 +327,7 @@
                         if (!this.formData.bin_id || this.formData.bin_id.trim() === '') {
                             await this.createNewConfiguration();
                         }
-                        
+
                         // Save to localStorage
                         this.saveToLocalStorage();
                         this.showNotification('Konfiguration erfolgreich gespeichert!', 'success');
@@ -413,7 +460,7 @@
                     const page = is_admin ? "a_login.html" : "b_login.html";
                     const url = `${this.formData.base_url}${page}?${params.toString()}`;
                     this.generatedUrl = url;
-                    
+
                     this.$nextTick(() => {
                         this.renderQrCode(this.generatedUrl);
                     });
@@ -427,9 +474,9 @@
                             text: url,
                             width: 256,
                             height: 256,
-                            colorDark : "#000000",
-                            colorLight : "#ffffff",
-                            correctLevel : QRCode.CorrectLevel.H
+                            colorDark: "#000000",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.H
                         });
                     }
                 },
@@ -523,4 +570,5 @@
         }).mount('#app');
     </script>
 </body>
+
 </html>
