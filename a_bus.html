@@ -194,10 +194,8 @@
 <body>
     <div id="app">
         <div class="main-container">
-            <!-- Alert Container -->
             <div id="alertContainer"></div>
 
-            <!-- Total Summary -->
             <div :class="['total-summary', { 'complete': allBusesHaveData }]">
                 <h3 class="mb-3">Gesamt</h3>
                 <div class="row">
@@ -220,14 +218,12 @@
                 </div>
             </div>
 
-            <!-- Refresh Button (Sticky) -->
-            <button class="btn refresh-btn" @click="loadBusData(false)" :disabled="loadingInitialData || !isConfigLoaded">
+            <button class="btn refresh-btn" @click="loadBusData(false)" :disabled="loadingInitialData || !isConfigLoaded || !remoteConfigLoaded">
                 <span v-if="loadingInitialData" class="spinner-border spinner-border-sm me-2"></span>
                 <i v-else class="fas fa-sync-alt me-2"></i>
                 {{ loadingInitialData ? 'Laden...' : 'Aktualisieren' }}
             </button>
 
-            <!-- Bus Data Card -->
             <div class="overview-card">
                 <div class="card-body">
                     <h5 class="card-title">
@@ -235,7 +231,6 @@
                         <span class="badge bg-secondary ms-2">{{ activeBusesCount }} aktive Busse</span>
                     </h5>
 
-                    <!-- Loading State -->
                     <div v-if="loadingInitialData" class="text-center py-5">
                         <div class="spinner-border mb-3" role="status">
                             <span class="visually-hidden">Wird geladen...</span>
@@ -243,20 +238,22 @@
                         <p class="text-muted">Lade Bus-Daten für heute...</p>
                     </div>
 
-                    <!-- No Data State -->
-                    <div v-else-if="!hasBusData && isConfigLoaded" class="text-center py-5">
+                    <div v-else-if="!hasBusData && isConfigLoaded && remoteConfigLoaded" class="text-center py-5">
                         <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
                         <h5 class="text-muted">Keine Bus-Daten für heute verfügbar</h5>
                         <p class="text-muted">Noch kein Betreuer hat Bus-Daten heute übermittelt.</p>
                     </div>
-                    <!-- Configuration Not Loaded State -->
                     <div v-else-if="!isConfigLoaded" class="text-center py-5">
                         <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">Konfiguration konnte nicht geladen werden.</h5>
+                        <h5 class="text-muted">Lokale Konfiguration konnte nicht geladen werden.</h5>
                         <p class="text-muted">Bitte gehen Sie zur Anmeldeseite zurück, um die Konfiguration zu laden.</p>
                     </div>
+                    <div v-else-if="!remoteConfigLoaded" class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Remote-Konfiguration konnte nicht geladen werden.</h5>
+                        <p class="text-muted">Stellen Sie sicher, dass die Master-BIN-ID korrekt ist und die Konfiguration auf JSONBin.io verfügbar ist.</p>
+                    </div>
 
-                    <!-- Bus Table -->
                     <div v-else class="table-responsive">
                         <table class="table table-hover bus-table">
                             <thead>
@@ -275,8 +272,10 @@
                                     <td><span v-html="getStatusIndicator(getBusData(busNumber))"></span></td>
                                     <td>
                                         <span class="bus-number">
+                                            <a :href="'b_bus.html?bus=' + busNumber" class="text-decoration-none text-reset">
                                             <i class="fas fa-bus me-2"></i>
                                             {{ busNumber }}
+                                            </a>
                                         </span>
                                     </td>
                                     <td><span v-html="formatCount(getBusData(busNumber).kinder_count)"></span></td>
@@ -290,13 +289,11 @@
                 </div>
             </div>
 
-            <!-- Back Button -->
             <button class="btn back-button" @click="goBack">
                 <i class="fas fa-arrow-left me-2"></i>
                 Zurück
             </button>
 
-            <!-- Last Update Time -->
             <div class="text-center mt-3">
                 <span class="text-white">
                     <i class="fas fa-sync-alt me-1"></i>
@@ -316,7 +313,7 @@
         const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
             BIN_COLLECTION_NAME: 'SR2025',
-            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
+            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation (Master Bin ID)
             MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
             ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
             TOTAL_GROUPS: 15, // Gesamtzahl der Gruppen
@@ -335,15 +332,54 @@
                     'X-Master-Key': config.MASTER_KEY,
                     'X-Access-Key': config.ACCESS_KEY
                 };
+                this.groupBinIds = {}; // Hier werden geladene GROUP_BIN_IDS gespeichert
+                this.busBinIds = {}; // Hier werden geladene BUS_BIN_IDS gespeichert
             }
 
             /**
-             * Aktuelle Daten von JSONBin abrufen
-             * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt
+             * Загружает конфигурацию из главного BIN_ID.
+             * Этот метод должен быть вызван один раз при инициализации.
+             * @returns {Promise<boolean>} Статус успеха загрузки конфигурации.
              */
-            async getData() {
+            async loadConfigBins() {
                 try {
                     const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
+                        method: 'GET',
+                        headers: { 'X-Master-Key': this.config.MASTER_KEY } // Используем Master Key для чтения конфигурации
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const configData = result.record;
+
+                    if (configData && configData.GROUP_BIN_IDS && configData.BUS_BIN_IDS) {
+                        this.groupBinIds = configData.GROUP_BIN_IDS;
+                        this.busBinIds = configData.BUS_BIN_IDS;
+                        // Обновляем TOTAL_GROUPS и TOTAL_BUSES из конфигурационного bin
+                        this.config.TOTAL_GROUPS = configData.TOTAL_GROUPS;
+                        this.config.TOTAL_BUSES = configData.TOTAL_BUSES;
+                        return true;
+                    } else {
+                        throw new Error('Некорректная структура конфигурации в главном bin.');
+                    }
+
+                } catch (error) {
+                    console.error('Ошибка при загрузке конфигурационных BIN_ID:', error);
+                    return false;
+                }
+            }
+
+            /**
+             * Получить текущие данные из определенного bin (группы или автобуса).
+             * @param {string} binId - ID бина, из которого нужно получить данные.
+             * @returns {Promise<Object>} Текущая структура данных или пустой объект.
+             */
+            async getSpecificBinData(binId) {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${binId}/latest`, {
                         method: 'GET',
                         headers: this.headers
                     });
@@ -356,7 +392,8 @@
                     const result = await response.json();
                     return result.record || {};
                 } catch (error) {
-                    console.error('Fehler beim Abrufen der Daten von JSONBin:', error);
+                    console.error(`Fehler beim Abrufen der Daten von BIN ${binId}:`, error);
+                    // Throwing error here to be caught by the calling function for proper error handling
                     throw error;
                 }
             }
@@ -486,7 +523,8 @@
                     lastUpdateTime: null,
                     showHeaderInfo: true,
                     isConfigLoaded: false, // Flag für den Konfigurationsladestatus
-                    config: null // Hier wird die geladene Konfiguration gespeichert
+                    config: null, // Hier wird die geladene Konfiguration gespeichert
+                    remoteConfigLoaded: false // Flag für den Status des Ladens der Remote-Konfiguration
                 };
             },
 
@@ -525,7 +563,7 @@
                 
                 totalBusRange() {
                     // Sicherstellen, dass die Konfiguration geladen ist, bevor auf TOTAL_BUSES zugegriffen wird
-                    if (this.isConfigLoaded && this.config && this.config.TOTAL_BUSES) {
+                    if (this.isConfigLoaded && this.remoteConfigLoaded && this.config && this.config.TOTAL_BUSES) {
                         return Array.from({ length: this.config.TOTAL_BUSES }, (_, i) => i + 1);
                     }
                     return []; // Leeres Array zurückgeben, wenn Konfiguration nicht geladen ist
@@ -533,7 +571,7 @@
                 
                 allBusesHaveData() {
                     // Prüfen, ob alle Busse (basierend auf totalBusCount) Daten haben
-                    if (!this.isConfigLoaded || !this.config || this.config.TOTAL_BUSES === 0) {
+                    if (!this.isConfigLoaded || !this.remoteConfigLoaded || !this.config || this.config.TOTAL_BUSES === 0) {
                         return false; // Kann nicht prüfen, wenn Konfiguration nicht geladen oder keine Busse definiert sind
                     }
                     for (let i = 1; i <= this.config.TOTAL_BUSES; i++) {
@@ -568,6 +606,7 @@
                     if (error) {
                         Utils.showAlert(error, 'danger');
                         this.isConfigLoaded = false;
+                        this.remoteConfigLoaded = false;
                         // Optional: Zurück zur Anmeldeseite, wenn Konfiguration fehlt
                         setTimeout(() => {
                             window.location.href = 'a_login.html';
@@ -578,7 +617,16 @@
                     this.config = config; // Geladene Konfiguration speichern
                     this.api = new JSONBinAPI(this.config); // API-Instanz mit geladener Konfiguration initialisieren
                     this.isConfigLoaded = true; // Konfiguration als geladen markieren
-                    this.totalBusCount = this.config.TOTAL_BUSES; // Busanzahl aus der Konfiguration setzen
+
+                    // Загружаем GROUP_BIN_IDS и BUS_BIN_IDS из главного конфигурационного bin
+                    const configBinsLoaded = await this.api.loadConfigBins();
+                    if (!configBinsLoaded) {
+                        Utils.showAlert('Не удалось загрузить конфигурационные идентификаторы Bin для групп и автобусов. Пожалуйста, проверьте конфигурацию.', 'danger');
+                        this.remoteConfigLoaded = false;
+                        return;
+                    }
+                    this.remoteConfigLoaded = true;
+                    this.totalBusCount = this.config.TOTAL_BUSES; // Busanzahl aus der geladenen Konfiguration setzen
 
                     // Daten laden, nachdem die Konfiguration erfolgreich geladen wurde
                     await this.loadBusData(false);
@@ -594,7 +642,7 @@
                 },
 
                 async loadBusData(silent = false) {
-                    if (!this.isConfigLoaded) {
+                    if (!this.isConfigLoaded || !this.remoteConfigLoaded) {
                         // Wenn die Konfiguration nicht geladen ist, versuchen Sie nicht, Daten zu laden
                         if (!silent) {
                             Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Daten können nicht abgerufen werden.', 'danger');
@@ -608,16 +656,48 @@
                             this.loadingInitialData = true;
                         }
 
-                        const fullBinData = await this.api.getData();
-                        this.lastUpdateTime = Utils.getCurrentTimeForDisplay();
+                        const busDataPromises = [];
+                        const currentDay = this.currentDate;
 
-                        const todayData = fullBinData[this.currentDate];
-
-                        if (todayData && todayData.buses) {
-                            this.busesData = JSON.parse(JSON.stringify(todayData.buses));
-                        } else {
-                            this.busesData = {};
+                        // Iterate over known bus BIN_IDs and fetch data for each
+                        for (const busNumber in this.api.busBinIds) {
+                            const busBinId = this.api.busBinIds[busNumber];
+                            busDataPromises.push(
+                                this.api.getSpecificBinData(busBinId)
+                                    .then(binContent => ({
+                                        busNumber: busNumber,
+                                        data: binContent[currentDay] || {
+                                            kinder_count: null,
+                                            betreuer_count: null,
+                                            betreuer_name: null,
+                                            timestamp: null
+                                        }
+                                    }))
+                                    .catch(error => {
+                                        console.error(`Fehler beim Abrufen der Daten für Bus ${busNumber}:`, error);
+                                        // Return default structure on error to prevent breaking the Promise.all
+                                        return {
+                                            busNumber: busNumber,
+                                            data: {
+                                                kinder_count: null,
+                                                betreuer_count: null,
+                                                betreuer_name: null,
+                                                timestamp: null
+                                            }
+                                        };
+                                    })
+                            );
                         }
+
+                        const allBusResults = await Promise.all(busDataPromises);
+
+                        const newBusesData = {};
+                        allBusResults.forEach(result => {
+                            newBusesData[result.busNumber] = result.data;
+                        });
+
+                        this.busesData = newBusesData;
+                        this.lastUpdateTime = Utils.getCurrentTimeForDisplay();
 
                         if (!silent) {
                             Utils.showAlert('Bus-Daten erfolgreich aktualisiert!', 'success');
