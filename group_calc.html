@@ -388,7 +388,7 @@
                     try {
                         // 1. Fetch the master config bin to get group bin IDs
                         const configApi = new ConfigBinAPI(this.config);
-                        const masterConfig = await configApi.getData(); [cite: 37]
+                        const masterConfig = await configApi.getData(); 
 
                         if (!masterConfig || !masterConfig.GROUP_BIN_IDS) {
                             Utils.showAlert('Master-Konfiguration oder Gruppen-Bin-IDs nicht gefunden.', 'danger');
@@ -398,7 +398,7 @@
                         }
 
                         // 2. Get the specific bin ID for the current group
-                        this.groupBinId = masterConfig.GROUP_BIN_IDS[this.groupNumber]; [cite: 32]
+                        this.groupBinId = masterConfig.GROUP_BIN_IDS[this.groupNumber]; 
                         if (!this.groupBinId) {
                             Utils.showAlert(`Keine Bin-ID für Gruppe ${this.groupNumber} in der Konfiguration gefunden.`, 'danger');
                             this.loadingInitialData = false;
@@ -407,7 +407,7 @@
 
                         // 3. Fetch data for the specific group bin
                         const groupApi = new JSONBinAPI(this.config, this.groupBinId);
-                        this.currentGroupData = await groupApi.getData(); [cite: 32]
+                        this.currentGroupData = await groupApi.getData(); 
 
                         if (!this.currentGroupData) {
                             this.currentGroupData = {}; // Ensure it's an object if empty
