@@ -360,7 +360,7 @@
         const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
             BIN_COLLECTION_NAME: 'SR2025',
-            BIN_ID: '68892cef7b4b8670d8a95f2b', // Стандартный BIN_ID для главной конфигурации
+            BIN_ID: '68892cef7b4b8670d8a95f2b', // Standard-BIN_ID für die Hauptkonfiguration
             MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
             ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
             TOTAL_GROUPS: 15, // Gesamtzahl der Gruppen (1-15)
@@ -385,15 +385,15 @@
             }
 
             /**
-             * Загружает конфигурацию из главного BIN_ID.
-             * Этот метод должен быть вызван один раз при инициализации.
-             * @returns {Promise<boolean>} Статус успеха загрузки конфигурации.
+             * Lädt die Konfiguration aus der Haupt-BIN_ID.
+             * Diese Methode sollte einmal bei der Initialisierung aufgerufen werden.
+             * @returns {Promise<boolean>} Erfolgsstatus des Ladens der Konfiguration.
              */
             async loadConfigBins() {
                 try {
                     const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
                         method: 'GET',
-                        headers: { 'X-Master-Key': this.config.MASTER_KEY } // Используем Master Key для чтения конфигурации
+                        headers: { 'X-Master-Key': this.config.MASTER_KEY } // Verwenden Sie den Master Key zum Lesen der Konfiguration
                     });
 
                     if (!response.ok) {
@@ -406,24 +406,24 @@
                     if (configData && configData.GROUP_BIN_IDS && configData.BUS_BIN_IDS) {
                         this.groupBinIds = configData.GROUP_BIN_IDS;
                         this.busBinIds = configData.BUS_BIN_IDS;
-                        // Обновляем TOTAL_GROUPS и TOTAL_BUSES из конфигурационного bin
+                        // Aktualisieren Sie TOTAL_GROUPS und TOTAL_BUSES aus dem Konfigurations-Bin
                         this.config.TOTAL_GROUPS = configData.TOTAL_GROUPS;
                         this.config.TOTAL_BUSES = configData.TOTAL_BUSES;
                         return true;
                     } else {
-                        throw new Error('Некорректная структура конфигурации в главном bin.');
+                        throw new Error('Ungültige Konfigurationsstruktur im Haupt-Bin.');
                     }
 
                 } catch (error) {
-                    console.error('Ошибка при загрузке конфигурационных BIN_ID:', error);
+                    console.error('Fehler beim Laden der Konfigurations-BIN_IDs:', error);
                     return false;
                 }
             }
 
             /**
-             * Получить текущие данные из определенного bin (группы или автобуса).
-             * @param {string} binId - ID бина, из которого нужно получить данные.
-             * @returns {Promise<Object>} Текущая структура данных или пустой объект.
+             * Ruft die aktuellen Daten von einer bestimmten Bin (Gruppe oder Bus) ab.
+             * @param {string} binId - Die ID der Bin, aus der Daten abgerufen werden sollen.
+             * @returns {Promise<Object>} Die aktuelle Datenstruktur oder ein leeres Objekt.
              */
             async getSpecificBinData(binId) {
                 try {
@@ -447,10 +447,10 @@
             }
 
             /**
-             * Обновить данные в определенном bin (группы или автобуса).
-             * @param {string} binId - ID бина, который нужно обновить.
-             * @param {Object} data - Полная структура данных для сохранения.
-             * @returns {Promise<boolean>} Статус успеха.
+             * Aktualisiert die Daten in einer bestimmten Bin (Gruppe oder Bus).
+             * @param {string} binId - Die ID der zu aktualisierenden Bin.
+             * @param {Object} data - Die vollständige Datenstruktur, die gespeichert werden soll.
+             * @returns {Promise<boolean>} Erfolgsstatus.
              */
             async updateSpecificBinData(binId, data) {
                 try {
@@ -668,10 +668,10 @@
                     this.api = new JSONBinAPI(this.config); // API-Instanz mit geladener Konfiguration initialisieren
                     this.isConfigLoaded = true; // Konfiguration als geladen markieren
 
-                    // Загружаем GROUP_BIN_IDS и BUS_BIN_IDS из главного конфигурационного bin
+                    // Lädt GROUP_BIN_IDS und BUS_BIN_IDS aus dem Hauptkonfigurations-Bin
                     const configBinsLoaded = await this.api.loadConfigBins();
                     if (!configBinsLoaded) {
-                        Utils.showAlert('Не удалось загрузить конфигурационные идентификаторы Bin для групп и автобусов. Пожалуйста, проверьте конфигурацию.', 'danger');
+                        Utils.showAlert('Die Konfigurations-Bin-IDs für Gruppen und Busse konnten nicht geladen werden. Bitte überprüfen Sie die Konfiguration.', 'danger');
                         this.remoteConfigLoaded = false;
                         return;
                     }
@@ -891,12 +891,12 @@
 
                 async triggerRecount() {
                     if (!this.isConfigLoaded || !this.remoteConfigLoaded) {
-                        Utils.showAlert('App-Konfiguration не загружена. Пересчет невозможен.', 'danger');
+                        Utils.showAlert('App-Konfiguration wurde nicht geladen. Neuberechnung ist nicht möglich.', 'danger');
                         return;
                     }
 
                     this.recountInitiating = true;
-                    Utils.showAlert('Начинается новый пересчет. Пожалуйста, подождите...', 'info');
+                    Utils.showAlert('Es wird eine neue Zählung gestartet. Bitte warten Sie...', 'info');
 
                     try {
                         const updatePromises = [];
@@ -931,22 +931,22 @@
 
                         // Check if all updates were successful
                         if (allSuccess.every(success => success)) {
-                            Utils.showAlert('Пересчет успешно завершен!', 'success');
-                            // После короткой задержки (3 секунды) перенаправляем на a_login.html
+                            Utils.showAlert('Neuberechnung erfolgreich abgeschlossen!', 'success');
+                            // Nach kurzer Verzögerung (3 Sekunden) Weiterleitung zu a_login.html
                             setTimeout(() => {
                                 location.href = 'a_login.html';
                             }, 3000);
                         } else {
-                            Utils.showAlert('Ошибка при запуске пересчета для одной или нескольких групп.', 'danger');
+                            Utils.showAlert('Fehler beim Starten der Neuberechnung für eine oder mehrere Gruppen.', 'danger');
                         }
 
                     } catch (error) {
-                        console.error('Ошибка при запуске пересчета:', error); // Немецкое сообщение об ошибке
-                        Utils.showAlert('Неожиданная ошибка при запуске пересчета.', 'danger');
+                        console.error('Fehler beim Starten der Neuberechnung:', error); 
+                        Utils.showAlert('Unerwarteter Fehler beim Starten der Neuberechnung.', 'danger');
                     } finally {
                         setTimeout(() => {
                             this.recountInitiating = false;
-                            this.loadOverviewData(false); // Принудительная перезагрузка после завершения пересчета
+                            this.loadOverviewData(false); // Erzwingen Sie eine Neuladung nach Abschluss der Neuberechnung
                         }, 2000);
                     }
                 }
