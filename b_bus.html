@@ -12,12 +12,12 @@
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         .container {
             padding-top: 2rem;
             padding-bottom: 2rem;
         }
-        
+
         .card {
             border: none;
             border-radius: 15px;
@@ -25,14 +25,14 @@
             backdrop-filter: blur(10px);
             background: rgba(255, 255, 255, 0.95);
         }
-        
+
         .card-header {
             background: linear-gradient(135deg, #2196F3, #21CBF3);
             color: white;
             border-radius: 15px 15px 0 0 !important;
             padding: 1.5rem;
         }
-        
+
         .form-control, .form-select {
             border-radius: 10px;
             border: 2px solid #e0e0e0;
@@ -40,12 +40,12 @@
             font-size: 1.1rem;
             transition: all 0.3s ease;
         }
-        
+
         .form-control:focus, .form-select:focus {
             border-color: #2196F3;
             box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
         }
-        
+
         .btn-primary {
             background: linear-gradient(135deg, #2196F3, #21CBF3);
             border: none;
@@ -55,12 +55,12 @@
             font-weight: 600;
             transition: all 0.3s ease;
         }
-        
+
         .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
         }
-        
+
         .btn-secondary {
             background: #6c757d;
             border: none;
@@ -68,49 +68,49 @@
             padding: 0.75rem 1.5rem;
             transition: all 0.3s ease;
         }
-        
+
         .btn-secondary:hover {
             background: #5a6268;
             transform: translateY(-1px);
         }
-        
+
         .alert {
             border-radius: 10px;
             border: none;
         }
-        
+
         .spinner-border {
             width: 1.5rem;
             height: 1.5rem;
         }
-        
+
         .form-label {
             font-weight: 600;
             color: #495057;
             margin-bottom: 0.5rem;
         }
-        
+
         .input-group-text {
             background: #f8f9fa;
             border: 2px solid #e0e0e0;
             border-right: none;
             border-radius: 10px 0 0 10px;
         }
-        
+
         .input-group .form-control {
             border-left: none;
             border-radius: 0 10px 10px 0;
         }
-        
+
         .card-body {
             padding: 2rem;
         }
-        
+
         @media (max-width: 768px) {
             .container {
                 padding-top: 1rem;
             }
-            
+
             .card-body {
                 padding: 1.5rem;
             }
@@ -131,28 +131,27 @@
                             <p class="mb-0 mt-2">Erfassung der Kinder und Betreuer im Bus</p>
                         </div>
                         <div class="card-body">
-                            <!-- Alert Container -->
                             <div id="alertContainer"></div>
-                            
+
                             <div v-if="betreuerName" class="alert alert-info d-flex align-items-center mb-4">
                                 <i class="bi bi-person-badge me-2"></i>
                                 <div>
                                     <strong>Betreuer:</strong> {{ betreuerName }}
                                 </div>
                             </div>
-                            
+
                             <form @submit.prevent="submitBusData">
                                 <div class="mb-4">
                                     <label for="busNumber" class="form-label">
                                         <i class="bi bi-bus-front me-1"></i>
                                         Bus Nummer
                                     </label>
-                                    <select 
-                                        id="busNumber" 
-                                        v-model.number="formData.bus_number" 
+                                    <select
+                                        id="busNumber"
+                                        v-model.number="formData.bus_number"
                                         class="form-select"
                                         required
-                                        :disabled="!isConfigLoaded"
+                                        :disabled="!isConfigLoaded || !remoteConfigLoaded"
                                     >
                                         <option value="">Bus auswählen...</option>
                                         <option v-for="busNum in busCount" :key="busNum" :value="busNum">
@@ -160,7 +159,7 @@
                                         </option>
                                     </select>
                                 </div>
-                                
+
                                 <div class="mb-4">
                                     <label for="kinderCount" class="form-label">
                                         <i class="bi bi-people me-1"></i>
@@ -170,20 +169,20 @@
                                         <span class="input-group-text">
                                             <i class="bi bi-people"></i>
                                         </span>
-                                        <input 
-                                            type="number" 
+                                        <input
+                                            type="number"
                                             id="kinderCount"
-                                            v-model.number="formData.kinder_count" 
+                                            v-model.number="formData.kinder_count"
                                             class="form-control"
-                                            min="0" 
-                                            max="100"
+                                            min="0"
+                                            max="200"
                                             placeholder="Anzahl eingeben"
                                             required
-                                            :disabled="!isConfigLoaded"
+                                            :disabled="!isConfigLoaded || !remoteConfigLoaded"
                                         >
                                     </div>
                                 </div>
-                                
+
                                 <div class="mb-4">
                                     <label for="betreuerCount" class="form-label">
                                         <i class="bi bi-person-badge me-1"></i>
@@ -193,25 +192,25 @@
                                         <span class="input-group-text">
                                             <i class="bi bi-person-badge"></i>
                                         </span>
-                                        <input 
-                                            type="number" 
+                                        <input
+                                            type="number"
                                             id="betreuerCount"
-                                            v-model.number="formData.betreuer_count" 
+                                            v-model.number="formData.betreuer_count"
                                             class="form-control"
-                                            min="0" 
+                                            min="0"
                                             max="100"
                                             placeholder="Anzahl eingeben"
                                             required
-                                            :disabled="!isConfigLoaded"
+                                            :disabled="!isConfigLoaded || !remoteConfigLoaded"
                                         >
                                     </div>
                                 </div>
-                                
+
                                 <div class="d-grid gap-2">
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         class="btn btn-primary"
-                                        :disabled="isLoading || !isFormValid || !isConfigLoaded"
+                                        :disabled="isLoading || !isFormValid || !isConfigLoaded || !remoteConfigLoaded"
                                     >
                                         <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status"></span>
                                         <i v-else class="bi bi-send me-2"></i>
@@ -219,17 +218,17 @@
                                     </button>
                                 </div>
                             </form>
-                            
+
                             <div class="mt-4 pt-3 border-top">
                                 <div class="d-grid gap-2">
-                                    <button 
-                                        @click="goBack" 
+                                    <button
+                                        @click="goBack"
                                         class="btn btn-secondary"
                                     >
                                         <i class="bi bi-arrow-left me-1"></i>
                                         Zurück
                                     </button>
-                                    
+
                                 </div>
                             </div>
                         </div>
@@ -240,7 +239,7 @@
     </div>
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    
+
     <script>
         /**
          * Standardkonfigurationswerte. Diese werden durch URL-Parameter oder LocalStorage überschrieben.
@@ -248,7 +247,7 @@
         const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
             BIN_COLLECTION_NAME: 'SR2025',
-            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
+            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation (Master Bin ID)
             MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
             ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
             TOTAL_GROUPS: 15,
@@ -262,60 +261,99 @@
         class JSONBinAPI {
             constructor(config) {
                 this.config = config;
+                // Header enthalten jetzt Access-Key für Schreiboperationen
                 this.headers = {
                     'Content-Type': 'application/json',
                     'X-Master-Key': config.MASTER_KEY,
-                    'X-Access-Key': config.ACCESS_KEY
+                    'X-Access-Key': config.ACCESS_KEY // Access-Key für PUT-Anfragen einbeziehen
                 };
+                this.groupBinIds = {}; // Hier werden geladene GROUP_BIN_IDS gespeichert
+                this.busBinIds = {}; // Hier werden geladene BUS_BIN_IDS gespeichert
             }
 
             /**
-             * Aktuelle Daten von JSONBin abrufen
-             * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt
+             * Загружает конфигурацию из главного BIN_ID.
+             * Этот метод должен быть вызван один раз при инициализации.
+             * @returns {Promise<boolean>} Статус успеха загрузки конфигурации.
              */
-            async getData() {
+            async loadConfigBins() {
                 try {
                     const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
                         method: 'GET',
-                        headers: {
-                            'X-Master-Key': this.config.MASTER_KEY,
-                            'X-Access-Key': this.config.ACCESS_KEY
-                        }
+                        headers: { 'X-Master-Key': this.config.MASTER_KEY } // Используем Master Key для чтения конфигурации
                     });
-                    
+
                     if (!response.ok) {
                         throw new Error(`HTTP-Fehler! Status: ${response.status}`);
                     }
-                    
+
                     const result = await response.json();
-                    return result.record || {};
+                    const configData = result.record;
+
+                    if (configData && configData.GROUP_BIN_IDS && configData.BUS_BIN_IDS) {
+                        this.groupBinIds = configData.GROUP_BIN_IDS;
+                        this.busBinIds = configData.BUS_BIN_IDS;
+                        // Обновляем TOTAL_GROUPS и TOTAL_BUSES из конфигурационного bin
+                        this.config.TOTAL_GROUPS = configData.TOTAL_GROUPS;
+                        this.config.TOTAL_BUSES = configData.TOTAL_BUSES;
+                        return true;
+                    } else {
+                        throw new Error('Некорректная структура конфигурации в главном bin.');
+                    }
+
                 } catch (error) {
-                    console.error('Fehler beim Abrufen der Daten von JSONBin:', error);
-                    return {};
+                    console.error('Ошибка при загрузке конфигурационных BIN_ID:', error);
+                    return false;
                 }
             }
 
             /**
-             * Daten in JSONBin aktualisieren (PUT-Operation)
-             * @param {Object} data - Vollständige Datenstruktur zum Speichern
-             * @returns {Promise<boolean>} Erfolgsstatus
+             * Получить текущие данные из определенного bin (группы или автобуса).
+             * @param {string} binId - ID бина, из которого нужно получить данные.
+             * @returns {Promise<Object>} Текущая структура данных или пустой объект.
              */
-            async updateData(data) {
+            async getSpecificBinData(binId) {
                 try {
-                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}`, {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${binId}/latest`, {
+                        method: 'GET',
+                        headers: this.headers
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    return result.record || {};
+                } catch (error) {
+                    console.error(`Fehler beim Abrufen der Daten von BIN ${binId}:`, error);
+                    return {}; // Leeres Objekt zurückgeben, wenn der Abruf fehlschlägt
+                }
+            }
+
+            /**
+             * Обновить данные в определенном bin (группы или автобуса).
+             * @param {string} binId - ID бина, который нужно обновить.
+             * @param {Object} data - Полная структура данных для сохранения.
+             * @returns {Promise<boolean>} Статус успеха.
+             */
+            async updateSpecificBinData(binId, data) {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${binId}`, {
                         method: 'PUT',
                         headers: this.headers,
                         body: JSON.stringify(data)
                     });
-                    
+
                     if (!response.ok) {
+                        // Versuch, die Fehlermeldung aus der Antwort zu lesen
                         const errorData = await response.json();
                         throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorData.message || 'Unbekannter Fehler'}`);
                     }
-                    
+
                     return true;
                 } catch (error) {
-                    console.error('Fehler beim Aktualisieren der Daten in JSONBin:', error);
+                    console.error(`Fehler beim Aktualisieren der Daten in BIN ${binId}:`, error);
                     return false;
                 }
             }
@@ -399,13 +437,13 @@
                         }
                     }
                 }
-                
+
                 config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
 
                 if (missingParams.length > 0) {
                     return { config: null, error: `Es fehlen wesentliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass diese über die URL übergeben oder in index.html festgelegt werden.` };
                 }
-                
+
                 return { config: config, error: null };
             }
         };
@@ -426,20 +464,21 @@
                     currentDate: '',
                     isConfigLoaded: false, // Flag für den Konfigurationsladestatus
                     config: null, // Hier wird die geladene Konfiguration gespeichert
-                    api: null // API-Instanz wird nach dem Laden der Konfiguration initialisiert
+                    api: null, // API-Instanz wird nach dem Laden der Konfiguration initialisiert
+                    remoteConfigLoaded: false // Flag für den Status des Ladens der Remote-Konfiguration
                 };
             },
-            
+
             computed: {
                 isFormValid() {
-                    return this.formData.bus_number !== '' && 
-                           this.formData.kinder_count !== '' && 
+                    return this.formData.bus_number !== '' &&
+                           this.formData.kinder_count !== '' &&
                            this.formData.betreuer_count !== '' &&
                            this.formData.kinder_count >= 0 &&
                            this.formData.betreuer_count >= 0;
                 }
             },
-            
+
             methods: {
                 /**
                  * Initialisiert die Bus-Seite: lädt Konfiguration, Betreuer-Namen und gespeicherte Daten.
@@ -461,7 +500,16 @@
                     this.config = config; // Geladene Konfiguration speichern
                     this.api = new JSONBinAPI(this.config); // API-Instanz mit geladener Konfiguration initialisieren
                     this.isConfigLoaded = true; // Konfiguration als geladen markieren
-                    this.busCount = this.config.TOTAL_BUSES; // Busanzahl aus der Konfiguration setzen
+
+                    // Загружаем GROUP_BIN_IDS и BUS_BIN_IDS из главного конфигурационного bin
+                    const configBinsLoaded = await this.api.loadConfigBins();
+                    if (!configBinsLoaded) {
+                        Utils.showAlert('Не удалось загрузить конфигурационные идентификаторы Bin для групп и автобусов. Пожалуйста, проверьте конфигурацию.', 'danger');
+                        this.remoteConfigLoaded = false;
+                        return;
+                    }
+                    this.remoteConfigLoaded = true;
+                    this.busCount = this.config.TOTAL_BUSES; // Busanzahl aus der geladenen Konfiguration setzen
 
                     this.currentDate = Utils.getCurrentDate(); // Aktuelles Datum setzen
                     this.loadBetreuerName(); // Betreuer-Namen laden
@@ -472,49 +520,50 @@
                  * Sendet die Busdaten an JSONBin.io.
                  */
                 async submitBusData() {
-                    if (!this.isFormValid || !this.isConfigLoaded) {
+                    if (!this.isFormValid || !this.isConfigLoaded || !this.remoteConfigLoaded) {
                         Utils.showAlert('Bitte füllen Sie alle Felder korrekt aus und stellen Sie sicher, dass die App konfiguriert ist.', 'warning');
                         return;
                     }
-                    
+
                     this.isLoading = true;
-                    
+
                     try {
                         const today = this.currentDate;
-                        
-                        // Bestehende Daten abrufen
-                        let existingData = await this.api.getData();
-                        
-                        // Datumsstruktur initialisieren, falls nicht vorhanden
-                        if (!existingData[today]) {
-                            existingData[today] = {
-                                groups: {},
-                                buses: {}
-                            };
+                        const selectedBusNumber = this.formData.bus_number;
+                        const busBinId = this.api.busBinIds[selectedBusNumber];
+
+                        if (!busBinId) {
+                            Utils.showAlert(`BIN_ID für Bus ${selectedBusNumber} nicht gefunden.`, 'danger');
+                            this.isLoading = false;
+                            return;
                         }
-                        
-                        if (!existingData[today].buses) {
-                            existingData[today].buses = {};
+
+                        // Bestehende Daten des spezifischen Bus-Bins abrufen
+                        let existingBusData = await this.api.getSpecificBinData(busBinId);
+
+                        // Datumsstruktur für den aktuellen Tag initialisieren, falls nicht vorhanden
+                        if (!existingBusData[today]) {
+                            existingBusData[today] = {};
                         }
-                        
-                        // Busdaten aktualisieren
-                        existingData[today].buses[this.formData.bus_number.toString()] = {
+
+                        // Busdaten für den aktuellen Tag aktualisieren
+                        existingBusData[today] = {
                             kinder_count: this.formData.kinder_count,
                             betreuer_count: this.formData.betreuer_count,
                             betreuer_name: this.betreuerName || 'Unbekannt',
                             timestamp: new Date().toISOString()
                         };
-                        
-                        // Daten speichern
-                        const success = await this.api.updateData(existingData);
-                        
+
+                        // Daten im spezifischen Bus-Bin speichern
+                        const success = await this.api.updateSpecificBinData(busBinId, existingBusData);
+
                         if (success) {
                             this.saveToLocalStorage(); // Nach erfolgreicher JSONBin.io-Aktualisierung im LocalStorage speichern
                             Utils.showAlert('Daten erfolgreich gesendet!', 'success');
                         } else {
                             Utils.showAlert('Fehler beim Senden der Daten. Bitte versuchen Sie es erneut.', 'danger');
                         }
-                        
+
                     } catch (error) {
                         console.error('Fehler beim Übermitteln der Busdaten:', error);
                         Utils.showAlert('Fehler beim Senden der Daten. Bitte versuchen Sie es erneut.', 'danger');
@@ -522,14 +571,14 @@
                         this.isLoading = false;
                     }
                 },
-                
+
                 /**
                  * Navigiert zurück zur vorherigen Seite im Browserverlauf.
                  */
                 goBack() {
                     window.history.back();
                 },
-                
+
                 /**
                  * Lädt den Betreuer-Namen aus dem LocalStorage.
                  */
@@ -541,7 +590,7 @@
                         Utils.showAlert('Kein Betreuer-Name gefunden. Bitte zuerst über Login anmelden.', 'danger');
                     }
                 },
-                
+
                 /**
                  * Speichert die aktuellen Busdaten im LocalStorage.
                  */
@@ -551,22 +600,22 @@
                     localStorage.setItem(`BusBetreuerCount_${this.currentDate}_${this.formData.bus_number}`, this.formData.betreuer_count);
                     console.log('Busdaten im LocalStorage gespeichert.');
                 },
-                
+
                 /**
                  * Lädt die zuletzt gespeicherten Busdaten aus dem LocalStorage.
                  */
                 loadFromLocalStorage() {
                     this.currentDate = Utils.getCurrentDate(); // Aktuelles Datum setzen
-                    
+
                     const savedBusNumber = localStorage.getItem(`last_selected_bus_number_${this.currentDate}`);
                     if (savedBusNumber) {
                         this.formData.bus_number = parseInt(savedBusNumber);
-                        
+
                         const savedKinderCount = localStorage.getItem(`BusKinderCount_${this.currentDate}_${this.formData.bus_number}`);
                         if (savedKinderCount !== null) {
                             this.formData.kinder_count = parseInt(savedKinderCount);
                         }
-                        
+
                         const savedBetreuerCount = localStorage.getItem(`BusBetreuerCount_${this.currentDate}_${this.formData.bus_number}`);
                         if (savedBetreuerCount !== null) {
                             this.formData.betreuer_count = parseInt(savedBetreuerCount);
@@ -577,7 +626,7 @@
                     }
                 }
             },
-            
+
             mounted() {
                 this.initializeBusPage(); // Startet die Initialisierung der Seite
             }

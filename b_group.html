@@ -161,7 +161,7 @@
                         <div v-if="bKinderAnzahl_EditMode" class="input-group input-group-lg">
                             <input type="number" class="form-control text-center" id="kinderAnzahl"
                                    min="0" max="20" placeholder="0" v-model.number="groupData.KinderAnzahl">
-                            <button class="btn btn-primary" type="button" @click="saveKinderAnzahl" :disabled="isSavingKinderAnzahl || !isConfigLoaded">
+                            <button class="btn btn-primary" type="button" @click="saveKinderAnzahl" :disabled="isSavingKinderAnzahl || !isConfigLoaded || !remoteConfigLoaded">
                                 <span v-if="isSavingKinderAnzahl" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                                 Speichern
                             </button>
@@ -179,7 +179,7 @@
                         <div v-if="bKinderAnzahlNow_EditMode" class="input-group input-group-lg">
                             <input type="number" class="form-control text-center" id="kinderAnzahlNow"
                                    min="0" max="20" placeholder="0" v-model.number="groupData.KinderAnzahlNow">
-                            <button class="btn btn-primary" type="button" @click="saveKinderAnzahlNow" :disabled="isSavingKinderAnzahlNow || !isConfigLoaded">
+                            <button class="btn btn-primary" type="button" @click="saveKinderAnzahlNow" :disabled="isSavingKinderAnzahlNow || !isConfigLoaded || !remoteConfigLoaded">
                                 <span v-if="isSavingKinderAnzahlNow" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                                 Aktualisieren
                             </button>
@@ -194,13 +194,12 @@
 
             <div class="group-card">
                 <div class="card-body">
-                    <!--<h5 class="card-title text-center mb-4">Aktionen</h5>-->
                     <div class="d-grid gap-3">
-                        <button class="btn btn-secondary d-none" @click="navigateToChildrenEdit" :disabled="!isConfigLoaded">
-                            Liste der Kinder bearbeiten
+                        <button class="btn btn-secondary" @click="navigateToChildrenEdit" :disabled="!isConfigLoaded || !remoteConfigLoaded">
+                            Liste der Kinder bearbeiten 
                         </button>
-                        <button class="btn btn-secondary d-none" @click="navigateToCalculation" :disabled="!isConfigLoaded">
-                            Rechnen
+                        <button class="btn btn-secondary" @click="navigateToCalculation" :disabled="!isConfigLoaded || !remoteConfigLoaded">
+                            Rechnen 
                         </button>
                         <button class="btn btn-outline-primary mt-3" @click="goBack"> Zurück </button>
                     </div>
@@ -238,57 +237,93 @@
                     'X-Master-Key': config.MASTER_KEY,
                     'X-Access-Key': config.ACCESS_KEY // Access-Key für PUT-Anfragen einbeziehen
                 };
+                this.groupBinIds = {}; // Hier werden geladene GROUP_BIN_IDS gespeichert
+                this.busBinIds = {}; // Hier werden geladene BUS_BIN_IDS gespeichert
             }
 
             /**
-             * Aktuelle Daten von JSONBin abrufen
-             * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt
+             * Загружает конфигурацию из главного BIN_ID.
+             * Этот метод должен быть вызван один раз при инициализации.
+             * @returns {Promise<boolean>} Статус успеха загрузки конфигурации.
              */
-            async getData() {
+            async loadConfigBins() {
                 try {
                     const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
                         method: 'GET',
-                        headers: {
-                            'X-Master-Key': this.config.MASTER_KEY,
-                            // Access-Key wird normalerweise für GET-Anfragen nicht benötigt, kann aber aus Konsistenzgründen sicher enthalten sein
-                            'X-Access-Key': this.config.ACCESS_KEY
-                        }
+                        headers: { 'X-Master-Key': this.config.MASTER_KEY } // Используем Master Key для чтения конфигурации
                     });
-
+                    
                     if (!response.ok) {
                         throw new Error(`HTTP-Fehler! Status: ${response.status}`);
                     }
-
+                    
                     const result = await response.json();
-                    return result.record || {}; // Sicherstellen, dass ein leeres Objekt zurückgegeben wird, wenn der Datensatz null/undefiniert ist
+                    const configData = result.record;
+
+                    if (configData && configData.GROUP_BIN_IDS && configData.BUS_BIN_IDS) {
+                        this.groupBinIds = configData.GROUP_BIN_IDS;
+                        this.busBinIds = configData.BUS_BIN_IDS;
+                        // Обновляем TOTAL_GROUPS и TOTAL_BUSES из конфигурационного bin
+                        this.config.TOTAL_GROUPS = configData.TOTAL_GROUPS; 
+                        this.config.TOTAL_BUSES = configData.TOTAL_BUSES; 
+                        return true;
+                    } else {
+                        throw new Error('Некорректная структура конфигурации в главном bin.');
+                    }
+
                 } catch (error) {
-                    console.error('Fehler beim Abrufen der Daten von JSONBin:', error);
-                    return {}; // Leeres Objekt bei Fehler zurückgeben, um Anwendungsabstürze zu verhindern
+                    console.error('Ошибка при загрузке конфигурационных BIN_ID:', error);
+                    return false;
                 }
             }
 
             /**
-             * Daten in JSONBin aktualisieren (PUT-Operation)
-             * @param {Object} data - Vollständige Datenstruktur zum Speichern
-             * @returns {Promise<boolean>} Erfolgsstatus
+             * Получить текущие данные из определенного bin (группы или автобуса).
+             * @param {string} binId - ID бина, из которого нужно получить данные.
+             * @returns {Promise<Object>} Текущая структура данных или пустой объект.
              */
-            async updateData(data) {
+            async getSpecificBinData(binId) {
                 try {
-                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}`, {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${binId}/latest`, {
+                        method: 'GET',
+                        headers: this.headers
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    return result.record || {};
+                } catch (error) {
+                    console.error(`Fehler beim Abrufen der Daten von BIN ${binId}:`, error);
+                    return {}; // Leeres Objekt zurückgeben, wenn der Abruf fehlschlägt
+                }
+            }
+
+            /**
+             * Обновить данные в определенном bin (группы или автобуса).
+             * @param {string} binId - ID бина, который нужно обновить.
+             * @param {Object} data - Полная структура данных для сохранения.
+             * @returns {Promise<boolean>} Статус успеха.
+             */
+            async updateSpecificBinData(binId, data) {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${binId}`, {
                         method: 'PUT',
-                        headers: this.headers, // Header mit Access-Key für PUT verwenden
+                        headers: this.headers,
                         body: JSON.stringify(data)
                     });
-
+                    
                     if (!response.ok) {
                         // Versuch, die Fehlermeldung aus der Antwort zu lesen
                         const errorData = await response.json();
                         throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorData.message || 'Unbekannter Fehler'}`);
                     }
-
+                    
                     return true;
                 } catch (error) {
-                    console.error('Fehler beim Aktualisieren der Daten in JSONBin:', error);
+                    console.error(`Fehler beim Aktualisieren der Daten in BIN ${binId}:`, error);
                     return false;
                 }
             }
@@ -410,6 +445,7 @@
             data() {
                 return {
                     groupNumber: null,
+                    groupBinId: null, // Добавлен для хранения ID текущего бина группы
                     currentDate: '',
                     groupData: {
                         Betreuer: [],
@@ -425,7 +461,8 @@
                     groupTitle: 'Gruppe wird geladen...',
                     formattedCurrentDate: '',
                     isConfigLoaded: false, // Flag für den Konfigurationsladestatus
-                    config: {} // Hier wird die geladene Konfiguration gespeichert
+                    config: {}, // Hier wird die geladene Konfiguration gespeichert
+                    remoteConfigLoaded: false // Флаг для проверки успешной загрузки конфигурации из удаленного bin
                 };
             },
 
@@ -457,12 +494,34 @@
                     this.api = new JSONBinAPI(this.config); // API-Instanz mit geladener Konfiguration initialisieren
                     this.isConfigLoaded = true; // Konfiguration als geladen markieren
 
+                    // Загружаем GROUP_BIN_IDS и BUS_BIN_IDS из главного конфигурационного bin
+                    const configBinsLoaded = await this.api.loadConfigBins();
+                    if (!configBinsLoaded) {
+                        Utils.showAlert('Не удалось загрузить конфигурационные идентификаторы Bin для групп и автобусов. Пожалуйста, проверьте конфигурацию.', 'danger');
+                        this.remoteConfigLoaded = false;
+                        return;
+                    }
+                    this.remoteConfigLoaded = true;
+                    // Обновляем TOTAL_GROUPS и TOTAL_BUSES из конфигурации, загруженной из главного bin
+                    this.totalGroups = this.config.TOTAL_GROUPS; 
+                    this.totalBuses = this.config.TOTAL_BUSES;
+
                     this.groupNumber = Utils.getURLParameter('gr');
                     this.currentDate = Utils.getCurrentDate();
                     this.formattedCurrentDate = this.formatDate(this.currentDate);
 
                     if (!this.groupNumber) {
                         Utils.showAlert('Gruppennummer nicht gefunden. Bitte über die Anmeldung zugreifen.', 'danger');
+                        setTimeout(() => {
+                            window.location.href = 'b_login.html';
+                        }, 3000);
+                        return;
+                    }
+
+                    // Получаем BIN_ID для текущей группы
+                    this.groupBinId = this.api.groupBinIds[this.groupNumber];
+                    if (!this.groupBinId) {
+                        Utils.showAlert(`BIN_ID для группы ${this.groupNumber} не найден. Пожалуйста, проверьте конфигурацию.`, 'danger');
                         setTimeout(() => {
                             window.location.href = 'b_login.html';
                         }, 3000);
@@ -504,51 +563,45 @@
                 },
 
                 /**
-                 * Lädt Gruppendaten (hauptsächlich Betreuer) von JSONBin.io.
-                 * KinderAnzahl und KinderAnzahlNow werden NICHT von JSONBin abgerufen.
+                 * Lädt Gruppendaten (главным образом Betreuer, KinderAnzahl, KinderAnzahlNow) из конкретного bin группы.
                  */
                 async loadBetreuerDataFromJSONBin() {
                     this.isLoadingBetreuer = true; // Ladespinner anzeigen
                     try {
-                        const data = await this.api.getData();
+                        // Получаем данные для текущего bin группы
+                        const data = await this.api.getSpecificBinData(this.groupBinId);
 
-                        // Prüfen, ob der Eintrag für das aktuelle Datum und die Gruppe existiert
-                        if (data && data[this.currentDate] && data[this.currentDate].groups && data[this.currentDate].groups[this.groupNumber]) {
-                            // Nur die Betreuerliste aus den JSONBin-Daten aktualisieren
-                            // KinderAnzahl und KinderAnzahlNow werden beim Laden von JSONBin IGNORIERT.
-                            // Sie werden über localStorage bzw. direkte Benutzereingabe verwaltet.
-                            this.groupData.Betreuer = data[this.currentDate].groups[this.groupNumber].Betreuer || [];
+                        // Проверяем, существует ли запись для текущей даты в данных группы
+                        if (data && data[this.currentDate]) {
+                            this.groupData.Betreuer = data[this.currentDate].Betreuer || [];
+                            // Эти поля теперь загружаются из bin группы напрямую
+                            this.groupData.KinderAnzahl = data[this.currentDate].KinderAnzahl !== undefined ? data[this.currentDate].KinderAnzahl : null;
+                            this.groupData.KinderAnzahlNow = data[this.currentDate].KinderAnzahlNow !== undefined ? data[this.currentDate].KinderAnzahlNow : null;
                         } else {
-                            // Wenn keine Daten für das aktuelle Datum/die Gruppe vorhanden sind, leere Betreuerliste initialisieren
-                            this.groupData.Betreuer = [];
-
-                            // Wenn dies der erste Ladevorgang für eine neue Gruppe/einen neuen Tag ist, leere Struktur in JSONBin speichern
-                            console.log('Keine vorhandenen Daten für Gruppe/Tag in JSONBin. Struktur wird initialisiert.');
-                            const updatedData = {
-                                ...data, // Bestehende Daten/Daten beibehalten
+                            // Если данных для текущей даты нет, инициализируем пустую структуру для этой даты в bin группы
+                            console.log('Нет существующих данных для текущей даты в bin группы. Инициализация структуры.');
+                            const updatedGroupData = {
+                                ...data, // Сохраняем любые другие данные группы, например, "GroupNumber" или "Kinder"
                                 [this.currentDate]: {
-                                    ... (data[this.currentDate] || { groups: {}, buses: {} }), // Sicherstellen, dass das Objekt für das aktuelle Datum existiert und 'buses' enthält
-                                    groups: {
-                                        ... (data[this.currentDate] ? data[this.currentDate].groups : {}),
-                                        // Gruppe initialisieren, aber KinderAnzahl und KinderAnzahlNow bleiben null (da sie nicht von JSONBin geladen werden)
-                                        [this.groupNumber]: {
-                                            Betreuer: [],
-                                            KinderAnzahl: null,
-                                            KinderAnzahlNow: null
-                                        }
-                                    }
+                                    Betreuer: [],
+                                    KinderAnzahl: null,
+                                    KinderAnzahlNow: null
                                 }
                             };
-                            // An den Server senden, ohne auf Antwort zu warten, um die Benutzeroberfläche nicht zu blockieren
-                            this.api.updateData(updatedData).then(success => {
-                                if (!success) console.error('Fehler beim Initialisieren der leeren Gruppendatenstruktur in JSONBin.');
+                            // Отправляем на сервер, не дожидаясь ответа, чтобы не блокировать UI
+                            this.api.updateSpecificBinData(this.groupBinId, updatedGroupData).then(success => {
+                                if (!success) console.error('Ошибка при инициализации пустой структуры данных для текущей даты в bin группы.');
                             });
+                            // Устанавливаем локальные данные на null, так как они инициализируются только что
+                            this.groupData.Betreuer = [];
+                            this.groupData.KinderAnzahl = null;
+                            this.groupData.KinderAnzahlNow = null;
                         }
                     } catch (error) {
-                        console.error('Fehler beim Laden der Gruppendaten (Betreuer):', error);
-                        Utils.showAlert('Fehler beim Laden der Betreuerdaten.', 'danger');
+                        console.error('Fehler beim Laden der Gruppendaten (Betreuer, KinderAnzahl):', error);
+                        Utils.showAlert('Fehler beim Laden der Gruppendaten.', 'danger');
                     } finally {
-                        this.isLoadingBetreuer = false; // Immer auf false setzen nach dem Versuch
+                        this.isLoadingBetreuer = false; // Всегда устанавливаем false после попытки
                     }
                 },
 
@@ -559,6 +612,10 @@
                     // Eingabe validieren
                     if (this.groupData.KinderAnzahl !== null && (isNaN(this.groupData.KinderAnzahl) || this.groupData.KinderAnzahl < 0 || this.groupData.KinderAnzahl > 20)) {
                         Utils.showAlert('Bitte geben Sie eine gültige Anzahl zwischen 0 und 20 ein.', 'warning');
+                        return;
+                    }
+                    if (!this.isConfigLoaded || !this.remoteConfigLoaded || !this.groupBinId) {
+                        Utils.showAlert('Конфигурация приложения не загружена или недействительна. Пожалуйста, проверьте параметры URL или перейдите на страницу конфигурации (index.html).', 'danger');
                         return;
                     }
 
@@ -596,6 +653,10 @@
                         Utils.showAlert('Bitte geben Sie eine gültige Anzahl zwischen 0 und 20 ein.', 'warning');
                         return;
                     }
+                    if (!this.isConfigLoaded || !this.remoteConfigLoaded || !this.groupBinId) {
+                        Utils.showAlert('Конфигурация приложения не загружена или недействительна. Пожалуйста, проверьте параметры URL или перейдите на страницу конфигурации (index.html).', 'danger');
+                        return;
+                    }
 
                     this.isSavingKinderAnzahlNow = true; // Speicherspinner anzeigen
                     try {
@@ -604,7 +665,7 @@
 
                         if (success) {
                             Utils.showAlert('Aktuelle Anzahl Kinder aktualisiert!', 'success');
-                            // Nach erfolgreichem Speichern in den Anzeigemodus wechseln
+                            // После успешного сохранения переходим в режим просмотра
                             this.bKinderAnzahlNow_EditMode = false;
                         } else {
                             Utils.showAlert('Fehler beim Speichern der Daten.', 'danger');
@@ -618,43 +679,32 @@
                 },
 
                 /**
-                 * Aktualisiert ein bestimmtes Feld in den Gruppendaten in JSONBin.
-                 * Diese Funktion ruft den gesamten Bin ab, aktualisiert die Daten der spezifischen Gruppe für heute,
-                 * und führt dann eine PUT-Anfrage aus, um den gesamten Bin zu aktualisieren.
-                 * @param {string} field - Name des zu aktualisierenden Feldes (z.B. 'KinderAnzahl', 'KinderAnzahlNow')
-                 * @param {any} value - Neuer Wert für das Feld
-                 * @returns {Promise<boolean>} Erfolgsstatus
+                 * Обновляет определенное поле в данных группы в JSONBin.
+                 * Эта функция получает весь bin, обновляет данные конкретной группы за текущий день,
+                 * а затем выполняет PUT-запрос для обновления всего bin.
+                 * @param {string} field - Имя поля для обновления (например, 'KinderAnzahl', 'KinderAnzahlNow')
+                 * @param {any} value - Новое значение для поля
+                 * @returns {Promise<boolean>} Статус успеха
                  */
                 async updateGroupFieldInJSONBin(field, value) {
                     try {
-                        // 1. Gesamte aktuelle Datenstruktur von JSONBin.io abrufen
-                        const currentData = await this.api.getData();
+                        // 1. Получаем всю текущую структуру данных из конкретного bin группы
+                        const currentGroupBinData = await this.api.getSpecificBinData(this.groupBinId);
 
-                        // 2. Sicherstellen, dass die erforderlichen verschachtelten Objekte für das aktuelle Datum und die Gruppe existieren
-                        if (!currentData[this.currentDate]) {
-                            currentData[this.currentDate] = { groups: {}, buses: {} }; // Sicherstellen, dass auch 'buses' initialisiert wird
-                        }
-                        if (!currentData[this.currentDate].groups) {
-                            currentData[this.currentDate].groups = {};
-                        }
-                        if (!currentData[this.currentDate].groups[this.groupNumber]) {
-                            // Wenn die Gruppe nicht existiert, mit Standardwerten initialisieren
-                            currentData[this.currentDate].groups[this.groupNumber] = {
-                                Betreuer: [],
-                                KinderAnzahl: null,
-                                KinderAnzahlNow: null
-                            };
+                        // 2. Убеждаемся, что необходимые вложенные объекты для текущей даты существуют
+                        if (!currentGroupBinData[this.currentDate]) {
+                            currentGroupBinData[this.currentDate] = { Betreuer: [], KinderAnzahl: null, KinderAnzahlNow: null };
                         }
 
-                        // 3. Das spezifische Feld für die aktuelle Gruppe und das Datum aktualisieren
-                        currentData[this.currentDate].groups[this.groupNumber][field] = value;
+                        // 3. Обновляем конкретное поле для текущей группы и даты
+                        currentGroupBinData[this.currentDate][field] = value;
 
-                        // 4. Die aktualisierte Datenstruktur zurück an JSONBin.io senden
-                        const success = await this.api.updateData(currentData);
+                        // 4. Отправляем обновленную структуру данных обратно в конкретный bin группы
+                        const success = await this.api.updateSpecificBinData(this.groupBinId, currentGroupBinData);
 
                         if (success) {
-                            // Bei Erfolg das lokale reaktive groupData-Objekt aktualisieren
-                            // Dies stellt sicher, dass Änderungen sofort in der Benutzeroberfläche angezeigt werden
+                            // При успехе обновляем локальный реактивный объект groupData
+                            // Это гарантирует немедленное отображение изменений в UI
                             this.groupData[field] = value;
                             return true;
                         } else {
@@ -671,7 +721,7 @@
                  * Navigiert zur Seite zur Bearbeitung von Kindern
                  */
                 navigateToChildrenEdit() {
-                    if (!this.isConfigLoaded) {
+                    if (!this.isConfigLoaded || !this.remoteConfigLoaded) {
                         Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Navigation nicht möglich.', 'danger');
                         return;
                     }
@@ -682,7 +732,7 @@
                  * Navigiert zur Berechnungsseite
                  */
                 navigateToCalculation() {
-                    if (!this.isConfigLoaded) {
+                    if (!this.isConfigLoaded || !this.remoteConfigLoaded) {
                         Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Navigation nicht möglich.', 'danger');
                         return;
                     }
@@ -699,7 +749,7 @@
                 /**
                  * Datum für die Anzeige formatieren
                  * @param {string} dateString - Datum im Format YYYY-MM-DD
-                 * @returns {string} Formatierte Datumszeichenfolge
+                 * @returns {string} Formatiertes Datumszeichenfolge
                  */
                 formatDate(dateString) {
                     const date = new Date(dateString);

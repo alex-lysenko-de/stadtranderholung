@@ -174,11 +174,11 @@
         const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
             BIN_COLLECTION_NAME: 'SR2025',
-            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
+            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID, jetzt für Master-Konfiguration
             MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
             ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
-            TOTAL_GROUPS: 15, // Gesamtzahl der Gruppen
-            TOTAL_BUSES: 3 // Gesamtzahl der Busse
+            TOTAL_GROUPS: 15, // Diese werden dynamisch aus der Konfiguration geladen
+            TOTAL_BUSES: 3 // Diese werden dynamisch aus der Konfiguration geladen
         };
 
         /**
@@ -186,8 +186,9 @@
          * Behandelt alle CRUD-Operationen mit ordnungsgemäßer Fehlerbehandlung
          */
         class JSONBinAPI {
-            constructor(config) {
+            constructor(config, binId) { // Bin ID wird jetzt dynamisch übergeben
                 this.config = config;
+                this.binId = binId;
                 this.headers = {
                     'Content-Type': 'application/json',
                     'X-Master-Key': config.MASTER_KEY,
@@ -201,7 +202,7 @@
              */
             async getData() {
                 try {
-                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.binId}/latest`, { // Verwende this.binId
                         method: 'GET',
                         headers: this.headers
                     });
@@ -210,11 +211,10 @@
                         const errorBody = await response.text();
                         throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorBody}`);
                     }
-
                     const result = await response.json();
                     return result.record || {};
                 } catch (error) {
-                    console.error('Fehler beim Abrufen der Daten von JSONBin:', error);
+                    console.error(`Fehler beim Abrufen der Daten von JSONBin (Bin ID: ${this.binId}):`, error);
                     throw error;
                 }
             }
@@ -226,7 +226,7 @@
              */
             async updateData(data) {
                 try {
-                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}`, {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.binId}`, { // Verwende this.binId
                         method: 'PUT',
                         headers: this.headers,
                         body: JSON.stringify(data)
@@ -236,12 +236,21 @@
                         const errorBody = await response.text();
                         throw new Error(`HTTP-PUT-Fehler! Status: ${response.status}, Nachricht: ${errorBody}`);
                     }
-
                     return true;
                 } catch (error) {
-                    console.error('Fehler beim Aktualisieren der Daten in JSONBin:', error);
+                    console.error(`Fehler beim Aktualisieren der Daten in JSONBin (Bin ID: ${this.binId}):`, error);
                     throw error;
                 }
+            }
+        }
+
+        /**
+         * Dienstprogrammklasse zum Abrufen der Hauptkonfigurationsdaten (GROUP_BIN_IDS, BUS_BIN_IDS)
+         */
+        class ConfigBinAPI extends JSONBinAPI {
+            constructor(config) {
+                // ConfigBinAPI verwendet die BIN_ID aus den CONFIG_DEFAULTS
+                super(config, config.BIN_ID);
             }
         }
 
@@ -264,12 +273,7 @@
              */
             formatDateForDisplay(dateString) {
                 const date = new Date(dateString);
-                return date.toLocaleDateString('de-DE', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
+                return date.toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             },
 
             /**
@@ -298,231 +302,156 @@
             },
 
             /**
-             * Konfigurationsparameter von URL oder LocalStorage laden.
-             * URL-Parameter haben Vorrang. Fehlende Parameter verwenden Standardwerte.
-             * Alle geladenen/Standardparameter werden im LocalStorage gespeichert.
-             * @returns {Object} Ein Objekt, das die geladene Konfiguration oder eine Fehlermeldung enthält.
+             * Konfigurationswerte aus der URL oder dem LocalStorage laden
+             * @returns {Object} Geladene Konfiguration
              */
-            loadConfig: function() {
-                const urlParams = new URLSearchParams(window.location.search);
+            loadConfig() {
+                const params = new URLSearchParams(window.location.search);
                 const config = {};
-                const missingParams = [];
 
-                const paramMap = {
-                    'TOTAL_GROUPS': 'config_total_groups',
-                    'TOTAL_BUSES': 'config_total_buses',
-                    'MASTER_KEY': 'config_bin_master_key',
-                    'ACCESS_KEY': 'config_bin_access_key',
-                    'BIN_COLLECTION_NAME': 'config_bin_collection',
-                    'BIN_ID': 'config_bin_id'
-                };
-
-                for (const urlParam in paramMap) {
-                    const lsKey = paramMap[urlParam];
-                    let value = urlParams.get(urlParam) || localStorage.getItem(lsKey);
-
-                    if (value !== null && value !== '') {
-                        if (urlParam === 'TOTAL_GROUPS' || urlParam === 'TOTAL_BUSES') {
-                            config[urlParam] = parseInt(value, 10);
-                        } else {
-                            config[urlParam] = value;
-                        }
-                        localStorage.setItem(lsKey, value);
-                    } else {
-                        if (CONFIG_DEFAULTS.hasOwnProperty(urlParam)) {
-                            config[urlParam] = CONFIG_DEFAULTS[urlParam];
-                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]);
-                        } else {
-                            missingParams.push(urlParam);
-                        }
-                    }
+                for (const key in CONFIG_DEFAULTS) {
+                    const urlValue = params.get(key.toLowerCase());
+                    const localValue = localStorage.getItem(`config_${key}`);
+                    config[key] = urlValue || localValue || CONFIG_DEFAULTS[key];
                 }
-                
-                config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
-
-                if (missingParams.length > 0) {
-                    return { config: null, error: `Es fehlen wesentliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass diese über die URL übergeben oder in index.html festgelegt werden.` };
-                }
-                
-                return { config: config, error: null };
+                return config;
             }
         };
 
-        const { createApp } = Vue;
-
-        createApp({
+        const app = Vue.createApp({
             data() {
                 return {
-                    groupNumber: null,
-                    currentDate: Utils.getCurrentDateString(),
-                    formattedCurrentDate: '',
-                    children: [], // Liste der Kinder in der Gruppe
-                    newChildName: '',
+                    config: {},
+                    isConfigLoaded: false,
                     loadingInitialData: true,
-                    api: null, // API-Instanz wird nach dem Laden der Konfiguration initialisiert
-                    isConfigLoaded: false, // Flag für den Konfigurationsladestatus
-                    config: null // Hier wird die geladene Konfiguration gespeichert
+                    groupNumber: null,
+                    groupBinId: null, // Specific bin ID for this group
+                    currentGroupData: {}, // Data for the current group's bin
+                    newChildName: '',
+                    formattedCurrentDate: '',
+                    currentDate: ''
                 };
             },
-            mounted() {
-                this.initializePage();
+            computed: {
+                children() {
+                    // Access the 'Kinder' array from the currentGroupData
+                    return this.currentGroupData.Kinder || []; // Ensure it returns an array
+                }
+            },
+            async created() {
+                this.formattedCurrentDate = Utils.formatDateForDisplay(Utils.getCurrentDateString());
+                this.currentDate = Utils.getCurrentDateString();
+                this.config = Utils.loadConfig();
+
+                const params = new URLSearchParams(window.location.search);
+                this.groupNumber = parseInt(params.get('group'), 10);
+
+                if (isNaN(this.groupNumber)) {
+                    Utils.showAlert('Gruppennummer fehlt in der URL.', 'danger');
+                    this.loadingInitialData = false;
+                    return;
+                }
+
+                if (!this.config.BIN_ID || !this.config.MASTER_KEY || !this.config.ACCESS_KEY) {
+                    Utils.showAlert('Konfigurationsdaten unvollständig. Bitte überprüfen Sie die URL-Parameter oder den LocalStorage.', 'danger');
+                    this.isConfigLoaded = false;
+                    this.loadingInitialData = false;
+                    return;
+                }
+
+                this.isConfigLoaded = true;
+                await this.loadInitialData();
             },
             methods: {
-                /**
-                 * Initialisiert die Seite: lädt Konfiguration, Gruppennummer und Kinderliste.
-                 */
-                async initializePage() {
-                    // Konfiguration laden
-                    const { config, error } = Utils.loadConfig();
-
-                    if (error) {
-                        Utils.showAlert(error, 'danger');
-                        this.isConfigLoaded = false;
-                        // Optional: Zurück zur Anmeldeseite, wenn Konfiguration fehlt
-                        setTimeout(() => {
-                            window.location.href = 'b_login.html';
-                        }, 3000);
-                        return;
-                    }
-
-                    this.config = config; // Geladene Konfiguration speichern
-                    this.api = new JSONBinAPI(this.config); // API-Instanz mit geladener Konfiguration initialisieren
-                    this.isConfigLoaded = true; // Konfiguration als geladen markieren
-
-                    this.groupNumber = Utils.getURLParameter('gr');
-                    this.formattedCurrentDate = Utils.formatDateForDisplay(this.currentDate);
-
-                    if (!this.groupNumber) {
-                        Utils.showAlert('Gruppennummer nicht gefunden. Bitte über die Anmeldung zugreifen.', 'danger');
-                        setTimeout(() => {
-                            window.location.href = 'b_login.html';
-                        }, 3000);
-                        return;
-                    }
-
-                    await this.loadChildrenData();
-                },
-
-                /**
-                 * Lädt die Kinderliste für die aktuelle Gruppe und das aktuelle Datum von JSONBin.
-                 */
-                async loadChildrenData() {
+                async loadInitialData() {
                     this.loadingInitialData = true;
                     try {
-                        const fullBinData = await this.api.getData();
-                        const todayData = fullBinData[this.currentDate];
+                        // 1. Fetch the master config bin to get group bin IDs
+                        const configApi = new ConfigBinAPI(this.config);
+                        const masterConfig = await configApi.getData(); [cite: 37]
 
-                        if (todayData && todayData.groups && todayData.groups[this.groupNumber] && todayData.groups[this.groupNumber].Kinder) {
-                            this.children = todayData.groups[this.groupNumber].Kinder;
-                        } else {
-                            this.children = []; // Leere Liste, wenn keine Daten vorhanden sind
-                            // Optional: Initialisiere die Gruppenstruktur, wenn sie nicht existiert
-                            await this.initializeGroupStructure(fullBinData);
+                        if (!masterConfig || !masterConfig.GROUP_BIN_IDS) {
+                            Utils.showAlert('Master-Konfiguration oder Gruppen-Bin-IDs nicht gefunden.', 'danger');
+                            this.loadingInitialData = false;
+                            this.isConfigLoaded = false;
+                            return;
                         }
+
+                        // 2. Get the specific bin ID for the current group
+                        this.groupBinId = masterConfig.GROUP_BIN_IDS[this.groupNumber]; [cite: 32]
+                        if (!this.groupBinId) {
+                            Utils.showAlert(`Keine Bin-ID für Gruppe ${this.groupNumber} in der Konfiguration gefunden.`, 'danger');
+                            this.loadingInitialData = false;
+                            return;
+                        }
+
+                        // 3. Fetch data for the specific group bin
+                        const groupApi = new JSONBinAPI(this.config, this.groupBinId);
+                        this.currentGroupData = await groupApi.getData(); [cite: 32]
+
+                        // Ensure Kinder array exists
+                        if (!this.currentGroupData.Kinder) {
+                            this.currentGroupData.Kinder = [];
+                        }
+
                     } catch (error) {
-                        console.error('Fehler beim Laden der Kinderdaten:', error);
-                        Utils.showAlert('Fehler beim Laden der Kinderdaten.', 'danger');
-                        this.children = [];
+                        Utils.showAlert(`Fehler beim Laden der Gruppendaten: ${error.message}`, 'danger');
+                        this.isConfigLoaded = false;
                     } finally {
                         this.loadingInitialData = false;
                     }
                 },
-
-                /**
-                 * Initialisiert die Gruppenstruktur in JSONBin, falls sie nicht existiert.
-                 * @param {Object} currentData - Die gesamte aktuelle Datenstruktur aus JSONBin.
-                 */
-                async initializeGroupStructure(currentData) {
-                    if (!currentData[this.currentDate]) {
-                        currentData[this.currentDate] = { groups: {}, buses: {} };
-                    }
-                    if (!currentData[this.currentDate].groups[this.groupNumber]) {
-                        currentData[this.currentDate].groups[this.groupNumber] = {
-                            Betreuer: [],
-                            KinderAnzahl: null,
-                            KinderAnzahlNow: null,
-                            Kinder: [] // Initialisiere die Kinderliste
-                        };
-                    }
-                    try {
-                        await this.api.updateData(currentData);
-                        console.log('Gruppenstruktur in JSONBin initialisiert.');
-                    } catch (error) {
-                        console.error('Fehler beim Initialisieren der Gruppenstruktur:', error);
-                    }
-                },
-
-                /**
-                 * Fügt ein neues Kind zur Liste hinzu und speichert es in JSONBin.
-                 */
                 async addChild() {
-                    if (!this.newChildName.trim()) {
+                    if (this.newChildName.trim() === '') {
                         Utils.showAlert('Bitte geben Sie einen Namen für das Kind ein.', 'warning');
                         return;
                     }
-                    const childName = this.newChildName.trim();
-                    if (this.children.includes(childName)) {
-                        Utils.showAlert('Dieses Kind ist bereits in der Liste.', 'warning');
-                        return;
-                    }
 
-                    this.children.push(childName);
-                    this.newChildName = ''; // Eingabefeld leeren
-                    await this.saveChildrenData();
-                },
-
-                /**
-                 * Entfernt ein Kind aus der Liste und speichert die Änderungen in JSONBin.
-                 * @param {number} index - Index des zu entfernenden Kindes.
-                 */
-                async removeChild(index) {
-                    const removedChild = this.children.splice(index, 1);
-                    Utils.showAlert(`${removedChild[0]} wurde entfernt.`, 'info');
-                    await this.saveChildrenData();
-                },
-
-                /**
-                 * Speichert die aktuelle Kinderliste in JSONBin.
-                 */
-                async saveChildrenData() {
                     try {
-                        const fullBinData = await this.api.getData();
-                        
-                        // Sicherstellen, dass die Struktur existiert
-                        if (!fullBinData[this.currentDate]) {
-                            fullBinData[this.currentDate] = { groups: {}, buses: {} };
+                        // Ensure Kinder array exists
+                        if (!this.currentGroupData.Kinder) {
+                            this.currentGroupData.Kinder = [];
                         }
-                        if (!fullBinData[this.currentDate].groups[this.groupNumber]) {
-                            fullBinData[this.currentDate].groups[this.groupNumber] = {
-                                Betreuer: [],
-                                KinderAnzahl: null,
-                                KinderAnzahlNow: null,
-                                Kinder: []
-                            };
-                        }
+                        this.currentGroupData.Kinder.push(this.newChildName.trim());
 
-                        fullBinData[this.currentDate].groups[this.groupNumber].Kinder = this.children;
-                        const success = await this.api.updateData(fullBinData);
+                        const groupApi = new JSONBinAPI(this.config, this.groupBinId);
+                        const success = await groupApi.updateData(this.currentGroupData);
 
                         if (success) {
-                            Utils.showAlert('Kinderliste erfolgreich gespeichert!', 'success');
+                            this.newChildName = '';
+                            Utils.showAlert('Kind erfolgreich hinzugefügt!', 'success');
                         } else {
-                            Utils.showAlert('Fehler beim Speichern der Kinderliste.', 'danger');
+                            Utils.showAlert('Fehler beim Hinzufügen des Kindes.', 'danger');
                         }
                     } catch (error) {
-                        console.error('Fehler beim Speichern der Kinderdaten:', error);
-                        Utils.showAlert('Unerwarteter Fehler beim Speichern der Kinderdaten.', 'danger');
+                        Utils.showAlert(`Fehler beim Speichern des Kindes: ${error.message}`, 'danger');
                     }
                 },
+                async removeChild(index) {
+                    if (confirm('Möchten Sie dieses Kind wirklich entfernen?')) {
+                        try {
+                            this.currentGroupData.Kinder.splice(index, 1);
 
-                /**
-                 * Navigiert zurück zur vorherigen Seite.
-                 */
+                            const groupApi = new JSONBinAPI(this.config, this.groupBinId);
+                            const success = await groupApi.updateData(this.currentGroupData);
+
+                            if (success) {
+                                Utils.showAlert('Kind erfolgreich entfernt.', 'success');
+                            } else {
+                                Utils.showAlert('Fehler beim Entfernen des Kindes.', 'danger');
+                            }
+                        } catch (error) {
+                            Utils.showAlert(`Fehler beim Entfernen des Kindes: ${error.message}`, 'danger');
+                        }
+                    }
+                },
                 goBack() {
                     window.history.back();
                 }
             }
-        }).mount('#app');
+        });
+
+        app.mount('#app');
     </script>
 </body>
 </html>

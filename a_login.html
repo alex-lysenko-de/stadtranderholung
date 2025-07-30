@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administrator Login - Stadtranderholung</title>
+    <title>Leiter Login - Stadtranderholung</title>
     <!-- Bootstrap 5.3.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom CSS for mobile optimization -->
+    <!-- use Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -82,6 +83,10 @@
             margin-bottom: 5px;
             word-break: break-all;
         }
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -89,9 +94,9 @@
         <div class="login-container">
             <div class="login-card">
                 <div class="card-header">
-                    <div class="admin-icon">🔧</div>
-                    <h2 class="mb-0">Administrator</h2>
-                    <p class="mb-0 mt-2">Stadtranderholung 2025</p>
+                    <div class="admin-icon"><!-- add crown fa-icon --><i class="fas fa-crown"></i></div>
+                    <h2 class="mb-0">Leiter</h2>
+                    <p class="mb-0 mt-2">Stadtranderholung {{ currentYear }}</p>
                 </div>
                 <div class="navigation-section">
                     <!-- Container für Erfolgs-/Fehlermeldungen -->
@@ -99,24 +104,30 @@
                     
                     <!-- Parameterinformationen (nur anzeigen, wenn Parameter geladen wurden) -->
                     <div v-if="hasParameters && isConfigLoaded" class="parameters-info">
-                        <h6 class="mb-2">📋 Geladene Parameter:</h6>
+                        <h6 class="mb-2"><i class="fas fa-clipboard-list"></i> Geladene Parameter:</h6>
                         <div v-for="(value, key) in loadedParameters" :key="key" class="parameter-item">
                             <strong>{{ key }}:</strong> {{ value }}
                         </div>
                     </div>
                     
+                    <!-- Ladeanzeige während der Konfigurationsvalidierung -->
+                    <div v-if="isValidatingConfig" class="text-center mb-3">
+                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                        <small class="text-muted">Konfiguration wird validiert...</small>
+                    </div>
+                    
                     <!-- Hauptnavigationsschaltflächen -->
                     <div class="d-grid gap-2">
-                        <button @click="navigateTo('a_overview.html')" class="btn btn-primary nav-button" :disabled="!isConfigLoaded">
-                            📊 Gruppen Übersicht
+                        <button @click="navigateTo('a_overview.html')" class="btn btn-primary nav-button" :disabled="!isConfigLoaded || isValidatingConfig">
+                            <i class="fa-solid fa-users"></i> Gruppen Übersicht
                         </button>
                         
-                        <button @click="navigateTo('a_bus.html')" class="btn btn-primary nav-button" :disabled="!isConfigLoaded">
-                            🚌 Bus Übersicht
+                        <button @click="navigateTo('a_bus.html')" class="btn btn-primary nav-button" :disabled="!isConfigLoaded || isValidatingConfig">
+                            <i class="fa-solid fa-bus"></i> Bus Übersicht
                         </button>
                         
-                        <button @click="navigateTo('b_login.html')" class="btn btn-info nav-button" :disabled="!isConfigLoaded">
-                            👤 Betreuer Login
+                        <button @click="navigateTo('b_login.html')" class="btn btn-info nav-button" :disabled="!isConfigLoaded || isValidatingConfig">
+                            <i class="fa-solid fa-user"></i> Betreuer Login
                         </button>
                     </div>
                     
@@ -142,8 +153,7 @@
          */
         const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
-            BIN_COLLECTION_NAME: 'SR2025',
-            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
+            BIN_ID: '68892cef7b4b8670d8a95f2b', // Standard Config-BIN_ID - now contains configuration with GROUP_BIN_IDS and BUS_BIN_IDS
             MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
             ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
             TOTAL_GROUPS: 15,
@@ -205,11 +215,11 @@
 
                 // Alle erwarteten Parameter und deren LocalStorage-Schlüssel definieren
                 const paramMap = {
+                    'year': 'config_year',
                     'TOTAL_GROUPS': 'config_total_groups',
                     'TOTAL_BUSES': 'config_total_buses',
-                    'MASTER_KEY': 'config_bin_master_key',
-                    'ACCESS_KEY': 'config_bin_access_key',
-                    'BIN_COLLECTION_NAME': 'config_bin_collection',
+                    'masterkey': 'config_bin_master_key',
+                    'bin_access_key': 'config_bin_access_key',
                     'BIN_ID': 'config_bin_id'
                 };
 
@@ -228,9 +238,12 @@
                         localStorage.setItem(lsKey, value);
                     } else {
                         // Prüfen, ob ein Standardwert in CONFIG_DEFAULTS existiert
-                        if (CONFIG_DEFAULTS.hasOwnProperty(urlParam)) {
-                            config[urlParam] = CONFIG_DEFAULTS[urlParam];
-                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]); // Standardwert im LS speichern
+                        const defaultKey = urlParam === 'masterkey' ? 'MASTER_KEY' : 
+                                         urlParam === 'bin_access_key' ? 'ACCESS_KEY' : urlParam;
+                        
+                        if (CONFIG_DEFAULTS.hasOwnProperty(defaultKey)) {
+                            config[urlParam] = CONFIG_DEFAULTS[defaultKey];
+                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[defaultKey]); // Standardwert im LS speichern
                         } else {
                             missingParams.push(urlParam);
                         }
@@ -245,6 +258,60 @@
                 }
                 
                 return { config: config, error: null };
+            },
+
+            /**
+             * Validiert die Konfiguration durch Abfrage des Config-Bins
+             * @param {Object} config - Die zu validierende Konfiguration
+             * @returns {Promise<Object>} Promise mit Validierungsergebnis
+             */
+            async validateConfiguration(config) {
+                try {
+                    const response = await fetch(`${config.API_BASE_URL}/${config.BIN_ID}/latest`, {
+                        method: 'GET',
+                        headers: {
+                            'X-Master-Key': config.masterkey
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    const configData = data.record;
+
+                    // Validiere die Struktur der Konfiguration
+                    if (!configData.TOTAL_GROUPS || !configData.TOTAL_BUSES || 
+                        !configData.GROUP_BIN_IDS || !configData.BUS_BIN_IDS) {
+                        throw new Error('Ungültige Konfigurationsstruktur im Config-Bin');
+                    }
+
+                    // Validiere, dass die Anzahl der Bin-IDs mit den Totals übereinstimmt
+                    const groupBinCount = Object.keys(configData.GROUP_BIN_IDS).length;
+                    const busBinCount = Object.keys(configData.BUS_BIN_IDS).length;
+
+                    if (groupBinCount !== configData.TOTAL_GROUPS) {
+                        throw new Error(`Anzahl der Gruppen-Bins (${groupBinCount}) stimmt nicht mit TOTAL_GROUPS (${configData.TOTAL_GROUPS}) überein`);
+                    }
+
+                    if (busBinCount !== configData.TOTAL_BUSES) {
+                        throw new Error(`Anzahl der Bus-Bins (${busBinCount}) stimmt nicht mit TOTAL_BUSES (${configData.TOTAL_BUSES}) überein`);
+                    }
+
+                    return { 
+                        valid: true, 
+                        configData: configData,
+                        error: null 
+                    };
+
+                } catch (error) {
+                    return { 
+                        valid: false, 
+                        configData: null,
+                        error: `Konfigurationsvalidierung fehlgeschlagen: ${error.message}` 
+                    };
+                }
             }
         };
 
@@ -258,10 +325,13 @@
             data() {
                 return {
                     currentDateTime: '',
+                    currentYear: new Date().getFullYear(),
                     loadedParameters: {},
                     hasParameters: false,
                     isConfigLoaded: false, // Flag, um den Konfigurationsladestatus zu verfolgen
-                    config: {} // Hier wird die geladene Konfiguration gespeichert
+                    isValidatingConfig: false, // Flag für Validierungsvorgang
+                    config: {}, // Hier wird die geladene Konfiguration gespeichert
+                    remoteConfig: {} // Hier wird die vom Server geladene Konfiguration gespeichert
                 };
             },
             
@@ -275,7 +345,7 @@
                  * Initialisiert die Anwendung
                  * Analysiert URL-Parameter und richtet den Anfangszustand ein
                  */
-                initializeApp() {
+                async initializeApp() {
                     console.log('Administrator-Anmeldung wird initialisiert...');
                     
                     const { config, error } = Utils.loadConfig();
@@ -287,7 +357,6 @@
                     }
 
                     this.config = config; // Geladene Konfiguration speichern
-                    this.isConfigLoaded = true; // Konfiguration als geladen markieren
 
                     // Anzeigen der geladenen Parameter im UI
                     this.loadedParameters = {};
@@ -298,18 +367,63 @@
                         }
                     }
                     this.hasParameters = Object.keys(this.loadedParameters).length > 0;
+
+                    // Jahr aus Konfiguration setzen, falls verfügbar
+                    if (this.config.year) {
+                        this.currentYear = this.config.year;
+                    }
                     
                     if (this.hasParameters) {
                         const paramCount = Object.keys(this.loadedParameters).length;
                         Utils.showAlert(
-                            `${paramCount} Parameter erfolgreich geladen und gespeichert.`, 
+                            `${paramCount} Parameter erfolgreich geladen.`, 
                             'success'
                         );
                         console.log('Geladene Parameter:', this.loadedParameters);
                     }
+
+                    // Konfiguration validieren
+                    await this.validateConfig();
                     
                     // Aktuelle Zeit einstellen
                     this.updateDateTime();
+                },
+
+                /**
+                 * Validiert die Konfiguration durch Abfrage des Config-Bins
+                 */
+                async validateConfig() {
+                    this.isValidatingConfig = true;
+                    
+                    try {
+                        const validation = await Utils.validateConfiguration(this.config);
+                        
+                        if (validation.valid) {
+                            this.remoteConfig = validation.configData;
+                            this.isConfigLoaded = true;
+                            
+                            // Aktualisiere lokale Totals mit den Werten vom Server
+                            this.config.TOTAL_GROUPS = validation.configData.TOTAL_GROUPS;
+                            this.config.TOTAL_BUSES = validation.configData.TOTAL_BUSES;
+                            
+                            // Speichere die aktualisierten Werte im LocalStorage
+                            localStorage.setItem('config_total_groups', validation.configData.TOTAL_GROUPS);
+                            localStorage.setItem('config_total_buses', validation.configData.TOTAL_BUSES);
+                            
+                            Utils.showAlert(
+                                `Konfiguration validiert: ${validation.configData.TOTAL_GROUPS} Gruppen, ${validation.configData.TOTAL_BUSES} Busse`, 
+                                'success'
+                            );
+                        } else {
+                            this.isConfigLoaded = false;
+                            Utils.showAlert(validation.error, 'danger');
+                        }
+                    } catch (error) {
+                        this.isConfigLoaded = false;
+                        Utils.showAlert(`Unerwarteter Fehler bei der Konfigurationsvalidierung: ${error.message}`, 'danger');
+                    } finally {
+                        this.isValidatingConfig = false;
+                    }
                 },
 
                 /**

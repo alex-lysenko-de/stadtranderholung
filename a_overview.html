@@ -258,11 +258,11 @@
         </div>
 
         <div class="action-buttons">
-            <button class="btn refresh-btn" @click="loadOverviewData(false)" :disabled="recountInitiating || loadingInitialData || !isConfigLoaded">
+            <button class="btn refresh-btn" @click="loadOverviewData(false)" :disabled="recountInitiating || loadingInitialData || !isConfigLoaded || !remoteConfigLoaded">
                 <span v-if="loadingInitialData" class="spinner-border spinner-border-sm me-2"></span>
                 <i class="fas fa-sync me-2"></i><span class="button-text">{{ loadingInitialData ? 'Laden...' : 'Aktualisieren' }}</span>
             </button>
-            <button class="btn recount-btn" @click="triggerRecount" :disabled="recountInitiating || !isConfigLoaded">
+            <button class="btn recount-btn" @click="triggerRecount" :disabled="recountInitiating || !isConfigLoaded || !remoteConfigLoaded">
                 <span v-if="recountInitiating" class="spinner-border spinner-border-sm me-2"></span>
                 <span class="button-text">{{ recountInitiating ? 'Überprüfung läuft...' : 'Überprüfung durchgeführt' }}</span>
             </button>
@@ -282,15 +282,20 @@
                     <p class="text-muted">Lade Gruppendaten für heute...</p>
                 </div>
 
-                <div v-else-if="!hasGroupsData && isConfigLoaded" class="text-center py-5">
+                <div v-else-if="!hasGroupsData && isConfigLoaded && remoteConfigLoaded" class="text-center py-5">
                     <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
                     <h5 class="text-muted">Keine Daten für heute verfügbar</h5>
                     <p class="text-muted">Noch kein Betreuer hat sich heute angemeldet.</p>
                 </div>
                  <div v-else-if="!isConfigLoaded" class="text-center py-5">
                     <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">Konfiguration konnte nicht geladen werden.</h5>
+                    <h5 class="text-muted">Lokale Konfiguration konnte nicht geladen werden.</h5>
                     <p class="text-muted">Bitte gehen Sie zur Anmeldeseite zurück, um die Konfiguration zu laden.</p>
+                </div>
+                <div v-else-if="!remoteConfigLoaded" class="text-center py-5">
+                    <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Remote-Konfiguration konnte nicht geladen werden.</h5>
+                    <p class="text-muted">Stellen Sie sicher, dass die Master-BIN-ID korrekt ist und die Konfiguration auf JSONBin.io verfügbar ist.</p>
                 </div>
 
                 <div v-else class="table-responsive">
@@ -319,7 +324,7 @@
                                 <td><span v-html="formatCount(getGroupData(groupNumber).KinderAnzahlNow, 'current')"></span></td>
                                 <td><span v-html="formatBetreuerList(getGroupData(groupNumber).Betreuer)"></span></td>
                                 <td><span v-html="formatDifference(getGroupData(groupNumber))"></span></td>
-                                <td>{{ lastUpdateTime || '-' }}</td>
+                                <td>{{ formatTimestamp(getGroupData(groupNumber).timestamp) || '-' }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -355,7 +360,7 @@
         const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
             BIN_COLLECTION_NAME: 'SR2025',
-            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation
+            BIN_ID: '68892cef7b4b8670d8a95f2b', // Standard-BIN_ID für die Hauptkonfiguration
             MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
             ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
             TOTAL_GROUPS: 15, // Gesamtzahl der Gruppen (1-15)
@@ -369,20 +374,60 @@
         class JSONBinAPI {
             constructor(config) {
                 this.config = config;
+                // Header enthalten jetzt Access-Key für Schreiboperationen
                 this.headers = {
                     'Content-Type': 'application/json',
                     'X-Master-Key': config.MASTER_KEY,
-                    'X-Access-Key': config.ACCESS_KEY
+                    'X-Access-Key': config.ACCESS_KEY // Access-Key für PUT-Anfragen einbeziehen
                 };
+                this.groupBinIds = {}; // Hier werden geladene GROUP_BIN_IDS gespeichert
+                this.busBinIds = {}; // Hier werden geladene BUS_BIN_IDS gespeichert
             }
 
             /**
-             * Aktuelle Daten von JSONBin abrufen
-             * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt
+             * Lädt die Konfiguration aus der Haupt-BIN_ID.
+             * Diese Methode sollte einmal bei der Initialisierung aufgerufen werden.
+             * @returns {Promise<boolean>} Erfolgsstatus des Ladens der Konfiguration.
              */
-            async getData() {
+            async loadConfigBins() {
                 try {
                     const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
+                        method: 'GET',
+                        headers: { 'X-Master-Key': this.config.MASTER_KEY } // Verwenden Sie den Master Key zum Lesen der Konfiguration
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const configData = result.record;
+
+                    if (configData && configData.GROUP_BIN_IDS && configData.BUS_BIN_IDS) {
+                        this.groupBinIds = configData.GROUP_BIN_IDS;
+                        this.busBinIds = configData.BUS_BIN_IDS;
+                        // Aktualisieren Sie TOTAL_GROUPS und TOTAL_BUSES aus dem Konfigurations-Bin
+                        this.config.TOTAL_GROUPS = configData.TOTAL_GROUPS;
+                        this.config.TOTAL_BUSES = configData.TOTAL_BUSES;
+                        return true;
+                    } else {
+                        throw new Error('Ungültige Konfigurationsstruktur im Haupt-Bin.');
+                    }
+
+                } catch (error) {
+                    console.error('Fehler beim Laden der Konfigurations-BIN_IDs:', error);
+                    return false;
+                }
+            }
+
+            /**
+             * Ruft die aktuellen Daten von einer bestimmten Bin (Gruppe oder Bus) ab.
+             * @param {string} binId - Die ID der Bin, aus der Daten abgerufen werden sollen.
+             * @returns {Promise<Object>} Die aktuelle Datenstruktur oder ein leeres Objekt.
+             */
+            async getSpecificBinData(binId) {
+                try {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${binId}/latest`, {
                         method: 'GET',
                         headers: this.headers
                     });
@@ -395,33 +440,36 @@
                     const result = await response.json();
                     return result.record || {};
                 } catch (error) {
-                    console.error('Fehler beim Abrufen der Daten von JSONBin:', error);
+                    console.error(`Fehler beim Abrufen der Daten von BIN ${binId}:`, error);
+                    // Throwing error here to be caught by the calling function for proper error handling
                     throw error;
                 }
             }
 
             /**
-             * Daten in JSONBin aktualisieren
-             * @param {Object} data - Vollständige zu speichernde Datenstruktur
-             * @returns {Promise<boolean>} Erfolgsstatus
+             * Aktualisiert die Daten in einer bestimmten Bin (Gruppe oder Bus).
+             * @param {string} binId - Die ID der zu aktualisierenden Bin.
+             * @param {Object} data - Die vollständige Datenstruktur, die gespeichert werden soll.
+             * @returns {Promise<boolean>} Erfolgsstatus.
              */
-            async updateData(data) {
+            async updateSpecificBinData(binId, data) {
                 try {
-                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}`, {
+                    const response = await fetch(`${this.config.API_BASE_URL}/${binId}`, {
                         method: 'PUT',
                         headers: this.headers,
                         body: JSON.stringify(data)
                     });
 
                     if (!response.ok) {
-                        const errorBody = await response.text();
-                        throw new Error(`HTTP-PUT-Fehler! Status: ${response.status}, Nachricht: ${errorBody}`);
+                        // Versuch, die Fehlermeldung aus der Antwort zu lesen
+                        const errorData = await response.json();
+                        throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorData.message || 'Unbekannter Fehler'}`);
                     }
 
                     return true;
                 } catch (error) {
-                    console.error('Fehler beim Aktualisieren der Daten in JSONBin:', error);
-                    throw error;
+                    console.error(`Fehler beim Aktualisieren der Daten in BIN ${binId}:`, error);
+                    return false;
                 }
             }
         }
@@ -557,7 +605,8 @@
                     api: null, // API-Instanz wird nach dem Laden der Konfiguration initialisiert
                     lastUpdateTime: null,
                     isConfigLoaded: false, // Flag für den Konfigurationsladestatus
-                    config: null // Hier wird die geladene Konfiguration gespeichert
+                    config: null, // Hier wird die geladene Konfiguration gespeichert
+                    remoteConfigLoaded: false // Flag für den Status des Ladens der Remote-Konfiguration
                 };
             },
 
@@ -584,7 +633,7 @@
                 },
                 totalGroupsRange() {
                     // Sicherstellen, dass die Konfiguration geladen ist, bevor auf TOTAL_GROUPS zugegriffen wird
-                    if (this.isConfigLoaded && this.config && this.config.TOTAL_GROUPS) {
+                    if (this.isConfigLoaded && this.remoteConfigLoaded && this.config && this.config.TOTAL_GROUPS) {
                         return Array.from({ length: this.config.TOTAL_GROUPS }, (_, i) => i + 1);
                     }
                     return []; // Leeres Array zurückgeben, wenn Konfiguration nicht geladen ist
@@ -607,6 +656,7 @@
                     if (error) {
                         Utils.showAlert(error, 'danger');
                         this.isConfigLoaded = false;
+                        this.remoteConfigLoaded = false;
                         // Optional: Zurück zur Anmeldeseite, wenn Konfiguration fehlt
                         setTimeout(() => {
                             window.location.href = 'a_login.html';
@@ -618,6 +668,15 @@
                     this.api = new JSONBinAPI(this.config); // API-Instanz mit geladener Konfiguration initialisieren
                     this.isConfigLoaded = true; // Konfiguration als geladen markieren
 
+                    // Lädt GROUP_BIN_IDS und BUS_BIN_IDS aus dem Hauptkonfigurations-Bin
+                    const configBinsLoaded = await this.api.loadConfigBins();
+                    if (!configBinsLoaded) {
+                        Utils.showAlert('Die Konfigurations-Bin-IDs für Gruppen und Busse konnten nicht geladen werden. Bitte überprüfen Sie die Konfiguration.', 'danger');
+                        this.remoteConfigLoaded = false;
+                        return;
+                    }
+                    this.remoteConfigLoaded = true;
+
                     // Daten laden, nachdem die Konfiguration erfolgreich geladen wurde
                     await this.loadOverviewData(false);
                 },
@@ -626,7 +685,8 @@
                     return this.groupsData[groupNumber.toString()] || {
                         Betreuer: [],
                         KinderAnzahl: null,
-                        KinderAnzahlNow: null
+                        KinderAnzahlNow: null,
+                        timestamp: null
                     };
                 },
 
@@ -635,7 +695,7 @@
                 },  
 
                 async loadOverviewData(silent = false) {
-                    if (!this.isConfigLoaded) {
+                    if (!this.isConfigLoaded || !this.remoteConfigLoaded) {
                         // Wenn die Konfiguration nicht geladen ist, versuchen Sie nicht, Daten zu laden
                         if (!silent) {
                             Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Daten können nicht abgerufen werden.', 'danger');
@@ -649,20 +709,52 @@
                             this.loadingInitialData = true;
                         }
 
-                        const fullBinData = await this.api.getData();
+                        const groupDataPromises = [];
+                        const currentDay = this.currentDate;
+
+                        // Iterate over known group BIN_IDs and fetch data for each
+                        for (const groupNumber in this.api.groupBinIds) {
+                            const groupBinId = this.api.groupBinIds[groupNumber];
+                            groupDataPromises.push(
+                                this.api.getSpecificBinData(groupBinId)
+                                    .then(binContent => ({
+                                        groupNumber: groupNumber,
+                                        data: binContent[currentDay] || {
+                                            Betreuer: [],
+                                            KinderAnzahl: null,
+                                            KinderAnzahlNow: null,
+                                            timestamp: null
+                                        }
+                                    }))
+                                    .catch(error => {
+                                        console.error(`Fehler beim Abrufen der Daten für Gruppe ${groupNumber}:`, error);
+                                        // Return default structure on error to prevent breaking the Promise.all
+                                        return {
+                                            groupNumber: groupNumber,
+                                            data: {
+                                                Betreuer: [],
+                                                KinderAnzahl: null,
+                                                KinderAnzahlNow: null,
+                                                timestamp: null
+                                            }
+                                        };
+                                    })
+                            );
+                        }
+
+                        const allGroupResults = await Promise.all(groupDataPromises);
+
+                        const newGroupsData = {};
+                        allGroupResults.forEach(result => {
+                            newGroupsData[result.groupNumber] = result.data;
+                        });
+
+                        this.groupsData = newGroupsData;
                         this.lastUpdateTime = Utils.getCurrentTimeForDisplay();
+                        this.processGroupsData(); // Process the fetched data to update totals and missing children
 
-                        const todayData = fullBinData[this.currentDate];
-
-                        if (todayData && todayData.groups) {
-                            this.groupsData = JSON.parse(JSON.stringify(todayData.groups));
-                            this.processGroupsData();
-                        } else {
-                            this.groupsData = {};
-                            this.totalMorning = 0;
-                            this.totalCurrent = 0;
-                            this.missingChildren = [];
-                            this.activeGroups = 0;
+                        if (!silent) {
+                            Utils.showAlert('Gruppen-Daten erfolgreich aktualisiert!', 'success');
                         }
 
                     } catch (error) {
@@ -670,7 +762,7 @@
                         if (!silent) {
                             Utils.showAlert('Datenaktualisierung fehlgeschlagen. Netzwerkproblem?', 'danger');
                         }
-                        this.groupsData = {};
+                        this.groupsData = {}; // Clear data on error
                     } finally {
                         this.loadingInitialData = false;
                     }
@@ -780,61 +872,81 @@
                     }
                 },
 
+                formatTimestamp(timestamp) {
+                    if (!timestamp) {
+                        return '<span class="count-null">-</span>';
+                    }
+                    
+                    try {
+                        const date = new Date(timestamp);
+                        const timeString = date.toLocaleTimeString('de-DE', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                        });
+                        return `<span class="timestamp">${timeString}</span>`;
+                    } catch (error) {
+                        return '<span class="count-null">-</span>';
+                    }
+                },
+
                 async triggerRecount() {
-                    if (!this.isConfigLoaded) {
-                        Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Zählvorgang nicht möglich.', 'danger');
+                    if (!this.isConfigLoaded || !this.remoteConfigLoaded) {
+                        Utils.showAlert('App-Konfiguration wurde nicht geladen. Neuberechnung ist nicht möglich.', 'danger');
                         return;
                     }
 
                     this.recountInitiating = true;
-                    Utils.showAlert('Neuer Zählvorgang wird gestartet. Bitte warten...', 'info');
+                    Utils.showAlert('Es wird eine neue Zählung gestartet. Bitte warten Sie...', 'info');
 
                     try {
-                        const fullBinData = await this.api.getData();
+                        const updatePromises = [];
+                        const currentDay = this.currentDate;
 
-                        if (!fullBinData[this.currentDate]) {
-                            fullBinData[this.currentDate] = { groups: {}, buses: {} }; // Sicherstellen, dass auch 'buses' initialisiert wird
-                        }
-                        if (!fullBinData[this.currentDate].groups) {
-                            fullBinData[this.currentDate].groups = {};
-                        }
-
-                        let groupsToUpdate = fullBinData[this.currentDate].groups;
-
-                        // Sicherstellen, dass this.config und this.config.TOTAL_GROUPS vorhanden sind
-                        const totalGroups = this.config && this.config.TOTAL_GROUPS ? this.config.TOTAL_GROUPS : 0;
-
-                        for (let i = 1; i <= totalGroups; i++) {
-                            const groupNumStr = i.toString();
-                            if (!groupsToUpdate[groupNumStr]) {
-                                groupsToUpdate[groupNumStr] = {
-                                    Betreuer: [],
-                                    KinderAnzahl: null,
-                                    KinderAnzahlNow: null
-                                };
+                        // Iterate over known group BIN_IDs and update data for each
+                        for (const groupNumber in this.api.groupBinIds) {
+                            const groupBinId = this.api.groupBinIds[groupNumber];
+                            
+                            // Get current data for the specific group bin
+                            const groupBinData = await this.api.getSpecificBinData(groupBinId);
+                            
+                            // If data exists for today, set KinderAnzahlNow to null
+                            if (groupBinData[currentDay]) {
+                                groupBinData[currentDay].KinderAnzahlNow = null;
                             } else {
-                                groupsToUpdate[groupNumStr].KinderAnzahlNow = null;
+                                // If no data exists for today, initialize it
+                                groupBinData[currentDay] = {
+                                    Betreuer: [], // Or fetch from a morning registration if that's a source
+                                    KinderAnzahl: null, // Or fetch from a morning registration
+                                    KinderAnzahlNow: null,
+                                    timestamp: null
+                                };
                             }
+
+                            // Add the update promise to the array
+                            updatePromises.push(this.api.updateSpecificBinData(groupBinId, groupBinData));
                         }
 
-                        const success = await this.api.updateData(fullBinData);
+                        // Wait for all group bin updates to complete
+                        const allSuccess = await Promise.all(updatePromises);
 
-                        if (success) {
-                            Utils.showAlert('Zählvorgang erfolgreich abgeschlossen!', 'success');
-                            // Nach kurzer Verzögerung (3 Sekunden) zur a_login.html weiterleiten
+                        // Check if all updates were successful
+                        if (allSuccess.every(success => success)) {
+                            Utils.showAlert('Neuberechnung erfolgreich abgeschlossen!', 'success');
+                            // Nach kurzer Verzögerung (3 Sekunden) Weiterleitung zu a_login.html
                             setTimeout(() => {
                                 location.href = 'a_login.html';
                             }, 3000);
                         } else {
-                            Utils.showAlert('Fehler beim Starten des Zählvorgangs.', 'danger');
+                            Utils.showAlert('Fehler beim Starten der Neuberechnung für eine oder mehrere Gruppen.', 'danger');
                         }
+
                     } catch (error) {
-                        console.error('Fehler beim Auslösen der Zählung:', error); // Deutsche Fehlermeldung
-                        Utils.showAlert('Unerwarteter Fehler beim Starten des Zählvorgangs.', 'danger');
+                        console.error('Fehler beim Starten der Neuberechnung:', error); 
+                        Utils.showAlert('Unerwarteter Fehler beim Starten der Neuberechnung.', 'danger');
                     } finally {
                         setTimeout(() => {
                             this.recountInitiating = false;
-                            this.loadOverviewData(false); // Erzwingen Sie ein neues Laden nach der Initiierung der Zählung
+                            this.loadOverviewData(false); // Erzwingen Sie eine Neuladung nach Abschluss der Neuberechnung
                         }, 2000);
                     }
                 }
