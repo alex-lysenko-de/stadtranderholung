@@ -1,0 +1,78 @@
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+            padding: 20px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .admin-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .navigation-section {
+            padding: 20px;
+        }
+        .nav-button {
+            transition: transform 0.2s ease;
+        }
+        .nav-button:hover {
+            transform: translateY(-2px);
+        }
+        .parameters-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        .parameter-item {
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }

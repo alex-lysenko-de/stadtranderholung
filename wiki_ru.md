@@ -74,7 +74,6 @@
       * `Jahr` (Год): Текстовое поле для указания текущего года (по умолчанию - текущий год). Используется для организации данных в JSONBin.io по годам.
 	  * `TOTAL_GROUPS` : Total number of groups of children (input type = "number" min=1 default=15)
 	  * `TOTAL_BUSES`: Total number of buses (input type = "number" min=1 default=3)
-      * `Bin_Collection_Name (JSONBin.io)`: Текстовое поле для ввода имени коллекции (или "библиотеки") в JSONBin.io, где будут храниться данные. default value: "SR2025".
       * `Master Key (JSONBin.io)`: Текстовое поле для ввода Master Key вашего аккаунта JSONBin.io. Это ключ с полными правами доступа.
 	  default value: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm'
       * `Access Key (JSONBin.io)`: Текстовое поле для ввода Access Key вашего аккаунта JSONBin.io. Этот ключ обычно используется для чтения/записи данных. default value: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu'
@@ -103,12 +102,11 @@
 - TOTAL_BUSES
 - MASTER_KEY
 - ACCESS_KEY
-- BIN_COLLECTION_NAME
 - BIN_ID
 and saves these parameters in LocalStorage
 the module receives these parameters at least at the first launch from the index.HTML as a list of get-parameters:
 
-[https://example.com/b\_login.html?TOTAL\_GROUPS=15\&TOTAL\_BUSES=3\&BIN\_COLLECTION\_NAME=SR2025\&BIN_ID=\&MASTER\_KEY=\&ACCESS\_KEY=](https://example.com/b_login.html?TOTAL_GROUPS=15&TOTAL_BUSES=3&BIN_COLLECTION_NAME=SR2025&BIN_ID=&MASTER_KEY=&ACCESS_KEY=)
+[https://example.com/b\_login.html?TOTAL\_GROUPS=15\&TOTAL\_BUSES=3\&BIN\_COLLECTION\_NAME=SR2025\&BIN_ID=\&MASTER\_KEY=\&ACCESS\_KEY=](https://example.com/b_login.html?TOTAL_GROUPS=15&TOTAL_BUSES=3&BIN_ID=&MASTER_KEY=&ACCESS_KEY=)
 
 these parameters will be used by this module and other modules (b_bus.html, b_group.html)
 if at least one value of the key parameters is not set in LocalStorage, the module can not work properly. In this case it displays the corresponding message and does nothing.
@@ -149,12 +147,11 @@ if at least one value of the key parameters is not set in LocalStorage, the modu
 - TOTAL_BUSES
 - MASTER_KEY
 - ACCESS_KEY
-- BIN_COLLECTION_NAME
 - BIN_ID
 and saves these parameters in LocalStorage
 the module receives these parameters at least at the first launch from the index.HTML as a list of get-parameters:
 
-[https://example.com/a\_login.html?TOTAL\_GROUPS=15\&TOTAL\_BUSES=3\&BIN\_COLLECTION\_NAME=SR2025\&BIN_ID=\&MASTER\_KEY=\&ACCESS\_KEY=](https://example.com/a_login.html?TOTAL_GROUPS=15&TOTAL_BUSES=3&BIN_COLLECTION_NAME=SR2025&BIN_ID=&MASTER_KEY=&ACCESS_KEY=)
+[https://example.com/a\_login.html?TOTAL\_GROUPS=15\&TOTAL\_BUSES=3\&BIN\_COLLECTION\_NAME=SR2025\&BIN_ID=\&MASTER\_KEY=\&ACCESS\_KEY=](https://example.com/a_login.html?TOTAL_GROUPS=15&TOTAL_BUSES=3&BIN_ID=&MASTER_KEY=&ACCESS_KEY=)
 
 these parameters will be used by this module and other modules (a_bus.html, a_overview.html)
 if at least one value of the key parameters is not set in LocalStorage, the module can not work properly. In this case it displays the corresponding message and does nothing.
@@ -183,7 +180,6 @@ Die Information über:
 - TOTAL_BUSES
 - MASTER_KEY
 - ACCESS_KEY
-- BIN_COLLECTION_NAME
 - BIN_ID
 aus LocalStorage erhalten werden muss. When etwas fehlt, kann die Module nicht richtig functionieren. In diesem Fall entsprechende information muss angezeigt werden.
 
@@ -202,7 +198,6 @@ aus LocalStorage erhalten werden muss. When etwas fehlt, kann die Module nicht r
 - TOTAL_BUSES
 - MASTER_KEY
 - ACCESS_KEY
-- BIN_COLLECTION_NAME
 - BIN_ID
 aus LocalStorage erhalten werden muss. When etwas fehlt, kann die Module nicht richtig functionieren. In diesem Fall entsprechende information muss angezeigt werden.
 

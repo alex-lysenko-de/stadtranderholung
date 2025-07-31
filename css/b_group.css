@@ -1,0 +1,133 @@
+
+        /* Allgemeine Stile für Hintergrund und Schriftarten */
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 30px 0; /* Erhöhter oberer und unterer Abstand */
+        }
+        /* Stile für den Hauptcontainer, Zentrierung und maximale Breite */
+        .main-container {
+            max-width: 550px; /* Erhöhte maximale Breite */
+            margin: 0 auto;
+            padding: 30px; /* Erhöhter Innenabstand */
+        }
+        /* Stile für Gruppenkarten, Schatten und abgerundete Ecken */
+        .group-card {
+            background: white;
+            border-radius: 20px; /* Erhöhter Eckenradius */
+            box-shadow: 0 15px 40px rgba(0,0,0,0.25); /* Verstärkter Schatten */
+            margin-bottom: 30px; /* Erhöhter Abstand zwischen den Karten */
+            overflow: hidden; /* Für korrekte abgerundete Ecken */
+        }
+        /* Stile für den Kartenkopf */
+        .card-header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border-radius: 20px 20px 0 0; /* Entspricht dem border-radius der group-card */
+            text-align: center;
+            padding: 25px; /* Erhöhter Innenabstand des Kopfes */
+            font-size: 1.5rem; /* Erhöhte Schriftgröße */
+        }
+        /* Stile für den Kartenkörper */
+        .card-body {
+            padding: 25px; /* Erhöhter Innenabstand des Kartenkörpers */
+        }
+        /* Allgemeine Stile für Schaltflächen */
+        .btn-primary, .btn-secondary, .btn-outline-primary {
+            border-radius: 12px; /* Erhöhter Eckenradius der Schaltflächen */
+            padding: 14px 20px; /* Erhöhte Abstände der Schaltflächen */
+            font-weight: bold;
+            font-size: 1.1rem; /* Erhöhte Schriftgröße der Schaltflächen */
+            transition: all 0.3s ease; /* Sanfter Übergang hinzugefügt */
+        }
+        /* Stile für die Hauptschaltfläche (Primary) */
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            border: none;
+        }
+        /* Stile für die sekundäre Schaltfläche (Secondary) */
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            border: none;
+        }
+        /* Stile für die Umriss-Schaltfläche (Outline) */
+        .btn-outline-primary {
+            border: 2px solid #4CAF50;
+            color: #4CAF50;
+            background-color: transparent;
+        }
+        .btn-outline-primary:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+        /* Stile für Eingabefelder */
+        .form-control {
+            border-radius: 12px; /* Erhöhter Eckenradius der Eingabefelder */
+            border: 2px solid #dee2e6; /* Deutlichere Umrandung */
+            padding: 15px; /* Erhöhter Innenabstand der Eingabefelder */
+            font-size: 1.2rem; /* Erhöhte Schriftgröße der Eingabefelder */
+            text-align: center;
+        }
+        .form-control:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 0.25rem rgba(76, 175, 80, 0.25);
+        }
+        /* Stile für große Eingabefelder und Schaltflächen in Eingabegruppen */
+        .input-group-lg > .form-control,
+        .input-group-lg > .btn {
+            padding: 0.85rem 1.2rem; /* Anpassung für input-group-lg */
+            font-size: 1.25rem;
+            border-radius: 12px;
+        }
+        .input-group-lg .btn {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        /* Stile für den Ladespinner */
+        .loading-spinner {
+            display: inline-block; /* Sicherstellen, dass der Spinner bei Bedarf sichtbar ist */
+            vertical-align: middle;
+            margin-right: .5em;
+        }
+        /* Stile für die Betreuerliste */
+        .betreuer-list {
+            background: #f1f3f5; /* Etwas stärkerer Hintergrund */
+            border-radius: 12px;
+            padding: 20px; /* Erhöhter Abstand */
+            margin-top: 20px; /* Erhöhter oberer Abstand */
+        }
+        /* Stile für ein einzelnes Betreuer-Element */
+        .betreuer-item {
+            background: white;
+            border-radius: 10px; /* Erhöhter Eckenradius */
+            padding: 10px 15px; /* Erhöhte Abstände */
+            margin: 8px 0; /* Erhöhter Abstand zwischen den Elementen */
+            border-left: 5px solid #4CAF50; /* Deutlicherer Streifen */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); /* Leichter Schatten hinzugefügt */
+            font-size: 1.1rem; /* Erhöhte Schriftgröße */
+        }
+        /* Stile für die Anzeige der Kinderanzahl */
+        .count-display {
+            font-size: 2.5rem; /* Deutlich erhöhte Schriftgröße */
+            font-weight: bold;
+            color: #4CAF50;
+            text-align: center;
+            margin: 15px 0; /* Erhöhter Abstand */
+            cursor: pointer; /* Zeigt an, dass das Element anklickbar ist */
+        }
+        .count-null {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 1.5rem; /* Reduzierte Größe für "Nicht gesetzt" */
+        }
+        /* Stile für Eingabefeld-Labels */
+        .form-label {
+            font-weight: 600; /* Fettere Schrift für Labels */
+            margin-bottom: 8px; /* Abstand unter dem Label */
+            display: block; /* Damit das Label die gesamte Breite einnimmt */
+            text-align: center; /* Textausrichtung zentriert */
+            font-size: 1rem; /* Standard-Schriftgröße für das Label */
+            color: #495057; /* Dunklere Textfarbe */
+        }
+    
