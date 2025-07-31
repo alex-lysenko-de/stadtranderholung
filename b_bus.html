@@ -6,116 +6,9 @@
     <title>Bus Management - Stadtranderholung</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.min.js"></script>
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+    <link rel="stylesheet" href="css/a_bus.css">
+    <link rel="icon" href="b_favicon.ico" type="image/x-icon">    
 
-        .container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
-
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
-            color: white;
-            border-radius: 15px 15px 0 0 !important;
-            padding: 1.5rem;
-        }
-
-        .form-control, .form-select {
-            border-radius: 10px;
-            border: 2px solid #e0e0e0;
-            padding: 0.75rem 1rem;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: #2196F3;
-            box-shadow: 0 0 0 0.2rem rgba(33, 150, 243, 0.25);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #2196F3, #21CBF3);
-            border: none;
-            border-radius: 10px;
-            padding: 0.75rem 2rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-            border: none;
-            border-radius: 10px;
-            padding: 0.75rem 1.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-            transform: translateY(-1px);
-        }
-
-        .alert {
-            border-radius: 10px;
-            border: none;
-        }
-
-        .spinner-border {
-            width: 1.5rem;
-            height: 1.5rem;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-        }
-
-        .input-group-text {
-            background: #f8f9fa;
-            border: 2px solid #e0e0e0;
-            border-right: none;
-            border-radius: 10px 0 0 10px;
-        }
-
-        .input-group .form-control {
-            border-left: none;
-            border-radius: 0 10px 10px 0;
-        }
-
-        .card-body {
-            padding: 2rem;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding-top: 1rem;
-            }
-
-            .card-body {
-                padding: 1.5rem;
-            }
-        }
-    </style>
 </head>
 <body>
     <div id="app">
@@ -246,12 +139,11 @@
          */
         const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
-            BIN_COLLECTION_NAME: 'SR2025',
-            BIN_ID: '68834e6e7b4b8670d8a712d0', // Standard-BIN_ID gemäß Dokumentation (Master Bin ID)
-            MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
-            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
-            TOTAL_GROUPS: 15,
-            TOTAL_BUSES: 3
+            BIN_ID: null, // Config-BIN_ID gemäß Dokumentation (Master Bin ID)
+            MASTER_KEY: null,
+            ACCESS_KEY: null,
+            TOTAL_GROUPS: null,
+            TOTAL_BUSES: null
         };
 
         /**
@@ -409,12 +301,11 @@
                 const missingParams = [];
 
                 const paramMap = {
-                    'TOTAL_GROUPS': 'config_total_groups',
-                    'TOTAL_BUSES': 'config_total_buses',
-                    'MASTER_KEY': 'config_bin_master_key',
-                    'ACCESS_KEY': 'config_bin_access_key',
-                    'BIN_COLLECTION_NAME': 'config_bin_collection',
-                    'BIN_ID': 'config_bin_id'
+                    'TOTAL_GROUPS': 'config_TOTAL_GROUPS',
+                    'TOTAL_BUSES': 'config_TOTAL_BUSSES',
+                    'MASTER_KEY': 'config_MASTER_KEY',
+                    'ACCESS_KEY': 'config_ACCESS_KEY',
+                    'BIN_ID': 'config_BIN_ID'
                 };
 
                 for (const urlParam in paramMap) {

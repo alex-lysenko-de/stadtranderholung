@@ -3,158 +3,354 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gruppenberechnung - Stadtranderholung</title>
+    <title>Anwesenheit verwalten - Stadtranderholung</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.min.js"></script>
+    <link rel="icon" href="b_favicon.ico" type="image/x-icon">
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px 0;
-            color: #333;
-        }
         .main-container {
-            max-width: 600px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
+            min-height: 100vh;
         }
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
-            margin-bottom: 20px;
-        }
-        .card-header {
-            background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
+        
+        .attendance-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-radius: 15px 15px 0 0 !important;
-            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            background: rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding: 20px;
             text-align: center;
         }
-        .card-body {
-            padding: 2rem;
+        
+        .card-header h2 {
+            margin: 0;
+            font-weight: 300;
+            font-size: 1.8rem;
         }
-        .btn-secondary {
-            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-            border: none;
+        
+        .children-table {
+            background: white;
             border-radius: 10px;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
-        .btn-secondary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 3px 10px rgba(108, 117, 125, 0.3);
+        
+        .table {
+            margin: 0;
         }
-        .data-display {
-            font-size: 2rem;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-        .data-label {
+        
+        .table thead th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
             font-weight: 600;
             color: #495057;
+            padding: 15px;
+            vertical-align: middle;
+        }
+        
+        .table tbody td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .child-name {
+            font-weight: 500;
+            color: #2c3e50;
+            font-size: 1rem;
+        }
+        
+        .attendance-checkbox {
+            transform: scale(1.2);
+            margin: 0 10px;
+            cursor: pointer;
+        }
+        
+        .attendance-checkbox:checked {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        
+        .checkbox-cell {
             text-align: center;
-            margin-bottom: 0.5rem;
+            min-width: 80px;
         }
-        .difference-display {
-            font-size: 2.5rem;
-            font-weight: bold;
-            text-align: center;
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid #eee;
+        
+        .stats-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .difference-positive {
-            color: #dc3545; /* Rot für fehlende Kinder */
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f3f4;
         }
-        .difference-negative {
-            color: #28a745; /* Grün für mehr Kinder */
+        
+        .stat-item:last-child {
+            border-bottom: none;
         }
-        .difference-zero {
-            color: #007bff; /* Blau für keine Differenz */
+        
+        .stat-label {
+            font-weight: 500;
+            color: #495057;
         }
+        
+        .stat-value {
+            font-weight: 600;
+            color: #28a745;
+            font-size: 1.1rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .saved-status {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-success:hover {
+            background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        
         .loading-spinner {
-            color: #007bff;
+            display: none;
         }
-        .count-null {
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
             color: #6c757d;
-            font-style: italic;
-            font-size: 1.5rem;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 20px;
+        }
+        
+        .alert {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 10px;
+            }
+            
+            .table-responsive {
+                font-size: 0.9rem;
+            }
+            
+            .child-name {
+                font-size: 0.9rem;
+            }
+            
+            .attendance-checkbox {
+                transform: scale(1.1);
+            }
         }
     </style>
 </head>
 <body>
     <div id="app">
         <div class="main-container">
-            <div class="card">
+            <div class="attendance-card">
                 <div class="card-header">
-                    <h3 class="mb-0">
-                        <i class="fas fa-calculator me-2"></i>
-                        Berechnung für Gruppe {{ groupNumber }}
-                    </h3>
+                    <h2 class="mb-0">
+                        <i class="fas fa-clipboard-check me-2"></i>
+                        Anwesenheit Gruppe {{ groupNumber }}
+                    </h2>
                     <p class="mb-0 mt-2">{{ formattedCurrentDate }}</p>
                 </div>
-                <div class="card-body">
-                    <div id="alertContainer"></div>
+            </div>
 
-                    <div v-if="loadingInitialData" class="text-center py-5">
-                        <div class="spinner-border mb-3" role="status">
-                            <span class="visually-hidden">Wird geladen...</span>
-                        </div>
-                        <p class="text-muted">Lade Gruppendaten...</p>
+            <div id="alertContainer"></div>
+
+            <div v-if="loadingInitialData" class="text-center py-5">
+                <div class="spinner-border mb-3" role="status" style="color: #667eea;">
+                    <span class="visually-hidden">Wird geladen...</span>
+                </div>
+                <p class="text-muted">Lade Kinderliste...</p>
+            </div>
+
+            <div v-else-if="!isConfigLoaded" class="text-center py-5">
+                <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Konfiguration konnte nicht geladen werden.</h5>
+                <p class="text-muted">Bitte gehen Sie zur Anmeldeseite zurück, um die Konfiguration zu laden.</p>
+            </div>
+
+            <div v-else>
+                <!-- Статистика -->
+                <div class="stats-section" v-if="children.length > 0">
+                    <h5 class="mb-3">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Übersicht
+                    </h5>
+                    <div class="stat-item">
+                        <span class="stat-label">Gesamtzahl Kinder:</span>
+                        <span class="stat-value">{{ children.length }}</span>
                     </div>
-
-                    <div v-else-if="!isConfigLoaded" class="text-center py-5">
-                        <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">Konfiguration konnte nicht geladen werden.</h5>
-                        <p class="text-muted">Bitte gehen Sie zur Anmeldeseite zurück, um die Konfiguration zu laden.</p>
+                    <div class="stat-item">
+                        <span class="stat-label">Anwesend am Morgen:</span>
+                        <span class="stat-value">{{ morningPresentCount }}</span>
+                        <span v-if="isMorningCountSaved" class="badge bg-success ms-2">
+                            <i class="fas fa-check"></i> Gespeichert
+                        </span>
                     </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Anwesend am Abend:</span>
+                        <span class="stat-value">{{ eveningPresentCount }}</span>
+                    </div>
+                </div>
 
-                    <div v-else>
-                        <div class="row mb-4">
-                            <div class="col-6">
-                                <div class="data-label">Kinder am Morgen:</div>
-                                <div class="data-display">
-                                    <span v-if="currentDateData && currentDateData.KinderAnzahl === null" class="count-null">Nicht gesetzt</span>
-                                    <span v-else-if="currentDateData">{{ currentDateData.KinderAnzahl }}</span>
-                                    <span v-else class="count-null">Nicht verfügbar</span>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="data-label">Aktuelle Kinderanzahl:</div>
-                                <div class="data-display">
-                                    <span v-if="currentDateData && currentDateData.KinderAnzahlNow === null" class="count-null">Nicht gesetzt</span>
-                                    <span v-else-if="currentDateData">{{ currentDateData.KinderAnzahlNow }}</span>
-                                    <span v-else class="count-null">Nicht verfügbar</span>
-                                </div>
-                            </div>
-                        </div>
+                <!-- Таблица присутствия -->
+                <div class="children-table" v-if="children.length > 0">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">
+                                        <i class="fas fa-child me-2"></i>
+                                        Name des Kindes
+                                    </th>
+                                    <th scope="col" class="checkbox-cell">
+                                        <i class="fas fa-sun me-2"></i>
+                                        Morgen
+                                    </th>
+                                    <th scope="col" class="checkbox-cell">
+                                        <i class="fas fa-moon me-2"></i>
+                                        Abend
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(child, index) in children" :key="index">
+                                    <td>
+                                        <span class="child-name">{{ child }}</span>
+                                    </td>
+                                    <td class="checkbox-cell">
+                                        <div v-if="isMorningCountSaved" class="saved-status">
+                                            <i v-if="attendanceData[child].morning" class="fas fa-check-circle text-success" style="font-size: 1.5rem;"></i>
+                                            <i v-else class="far fa-circle text-muted" style="font-size: 1.5rem;"></i>
+                                        </div>
+                                        <input 
+                                            v-else
+                                            type="checkbox" 
+                                            class="form-check-input attendance-checkbox"
+                                            v-model="attendanceData[child].morning"
+                                            @change="saveAttendanceData"
+                                        >
+                                    </td>
+                                    <td class="checkbox-cell">
+                                        <input 
+                                            type="checkbox" 
+                                            class="form-check-input attendance-checkbox"
+                                            v-model="attendanceData[child].evening"
+                                            @change="saveAttendanceData"
+                                        >
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-                        <div class="difference-display">
-                            <div class="data-label">Differenz:</div>
-                            <div :class="['data-display', differenceClass]">
-                                <span v-if="difference === null" class="count-null">N/A</span>
-                                <span v-else-if="difference > 0">
-                                    <i class="fas fa-minus-circle me-2"></i>{{ difference }} Kind(er) fehlen
-                                </span>
-                                <span v-else-if="difference < 0">
-                                    <i class="fas fa-plus-circle me-2"></i>{{ Math.abs(difference) }} Kind(er) mehr
-                                </span>
-                                <span v-else>
-                                    <i class="fas fa-check-circle me-2"></i>Keine Differenz
-                                </span>
-                            </div>
-                        </div>
+                <!-- Пустое состояние -->
+                <div v-else class="empty-state">
+                    <i class="fas fa-users"></i>
+                    <h4>Keine Kinder in der Liste</h4>
+                    <p>Es wurden noch keine Kinder für diese Gruppe hinzugefügt.</p>
+                    <button class="btn btn-primary" @click="navigateToChildrenEdit">
+                        <i class="fas fa-plus me-2"></i>
+                        Kinder hinzufügen
+                    </button>
+                </div>
 
-                        <div class="d-grid gap-2 mt-4">
-                            <button class="btn btn-secondary" @click="goBack">
-                                <i class="fas fa-arrow-left me-2"></i>Zurück
+                <!-- Кнопки действий -->
+                <div class="d-grid gap-3 mt-4" v-if="children.length > 0">
+                    <button 
+                        v-if="!isMorningCountSaved"
+                        class="btn btn-primary btn-lg" 
+                         @click="submitMorningAttendance"
+                        :disabled="isSaving"
+                    >
+                        <span v-if="isSaving" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <i v-else class="fas fa-sun me-2"></i>
+                        <span v-if="isSaving">Wird gespeichert...</span>
+                        <span v-else>Morgen-Anwesenheit speichern</span>
+                    </button>
+
+                    <button 
+                        v-else
+                        class="btn btn-success btn-lg" 
+                        @click="submitEveningAttendance"
+                        :disabled="isSaving"
+                    >
+                        <span v-if="isSaving" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <i v-else class="fas fa-moon me-2"></i>
+                        <span v-if="isSaving">Wird gespeichert...</span>
+                        <span v-else>Abend-Anwesenheit speichern</span>
+                    </button>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button class="btn btn-secondary w-100" @click="goBack">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Zurück
                             </button>
                         </div>
                     </div>
@@ -168,24 +364,22 @@
 
     <script>
         /**
-         * Standardkonfigurationswerte. Diese werden durch URL-Parameter oder LocalStorage überschrieben.
+         * Стандартные значения конфигурации
          */
         const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
-            BIN_COLLECTION_NAME: 'SR2025',
-            BIN_ID: '68892cef7b4b8670d8a95f2b', // Standard-BIN_ID, jetzt für Master-Konfiguration
-            MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
-            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
-            TOTAL_GROUPS: 15, // Diese werden dynamisch aus der Konfiguration geladen
-            TOTAL_BUSES: 3 // Diese werden dynamisch aus der Konfiguration geladen
+            BIN_ID: null,
+            MASTER_KEY: null,
+            ACCESS_KEY: null,
+            TOTAL_GROUPS: null,
+            TOTAL_BUSES: null
         };
 
         /**
-         * Dienstprogrammklasse für die Verwaltung von JSONBin.io API-Interaktionen
-         * Behandelt alle CRUD-Operationen mit ordnungsgemäßer Fehlerbehandlung
+         * Класс для работы с JSONBin.io API
          */
         class JSONBinAPI {
-            constructor(config, binId) { // Bin ID wird jetzt dynamisch übergeben
+            constructor(config, binId) {
                 this.config = config;
                 this.binId = binId;
                 this.headers = {
@@ -195,13 +389,9 @@
                 };
             }
 
-            /**
-             * Aktuelle Daten von JSONBin abrufen
-             * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt
-             */
             async getData() {
                 try {
-                    const response = await fetch(`${this.config.API_BASE_URL}/${this.binId}/latest`, { // Verwende this.binId
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.binId}/latest`, {
                         method: 'GET',
                         headers: this.headers
                     });
@@ -218,14 +408,9 @@
                 }
             }
 
-            /**
-             * Daten in JSONBin aktualisieren
-             * @param {Object} data - Vollständige zu speichernde Datenstruktur
-             * @returns {Promise<boolean>} Erfolgsstatus
-             */
             async updateData(data) {
                 try {
-                    const response = await fetch(`${this.config.API_BASE_URL}/${this.binId}`, { // Verwende this.binId
+                    const response = await fetch(`${this.config.API_BASE_URL}/${this.binId}`, {
                         method: 'PUT',
                         headers: this.headers,
                         body: JSON.stringify(data)
@@ -244,42 +429,32 @@
         }
 
         /**
-         * Dienstprogrammklasse zum Abrufen der Hauptkonfigurationsdaten (GROUP_BIN_IDS, BUS_BIN_IDS)
+         * Класс для работы с конфигурационными данными
          */
         class ConfigBinAPI extends JSONBinAPI {
             constructor(config) {
-                // ConfigBinAPI verwendet die BIN_ID aus den CONFIG_DEFAULTS
                 super(config, config.BIN_ID);
             }
         }
 
         /**
-         * Dienstprogrammfunktionen für gängige Operationen
+         * Утилиты
          */
         const Utils = {
-            /**
-             * Aktuelles Datum im Format YYYY-MM-DD abrufen
-             * @returns {string} Formatiertes Datumszeichenfolge
-             */
             getCurrentDateString() {
                 return new Date().toISOString().split('T')[0];
             },
 
-            /**
-             * Datum zur Anzeige formatieren
-             * @param {string} dateString - Datum im Format YYYY-MM-DD
-             * @returns {string} Formatiertes Datumszeichenfolge
-             */
             formatDateForDisplay(dateString) {
                 const date = new Date(dateString);
-                return date.toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                return date.toLocaleDateString('de-DE', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
             },
 
-            /**
-             * Warnmeldung für den Benutzer anzeigen
-             * @param {string} message - Anzuzeigende Nachricht
-             * @param {string} type - Warntyp (success, danger, warning, info)
-             */
             showAlert(message, type = 'info') {
                 const alertContainer = document.getElementById('alertContainer');
                 if (!alertContainer) return;
@@ -300,62 +475,40 @@
                 }, 5000);
             },
 
-            /**
-             * Konfigurationswerte aus der URL oder dem LocalStorage laden
-             * @returns {Object} Geladene Konfiguration
-             */
             loadConfig() {
-                const params = new URLSearchParams(window.location.search);
                 const config = {};
-
                 for (const key in CONFIG_DEFAULTS) {
-                    const urlValue = params.get(key.toLowerCase());
                     const localValue = localStorage.getItem(`config_${key}`);
-                    config[key] = urlValue || localValue || CONFIG_DEFAULTS[key];
+                    config[key] = localValue || CONFIG_DEFAULTS[key];
                 }
                 return config;
             }
         };
 
         const app = Vue.createApp({
-            data() {
-                return {
+    data() {
+        return {
                     config: {},
                     isConfigLoaded: false,
                     loadingInitialData: true,
+                    isSaving: false,
                     groupNumber: null,
                     groupBinId: null,
-                    currentGroupData: {}, // Daten für die aktuelle Gruppe
+                    currentGroupData: {},
+                    attendanceData: {}, // Объект для хранения данных о присутствии
                     formattedCurrentDate: '',
                     currentDate: ''
                 };
             },
             computed: {
-                kinderAnzahlMorning() {
-                    return this.currentDateData ? this.currentDateData.KinderAnzahl : null;
+                children() {
+                    return this.currentGroupData.Kinder || [];
                 },
-                kinderAnzahlNow() {
-                    return this.currentDateData ? this.currentDateData.KinderAnzahlNow : null;
+                morningPresentCount() {
+                    return Object.values(this.attendanceData).filter(data => data.morning).length;
                 },
-                difference() {
-                    if (this.kinderAnzahlMorning === null || this.kinderAnzahlNow === null) {
-                        return null;
-                    }
-                    return this.kinderAnzahlMorning - this.kinderAnzahlNow;
-                },
-                differenceClass() {
-                    if (this.difference === null) {
-                        return '';
-                    } else if (this.difference > 0) {
-                        return 'difference-positive';
-                    } else if (this.difference < 0) {
-                        return 'difference-negative';
-                    } else {
-                        return 'difference-zero';
-                    }
-                },
-                currentDateData() {
-                    return this.currentGroupData[this.currentDate] || null;
+                eveningPresentCount() {
+                    return Object.values(this.attendanceData).filter(data => data.evening).length;
                 }
             },
             async created() {
@@ -364,7 +517,7 @@
                 this.config = Utils.loadConfig();
 
                 const params = new URLSearchParams(window.location.search);
-                this.groupNumber = parseInt(params.get('group'), 10);
+                this.groupNumber = parseInt(params.get('gr'), 10);
 
                 if (isNaN(this.groupNumber)) {
                     Utils.showAlert('Gruppennummer fehlt in der URL.', 'danger');
@@ -386,9 +539,9 @@
                 async loadInitialData() {
                     this.loadingInitialData = true;
                     try {
-                        // 1. Fetch the master config bin to get group bin IDs
+                        // 1. Получаем конфигурацию групп
                         const configApi = new ConfigBinAPI(this.config);
-                        const masterConfig = await configApi.getData(); 
+                        const masterConfig = await configApi.getData();
 
                         if (!masterConfig || !masterConfig.GROUP_BIN_IDS) {
                             Utils.showAlert('Master-Konfiguration oder Gruppen-Bin-IDs nicht gefunden.', 'danger');
@@ -397,29 +550,204 @@
                             return;
                         }
 
-                        // 2. Get the specific bin ID for the current group
-                        this.groupBinId = masterConfig.GROUP_BIN_IDS[this.groupNumber]; 
+                        // 2. Получаем BIN ID для текущей группы
+                        this.groupBinId = masterConfig.GROUP_BIN_IDS[this.groupNumber];
                         if (!this.groupBinId) {
                             Utils.showAlert(`Keine Bin-ID für Gruppe ${this.groupNumber} in der Konfiguration gefunden.`, 'danger');
                             this.loadingInitialData = false;
                             return;
                         }
 
-                        // 3. Fetch data for the specific group bin
+                        // 3. Загружаем данные группы
                         const groupApi = new JSONBinAPI(this.config, this.groupBinId);
-                        this.currentGroupData = await groupApi.getData(); 
+                        this.currentGroupData = await groupApi.getData();
 
-                        if (!this.currentGroupData) {
-                            this.currentGroupData = {}; // Ensure it's an object if empty
-                        }
+                        // 4. Инициализируем данные о присутствии
+                        this.initializeAttendanceData();
+
+                        // 5. Проверяем, сохранены ли утренние данные
+                        this.checkMorningSavedStatus();
+
+                        // 6. Загружаем сохраненные данные о присутствии
+                        this.loadStoredAttendanceData();
 
                     } catch (error) {
                         Utils.showAlert(`Fehler beim Laden der Gruppendaten: ${error.message}`, 'danger');
+                        console.error('Fehler beim Laden der Gruppendaten:', error);
                         this.isConfigLoaded = false;
                     } finally {
                         this.loadingInitialData = false;
                     }
                 },
+
+                checkMorningSavedStatus() {
+                    // Проверяем, есть ли сохраненный массив KinderAnwesenheit
+                    if (this.currentGroupData[this.currentDate] && 
+                        this.currentGroupData[this.currentDate].KinderAnwesenheit &&
+                        Array.isArray(this.currentGroupData[this.currentDate].KinderAnwesenheit)) {
+                        this.isMorningCountSaved = true;
+                        
+                        // Загружаем данные из KinderAnwesenheit в attendanceData
+                        const kinderAnwesenheit = this.currentGroupData[this.currentDate].KinderAnwesenheit;
+                        this.children.forEach((child, index) => {
+                            if (this.attendanceData[child] && kinderAnwesenheit[index] !== undefined) {
+                                this.attendanceData[child].morning = kinderAnwesenheit[index] === 1;
+                            }
+                        });
+                    } else {
+                        this.isMorningCountSaved = false;
+                    }
+                },
+
+                initializeAttendanceData() {
+                    this.attendanceData = {};
+                    if (this.children.length > 0) {
+                        this.children.forEach(child => {
+                            this.attendanceData[child] = {
+                                morning: false,
+                                evening: false
+                            };
+                        });
+                    }
+                },
+
+                loadStoredAttendanceData() {
+                    // Загружаем данные из localStorage если они есть
+                    const storageKey = `attendance_${this.currentDate}_${this.groupNumber}`;
+                    const storedData = localStorage.getItem(storageKey);
+                    
+                    // Также проверяем данные из JSON bin
+                    if (this.currentGroupData[this.currentDate] && this.currentGroupData[this.currentDate].AttendanceData) {
+                        const binAttendanceData = this.currentGroupData[this.currentDate].AttendanceData;
+                        // Объединяем данные из bin с локальными данными
+                        Object.keys(binAttendanceData).forEach(child => {
+                            if (this.attendanceData[child]) {
+                                this.attendanceData[child] = { ...binAttendanceData[child] };
+                            }
+                        });
+                    }
+                    
+                    // Приоритет localStorage (более свежие данные)
+                    if (storedData) {
+                        try {
+                            const parsedData = JSON.parse(storedData);
+                            Object.keys(parsedData).forEach(child => {
+                                if (this.attendanceData[child]) {
+                                    this.attendanceData[child] = { ...parsedData[child] };
+                                }
+                            });
+                        } catch (error) {
+                            console.error('Fehler beim Parsen der gespeicherten Anwesenheitsdaten:', error);
+                        }
+                    }
+                },
+
+                saveAttendanceData() {
+                    // Сохраняем данные в localStorage при каждом изменении (только если утренний подсчет еще не сохранен)
+                    if (!this.isMorningCountSaved) {
+                        const storageKey = `attendance_${this.currentDate}_${this.groupNumber}`;
+                        localStorage.setItem(storageKey, JSON.stringify(this.attendanceData));
+                    }
+                },
+
+  
+        async submitMorningAttendance() {
+            this.isSaving = true;
+            try {
+                // 1. Формируем массив присутствия утром
+                const kinderAnwesenheit = this.children.map(child => 
+                    this.attendanceData[child].morning ? 1 : 0
+                );
+
+                // 2. Рассчитываем значения счетчиков
+                const kinderAnzahl = this.morningPresentCount;
+                const kinderAnzahlNow = this.eveningPresentCount;
+
+                // 3. Обновляем структуру данных группы
+                if (!this.currentGroupData[this.currentDate]) {
+                    this.currentGroupData[this.currentDate] = {
+                        Betreuer: [],
+                        KinderAnzahl: null,
+                        KinderAnzahlNow: null
+                    };
+                }
+
+                // 4. Устанавливаем новые значения
+                this.currentGroupData[this.currentDate].KinderAnwesenheit = kinderAnwesenheit;
+                this.currentGroupData[this.currentDate].KinderAnzahl = kinderAnzahl;
+                this.currentGroupData[this.currentDate].KinderAnzahlNow = kinderAnzahlNow;
+                this.currentGroupData[this.currentDate].AttendanceData = { ...this.attendanceData };
+
+                // 5. Сохраняем в JSONBin
+                const groupApi = new JSONBinAPI(this.config, this.groupBinId);
+                const success = await groupApi.updateData(this.currentGroupData);
+
+                if (success) {
+                    // 6. Сохраняем в localStorage
+                    const storageKeyKinderAnzahl = `${this.currentDate}-${this.groupNumber}-KinderAnzahl`;
+                    localStorage.setItem(storageKeyKinderAnzahl, kinderAnzahl);
+                    
+                    const storageKeyAttendance = `attendance_${this.currentDate}_${this.groupNumber}`;
+                    localStorage.setItem(storageKeyAttendance, JSON.stringify(this.attendanceData));
+                    
+                    Utils.showAlert('Morgen-Anwesenheit erfolgreich gespeichert!', 'success');
+                    this.isMorningCountSaved = true;
+                } else {
+                    Utils.showAlert('Fehler beim Speichern der Morgen-Anwesenheit.', 'danger');
+                }
+            } catch (error) {
+                Utils.showAlert(`Fehler: ${error.message}`, 'danger');
+                console.error(error);
+            } finally {
+                this.isSaving = false;
+            }
+        },
+
+        async submitEveningAttendance() {
+            this.isSaving = true;
+            try {
+                // 1. Обновляем только вечерние данные
+                const kinderAnzahlNow = this.eveningPresentCount;
+
+                // 2. Обновляем структуру данных
+                if (!this.currentGroupData[this.currentDate]) {
+                    this.currentGroupData[this.currentDate] = {
+                        Betreuer: [],
+                        KinderAnzahl: null,
+                        KinderAnzahlNow: null
+                    };
+                }
+
+                // 3. Устанавливаем новые значения
+                this.currentGroupData[this.currentDate].KinderAnzahlNow = kinderAnzahlNow;
+                this.currentGroupData[this.currentDate].AttendanceData = { ...this.attendanceData };
+
+                // 4. Сохраняем в JSONBin
+                const groupApi = new JSONBinAPI(this.config, this.groupBinId);
+                const success = await groupApi.updateData(this.currentGroupData);
+
+                if (success) {
+                    // 5. Сохраняем в localStorage
+                    const storageKeyAttendance = `attendance_${this.currentDate}_${this.groupNumber}`;
+                    localStorage.setItem(storageKeyAttendance, JSON.stringify(this.attendanceData));
+                    
+                    Utils.showAlert('Abend-Anwesenheit erfolgreich gespeichert!', 'success');
+                } else {
+                    Utils.showAlert('Fehler beim Speichern der Abend-Anwesenheit.', 'danger');
+                }
+            } catch (error) {
+                Utils.showAlert(`Fehler: ${error.message}`, 'danger');
+                console.error(error);
+            } finally {
+                this.isSaving = false;
+            }
+        },
+
+
+                navigateToChildrenEdit() {
+                    window.location.href = `group_edit.html?gr=${this.groupNumber}`;
+                },
+
                 goBack() {
                     window.history.back();
                 }
