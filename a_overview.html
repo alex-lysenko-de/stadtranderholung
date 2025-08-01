@@ -483,80 +483,67 @@
                     location.href = 'a_login.html';
                 },  
 
-                async loadOverviewData(silent = false) {
-                    if (!this.isConfigLoaded || !this.remoteConfigLoaded) {
-                        // Wenn die Konfiguration nicht geladen ist, versuchen Sie nicht, Daten zu laden
-                        if (!silent) {
-                            Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Daten können nicht abgerufen werden.', 'danger');
-                        }
-                        this.loadingInitialData = false; // Ladespinner ausblenden
-                        return;
-                    }
+async loadOverviewData(silent = false) {
+    if (!this.isConfigLoaded || !this.remoteConfigLoaded) {
+        if (!silent) {
+            Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Daten können nicht abgerufen werden.', 'danger');
+        }
+        this.loadingInitialData = false;
+        return;
+    }
 
-                    try {
-                        if (!silent) {
-                            this.loadingInitialData = true;
-                        }
+    try {
+        if (!silent) {
+            this.loadingInitialData = true;
+        }
 
-                        const groupDataPromises = [];
-                        const currentDay = this.currentDate;
+        const newGroupsData = {};
+        const currentDay = this.currentDate;
+        const groupNumbers = Object.keys(this.api.groupBinIds);
 
-                        // Iterate over known group BIN_IDs and fetch data for each
-                        for (const groupNumber in this.api.groupBinIds) {
-                            const groupBinId = this.api.groupBinIds[groupNumber];
-                            groupDataPromises.push(
-                                this.api.getSpecificBinData(groupBinId)
-                                    .then(binContent => ({
-                                        groupNumber: groupNumber,
-                                        data: binContent[currentDay] || {
-                                            Betreuer: [],
-                                            KinderAnzahl: null,
-                                            KinderAnzahlNow: null,
-                                            timestamp: null
-                                        }
-                                    }))
-                                    .catch(error => {
-                                        console.error(`Fehler beim Abrufen der Daten für Gruppe ${groupNumber}:`, error);
-                                        // Return default structure on error to prevent breaking the Promise.all
-                                        return {
-                                            groupNumber: groupNumber,
-                                            data: {
-                                                Betreuer: [],
-                                                KinderAnzahl: null,
-                                                KinderAnzahlNow: null,
-                                                timestamp: null
-                                            }
-                                        };
-                                    })
-                            );
-                        }
+        // Sequenzielles Abrufen statt parallelem Abruf
+        for (const groupNumber of groupNumbers) {
+            try {
+                const groupBinId = this.api.groupBinIds[groupNumber];
+                const binContent = await this.api.getSpecificBinData(groupBinId);
+                
+                newGroupsData[groupNumber] = binContent[currentDay] || {
+                    Betreuer: [],
+                    KinderAnzahl: null,
+                    KinderAnzahlNow: null,
+                    timestamp: null
+                };
+                
+                // Kurze Pause zwischen den Anfragen
+                await new Promise(resolve => setTimeout(resolve, 100));
+            } catch (error) {
+                console.error(`Fehler beim Abrufen der Daten für Gruppe ${groupNumber}:`, error);
+                newGroupsData[groupNumber] = {
+                    Betreuer: [],
+                    KinderAnzahl: null,
+                    KinderAnzahlNow: null,
+                    timestamp: null
+                };
+            }
+        }
 
-                        const allGroupResults = await Promise.all(groupDataPromises);
+        this.groupsData = newGroupsData;
+        this.lastUpdateTime = Utils.getCurrentTimeForDisplay();
+        this.processGroupsData();
 
-                        const newGroupsData = {};
-                        allGroupResults.forEach(result => {
-                            newGroupsData[result.groupNumber] = result.data;
-                        });
+        if (!silent) {
+            Utils.showAlert('Gruppen-Daten erfolgreich aktualisiert!', 'success');
+        }
 
-                        this.groupsData = newGroupsData;
-                        this.lastUpdateTime = Utils.getCurrentTimeForDisplay();
-                        this.processGroupsData(); // Process the fetched data to update totals and missing children
-
-                        if (!silent) {
-                            Utils.showAlert('Gruppen-Daten erfolgreich aktualisiert!', 'success');
-                        }
-
-                    } catch (error) {
-                        console.error('Fehler beim Laden der Übersichtsdaten:', error); // Deutsche Fehlermeldung
-                        if (!silent) {
-                            Utils.showAlert('Datenaktualisierung fehlgeschlagen. Netzwerkproblem?', 'danger');
-                        }
-                        this.groupsData = {}; // Clear data on error
-                    } finally {
-                        this.loadingInitialData = false;
-                    }
-                },
-
+    } catch (error) {
+        console.error('Fehler beim Laden der Übersichtsdaten:', error);
+        if (!silent) {
+            Utils.showAlert('Datenaktualisierung fehlgeschlagen: ' + error.message, 'danger');
+        }
+    } finally {
+        this.loadingInitialData = false;
+    }
+},
                 processGroupsData() {
                     let tempTotalMorning = 0;
                     let tempTotalCurrent = 0;
@@ -678,69 +665,60 @@
                     }
                 },
 
-                async triggerRecount() {
-                    if (!this.isConfigLoaded || !this.remoteConfigLoaded) {
-                        Utils.showAlert('App-Konfiguration wurde nicht geladen. Neuberechnung ist nicht möglich.', 'danger');
-                        return;
-                    }
+async triggerRecount() {
+    if (!this.isConfigLoaded || !this.remoteConfigLoaded) {
+        Utils.showAlert('App-Konfiguration wurde nicht geladen. Neuberechnung ist nicht möglich.', 'danger');
+        return;
+    }
 
-                    this.recountInitiating = true;
-                    Utils.showAlert('Es wird eine neue Zählung gestartet. Bitte warten Sie...', 'info');
+    this.recountInitiating = true;
+    Utils.showAlert('Es wird eine neue Zählung gestartet. Bitte warten Sie...', 'info');
 
-                    try {
-                        const updatePromises = [];
-                        const currentDay = this.currentDate;
+    try {
+        const currentDay = this.currentDate;
+        const groupNumbers = Object.keys(this.api.groupBinIds);
 
-                        // Iterate over known group BIN_IDs and update data for each
-                        for (const groupNumber in this.api.groupBinIds) {
-                            const groupBinId = this.api.groupBinIds[groupNumber];
-                            
-                            // Get current data for the specific group bin
-                            const groupBinData = await this.api.getSpecificBinData(groupBinId);
-                            
-                            // If data exists for today, set KinderAnzahlNow to null
-                            if (groupBinData[currentDay]) {
-                                groupBinData[currentDay].KinderAnzahlNow = null;
-                            } else {
-                                // If no data exists for today, initialize it
-                                groupBinData[currentDay] = {
-                                    Betreuer: [], // Or fetch from a morning registration if that's a source
-                                    KinderAnzahl: null, // Or fetch from a morning registration
-                                    KinderAnzahlNow: null,
-                                    timestamp: null
-                                };
-                            }
-
-                            // Add the update promise to the array
-                            updatePromises.push(this.api.updateSpecificBinData(groupBinId, groupBinData));
-                        }
-
-                        // Wait for all group bin updates to complete
-                        const allSuccess = await Promise.all(updatePromises);
-
-                        // Check if all updates were successful
-                        if (allSuccess.every(success => success)) {
-                            Utils.showAlert('Neuberechnung erfolgreich abgeschlossen!', 'success');
-                            // Nach kurzer Verzögerung (3 Sekunden) Weiterleitung zu a_login.html
-                            setTimeout(() => {
-                                location.href = 'a_login.html';
-                            }, 3000);
-                        } else {
-                            Utils.showAlert('Fehler beim Starten der Neuberechnung für eine oder mehrere Gruppen.', 'danger');
-                        }
-
-                    } catch (error) {
-                        console.error('Fehler beim Starten der Neuberechnung:', error); 
-                        Utils.showAlert('Unerwarteter Fehler beim Starten der Neuberechnung.', 'danger');
-                    } finally {
-                        setTimeout(() => {
-                            this.recountInitiating = false;
-                            this.loadOverviewData(false); // Erzwingen Sie eine Neuladung nach Abschluss der Neuberechnung
-                        }, 2000);
-                    }
+        for (const groupNumber of groupNumbers) {
+            try {
+                const groupBinId = this.api.groupBinIds[groupNumber];
+                const groupBinData = await this.api.getSpecificBinData(groupBinId);
+                
+                if (groupBinData[currentDay]) {
+                    groupBinData[currentDay].KinderAnzahlNow = null;
+                    groupBinData[currentDay].timestamp = null;
+                } else {
+                    groupBinData[currentDay] = {
+                        Betreuer: [],
+                        KinderAnzahl: null,
+                        KinderAnzahlNow: null,
+                        timestamp: null
+                    };
                 }
+                
+                await this.api.updateSpecificBinData(groupBinId, groupBinData);
+                
+                // Pause zwischen den Aktualisierungen
+                await new Promise(resolve => setTimeout(resolve, 200));
+            } catch (error) {
+                console.error(`Fehler bei Neuberechnung für Gruppe ${groupNumber}:`, error);
             }
-        }).mount('#app');
+        }
+        
+        Utils.showAlert('Neuberechnung erfolgreich abgeschlossen! Weiterleitung...', 'success');
+        setTimeout(() => {
+            location.href = 'a_login.html';
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Kritischer Fehler bei der Neuberechnung:', error); 
+        Utils.showAlert('Schwerwiegender Fehler bei der Neuberechnung: ' + error.message, 'danger');
+    } finally {
+        this.recountInitiating = false;
+    }
+}
+
+            }
+        }).mount('#app');   
     </script>
 </body>
 </html>
