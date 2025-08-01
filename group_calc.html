@@ -739,7 +739,8 @@ const app = Vue.createApp({
         },
 
         goBack() {
-            window.history.back();
+            location.href = 'b_login.html'; // Zurück zur Anmeldeseite
+            // window.history.back(); // Alternativ: Zurück zur vorherigen Seite im Verlauf 
         }
     }
 });

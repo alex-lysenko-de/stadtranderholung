@@ -467,7 +467,9 @@
                  * Navigiert zurück zur vorherigen Seite im Browserverlauf.
                  */
                 goBack() {
-                    window.history.back();
+                    // Zurück zur Anmeldeseite
+                    location.href = 'b_login.html';
+                    // window.history.back(); // Alternativ: Zurück zur vorherigen Seite im Verlauf 
                 },
 
                 /**
