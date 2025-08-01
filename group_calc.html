@@ -363,9 +363,7 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
     <script>
-        /**
-         * Стандартные значения конфигурации
-         */
+   
         const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
             BIN_ID: null,
@@ -375,9 +373,7 @@
             TOTAL_BUSES: null
         };
 
-        /**
-         * Класс для работы с JSONBin.io API
-         */
+    
         class JSONBinAPI {
             constructor(config, binId) {
                 this.config = config;
@@ -428,18 +424,14 @@
             }
         }
 
-        /**
-         * Класс для работы с конфигурационными данными
-         */
+      
         class ConfigBinAPI extends JSONBinAPI {
             constructor(config) {
                 super(config, config.BIN_ID);
             }
         }
 
-        /**
-         * Утилиты
-         */
+       
         const Utils = {
             getCurrentDateString() {
                 return new Date().toISOString().split('T')[0];
@@ -485,185 +477,184 @@
             }
         };
 
-        const app = Vue.createApp({
+const app = Vue.createApp({
     data() {
         return {
-                    config: {},
-                    isConfigLoaded: false,
-                    loadingInitialData: true,
-                    isSaving: false,
-                    groupNumber: null,
-                    groupBinId: null,
-                    currentGroupData: {},
-                    attendanceData: {}, // Объект для хранения данных о присутствии
-                    formattedCurrentDate: '',
-                    currentDate: ''
-                };
-            },
-            computed: {
-                children() {
-                    return this.currentGroupData.Kinder || [];
-                },
-                morningPresentCount() {
-                    return Object.values(this.attendanceData).filter(data => data.morning).length;
-                },
-                eveningPresentCount() {
-                    return Object.values(this.attendanceData).filter(data => data.evening).length;
-                }
-            },
-            async created() {
-                this.formattedCurrentDate = Utils.formatDateForDisplay(Utils.getCurrentDateString());
-                this.currentDate = Utils.getCurrentDateString();
-                this.config = Utils.loadConfig();
+            config: {},
+            isConfigLoaded: false,
+            loadingInitialData: true,
+            isSaving: false,
+            groupNumber: null,
+            groupBinId: null,
+            currentGroupData: {},
+            attendanceData: {}, // Objekt zur Speicherung der Anwesenheitsdaten
+            formattedCurrentDate: '',
+            currentDate: ''
+        };
+    },
+    computed: {
+        children() {
+            return this.currentGroupData.Kinder || [];
+        },
+        morningPresentCount() {
+            return Object.values(this.attendanceData).filter(data => data.morning).length;
+        },
+        eveningPresentCount() {
+            return Object.values(this.attendanceData).filter(data => data.evening).length;
+        }
+    },
+    async created() {
+        this.formattedCurrentDate = Utils.formatDateForDisplay(Utils.getCurrentDateString());
+        this.currentDate = Utils.getCurrentDateString();
+        this.config = Utils.loadConfig();
 
-                const params = new URLSearchParams(window.location.search);
-                this.groupNumber = parseInt(params.get('gr'), 10);
+        const params = new URLSearchParams(window.location.search);
+        this.groupNumber = parseInt(params.get('gr'), 10);
 
-                if (isNaN(this.groupNumber)) {
-                    Utils.showAlert('Gruppennummer fehlt in der URL.', 'danger');
+        if (isNaN(this.groupNumber)) {
+            Utils.showAlert('Gruppennummer fehlt in der URL.', 'danger');
+            this.loadingInitialData = false;
+            return;
+        }
+
+        if (!this.config.BIN_ID || !this.config.MASTER_KEY || !this.config.ACCESS_KEY) {
+            Utils.showAlert('Konfigurationsdaten unvollständig. Bitte überprüfen Sie die URL-Parameter oder den LocalStorage.', 'danger');
+            this.isConfigLoaded = false;
+            this.loadingInitialData = false;
+            return;
+        }
+
+        this.isConfigLoaded = true;
+        await this.loadInitialData();
+    },
+    methods: {
+        async loadInitialData() {
+            this.loadingInitialData = true;
+            try {
+                // 1. Laden der Gruppenkonfiguration
+                const configApi = new ConfigBinAPI(this.config);
+                const masterConfig = await configApi.getData();
+
+                if (!masterConfig || !masterConfig.GROUP_BIN_IDS) {
+                    Utils.showAlert('Master-Konfiguration oder Gruppen-Bin-IDs nicht gefunden.', 'danger');
                     this.loadingInitialData = false;
-                    return;
-                }
-
-                if (!this.config.BIN_ID || !this.config.MASTER_KEY || !this.config.ACCESS_KEY) {
-                    Utils.showAlert('Konfigurationsdaten unvollständig. Bitte überprüfen Sie die URL-Parameter oder den LocalStorage.', 'danger');
                     this.isConfigLoaded = false;
+                    return;
+                }
+
+                // 2. Laden der BIN-ID für die aktuelle Gruppe
+                this.groupBinId = masterConfig.GROUP_BIN_IDS[this.groupNumber];
+                if (!this.groupBinId) {
+                    Utils.showAlert(`Keine Bin-ID für Gruppe ${this.groupNumber} in der Konfiguration gefunden.`, 'danger');
                     this.loadingInitialData = false;
                     return;
                 }
 
-                this.isConfigLoaded = true;
-                await this.loadInitialData();
-            },
-            methods: {
-                async loadInitialData() {
-                    this.loadingInitialData = true;
-                    try {
-                        // 1. Получаем конфигурацию групп
-                        const configApi = new ConfigBinAPI(this.config);
-                        const masterConfig = await configApi.getData();
+                // 3. Laden der Gruppendaten
+                const groupApi = new JSONBinAPI(this.config, this.groupBinId);
+                this.currentGroupData = await groupApi.getData();
 
-                        if (!masterConfig || !masterConfig.GROUP_BIN_IDS) {
-                            Utils.showAlert('Master-Konfiguration oder Gruppen-Bin-IDs nicht gefunden.', 'danger');
-                            this.loadingInitialData = false;
-                            this.isConfigLoaded = false;
-                            return;
+                // 4. Initialisieren der Anwesenheitsdaten
+                this.initializeAttendanceData();
+
+                // 5. Prüfen, ob die morgendlichen Daten bereits gespeichert wurden
+                this.checkMorningSavedStatus();
+
+                // 6. Laden gespeicherter Anwesenheitsdaten
+                this.loadStoredAttendanceData();
+
+            } catch (error) {
+                Utils.showAlert(`Fehler beim Laden der Gruppendaten: ${error.message}`, 'danger');
+                console.error('Fehler beim Laden der Gruppendaten:', error);
+                this.isConfigLoaded = false;
+            } finally {
+                this.loadingInitialData = false;
+            }
+        },
+
+        checkMorningSavedStatus() {
+            // Prüfen, ob das Array KinderAnwesenheit gespeichert ist
+            if (this.currentGroupData[this.currentDate] && 
+                this.currentGroupData[this.currentDate].KinderAnwesenheit &&
+                Array.isArray(this.currentGroupData[this.currentDate].KinderAnwesenheit)) {
+                this.isMorningCountSaved = true;
+                
+                // Daten aus KinderAnwesenheit in attendanceData laden
+                const kinderAnwesenheit = this.currentGroupData[this.currentDate].KinderAnwesenheit;
+                this.children.forEach((child, index) => {
+                    if (this.attendanceData[child] && kinderAnwesenheit[index] !== undefined) {
+                        this.attendanceData[child].morning = kinderAnwesenheit[index] === 1;
+                    }
+                });
+            } else {
+                this.isMorningCountSaved = false;
+            }
+        },
+
+        initializeAttendanceData() {
+            this.attendanceData = {};
+            if (this.children.length > 0) {
+                this.children.forEach(child => {
+                    this.attendanceData[child] = {
+                        morning: false,
+                        evening: false
+                    };
+                });
+            }
+        },
+
+        loadStoredAttendanceData() {
+            // Laden der Daten aus dem localStorage, falls vorhanden
+            const storageKey = `attendance_${this.currentDate}_${this.groupNumber}`;
+            const storedData = localStorage.getItem(storageKey);
+            
+            // Prüfen, ob Daten aus JSONBin vorhanden sind
+            if (this.currentGroupData[this.currentDate] && this.currentGroupData[this.currentDate].AttendanceData) {
+                const binAttendanceData = this.currentGroupData[this.currentDate].AttendanceData;
+                // Daten aus dem Bin mit lokalen Daten kombinieren
+                Object.keys(binAttendanceData).forEach(child => {
+                    if (this.attendanceData[child]) {
+                        this.attendanceData[child] = { ...binAttendanceData[child] };
+                    }
+                });
+            }
+            
+            // LocalStorage hat Vorrang (aktuellere Daten)
+            if (storedData) {
+                try {
+                    const parsedData = JSON.parse(storedData);
+                    Object.keys(parsedData).forEach(child => {
+                        if (this.attendanceData[child]) {
+                            this.attendanceData[child] = { ...parsedData[child] };
                         }
+                    });
+                } catch (error) {
+                    console.error('Fehler beim Parsen der gespeicherten Anwesenheitsdaten:', error);
+                }
+            }
+        },
 
-                        // 2. Получаем BIN ID для текущей группы
-                        this.groupBinId = masterConfig.GROUP_BIN_IDS[this.groupNumber];
-                        if (!this.groupBinId) {
-                            Utils.showAlert(`Keine Bin-ID für Gruppe ${this.groupNumber} in der Konfiguration gefunden.`, 'danger');
-                            this.loadingInitialData = false;
-                            return;
-                        }
+        saveAttendanceData() {
+            // Speichern der Daten im localStorage bei jeder Änderung (nur wenn Morgen-Zählung noch nicht gespeichert ist)
+            if (!this.isMorningCountSaved) {
+                const storageKey = `attendance_${this.currentDate}_${this.groupNumber}`;
+                localStorage.setItem(storageKey, JSON.stringify(this.attendanceData));
+            }
+        },
 
-                        // 3. Загружаем данные группы
-                        const groupApi = new JSONBinAPI(this.config, this.groupBinId);
-                        this.currentGroupData = await groupApi.getData();
-
-                        // 4. Инициализируем данные о присутствии
-                        this.initializeAttendanceData();
-
-                        // 5. Проверяем, сохранены ли утренние данные
-                        this.checkMorningSavedStatus();
-
-                        // 6. Загружаем сохраненные данные о присутствии
-                        this.loadStoredAttendanceData();
-
-                    } catch (error) {
-                        Utils.showAlert(`Fehler beim Laden der Gruppendaten: ${error.message}`, 'danger');
-                        console.error('Fehler beim Laden der Gruppendaten:', error);
-                        this.isConfigLoaded = false;
-                    } finally {
-                        this.loadingInitialData = false;
-                    }
-                },
-
-                checkMorningSavedStatus() {
-                    // Проверяем, есть ли сохраненный массив KinderAnwesenheit
-                    if (this.currentGroupData[this.currentDate] && 
-                        this.currentGroupData[this.currentDate].KinderAnwesenheit &&
-                        Array.isArray(this.currentGroupData[this.currentDate].KinderAnwesenheit)) {
-                        this.isMorningCountSaved = true;
-                        
-                        // Загружаем данные из KinderAnwesenheit в attendanceData
-                        const kinderAnwesenheit = this.currentGroupData[this.currentDate].KinderAnwesenheit;
-                        this.children.forEach((child, index) => {
-                            if (this.attendanceData[child] && kinderAnwesenheit[index] !== undefined) {
-                                this.attendanceData[child].morning = kinderAnwesenheit[index] === 1;
-                            }
-                        });
-                    } else {
-                        this.isMorningCountSaved = false;
-                    }
-                },
-
-                initializeAttendanceData() {
-                    this.attendanceData = {};
-                    if (this.children.length > 0) {
-                        this.children.forEach(child => {
-                            this.attendanceData[child] = {
-                                morning: false,
-                                evening: false
-                            };
-                        });
-                    }
-                },
-
-                loadStoredAttendanceData() {
-                    // Загружаем данные из localStorage если они есть
-                    const storageKey = `attendance_${this.currentDate}_${this.groupNumber}`;
-                    const storedData = localStorage.getItem(storageKey);
-                    
-                    // Также проверяем данные из JSON bin
-                    if (this.currentGroupData[this.currentDate] && this.currentGroupData[this.currentDate].AttendanceData) {
-                        const binAttendanceData = this.currentGroupData[this.currentDate].AttendanceData;
-                        // Объединяем данные из bin с локальными данными
-                        Object.keys(binAttendanceData).forEach(child => {
-                            if (this.attendanceData[child]) {
-                                this.attendanceData[child] = { ...binAttendanceData[child] };
-                            }
-                        });
-                    }
-                    
-                    // Приоритет localStorage (более свежие данные)
-                    if (storedData) {
-                        try {
-                            const parsedData = JSON.parse(storedData);
-                            Object.keys(parsedData).forEach(child => {
-                                if (this.attendanceData[child]) {
-                                    this.attendanceData[child] = { ...parsedData[child] };
-                                }
-                            });
-                        } catch (error) {
-                            console.error('Fehler beim Parsen der gespeicherten Anwesenheitsdaten:', error);
-                        }
-                    }
-                },
-
-                saveAttendanceData() {
-                    // Сохраняем данные в localStorage при каждом изменении (только если утренний подсчет еще не сохранен)
-                    if (!this.isMorningCountSaved) {
-                        const storageKey = `attendance_${this.currentDate}_${this.groupNumber}`;
-                        localStorage.setItem(storageKey, JSON.stringify(this.attendanceData));
-                    }
-                },
-
-  
         async submitMorningAttendance() {
             this.isSaving = true;
             try {
-                // 1. Формируем массив присутствия утром
+                // 1. Erstellen des Arrays für Morgenanwesenheit
                 const kinderAnwesenheit = this.children.map(child => 
                     this.attendanceData[child].morning ? 1 : 0
                 );
 
-                // 2. Рассчитываем значения счетчиков
+                // 2. Zählung berechnen
                 const kinderAnzahl = this.morningPresentCount;
                 const kinderAnzahlNow = this.eveningPresentCount;
 
-                // 3. Обновляем структуру данных группы
+                // 3. Gruppendatenstruktur aktualisieren
                 if (!this.currentGroupData[this.currentDate]) {
                     this.currentGroupData[this.currentDate] = {
                         Betreuer: [],
@@ -672,18 +663,18 @@
                     };
                 }
 
-                // 4. Устанавливаем новые значения
+                // 4. Neue Werte setzen
                 this.currentGroupData[this.currentDate].KinderAnwesenheit = kinderAnwesenheit;
                 this.currentGroupData[this.currentDate].KinderAnzahl = kinderAnzahl;
                 this.currentGroupData[this.currentDate].KinderAnzahlNow = kinderAnzahlNow;
                 this.currentGroupData[this.currentDate].AttendanceData = { ...this.attendanceData };
 
-                // 5. Сохраняем в JSONBin
+                // 5. Speichern in JSONBin
                 const groupApi = new JSONBinAPI(this.config, this.groupBinId);
                 const success = await groupApi.updateData(this.currentGroupData);
 
                 if (success) {
-                    // 6. Сохраняем в localStorage
+                    // 6. Speichern in localStorage
                     const storageKeyKinderAnzahl = `${this.currentDate}-${this.groupNumber}-KinderAnzahl`;
                     localStorage.setItem(storageKeyKinderAnzahl, kinderAnzahl);
                     
@@ -706,10 +697,10 @@
         async submitEveningAttendance() {
             this.isSaving = true;
             try {
-                // 1. Обновляем только вечерние данные
+                // 1. Nur Abenddaten aktualisieren
                 const kinderAnzahlNow = this.eveningPresentCount;
 
-                // 2. Обновляем структуру данных
+                // 2. Datenstruktur aktualisieren
                 if (!this.currentGroupData[this.currentDate]) {
                     this.currentGroupData[this.currentDate] = {
                         Betreuer: [],
@@ -718,16 +709,16 @@
                     };
                 }
 
-                // 3. Устанавливаем новые значения
+                // 3. Neue Werte setzen
                 this.currentGroupData[this.currentDate].KinderAnzahlNow = kinderAnzahlNow;
                 this.currentGroupData[this.currentDate].AttendanceData = { ...this.attendanceData };
 
-                // 4. Сохраняем в JSONBin
+                // 4. Speichern in JSONBin
                 const groupApi = new JSONBinAPI(this.config, this.groupBinId);
                 const success = await groupApi.updateData(this.currentGroupData);
 
                 if (success) {
-                    // 5. Сохраняем в localStorage
+                    // 5. Speichern in localStorage
                     const storageKeyAttendance = `attendance_${this.currentDate}_${this.groupNumber}`;
                     localStorage.setItem(storageKeyAttendance, JSON.stringify(this.attendanceData));
                     
@@ -743,18 +734,17 @@
             }
         },
 
+        navigateToChildrenEdit() {
+            window.location.href = `group_edit.html?gr=${this.groupNumber}`;
+        },
 
-                navigateToChildrenEdit() {
-                    window.location.href = `group_edit.html?gr=${this.groupNumber}`;
-                },
+        goBack() {
+            window.history.back();
+        }
+    }
+});
 
-                goBack() {
-                    window.history.back();
-                }
-            }
-        });
-
-        app.mount('#app');
+app.mount('#app');
     </script>
 </body>
 </html>

@@ -6,8 +6,8 @@
     <title>Betreuer Anmeldung - Stadtranderholung</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/b_login.css">
-        <link rel="icon" href="b_favicon.ico" type="image/x-icon">    
-
+    <link rel="icon" href="b_favicon.ico" type="image/x-icon">
+</head>
 <body>
     <div id="app">
         <div class="login-container">
@@ -59,20 +59,20 @@
     
     <script>
         /**
-         * Standardkonfigurationswerte. Эти значения будут перезаписаны параметрами URL или LocalStorage.
+         * Standardkonfigurationswerte. Diese Werte werden durch URL-Parameter oder LocalStorage überschrieben.
          */
         const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
             BIN_ID: null, 
             MASTER_KEY: null,
             ACCESS_KEY: null,
-            TOTAL_GROUPS: null, // Это значение будет перезаписано из конфигурационного bin
-            TOTAL_BUSES: null // Это значение будет перезаписано из конфигурационного bin
+            TOTAL_GROUPS: null, // Dieser Wert wird aus dem Konfigurations-Bin überschrieben
+            TOTAL_BUSES: null // Dieser Wert wird aus dem Konfigurations-Bin überschrieben
         };
 
         /**
-         * Служебный класс для управления взаимодействиями с JSONBin.io API
-         * Обрабатывает все операции CRUD с надлежащей обработкой ошибок.
+         * Dienstklasse zur Verwaltung der Interaktionen mit der JSONBin.io API.
+         * Behandelt alle CRUD-Operationen mit entsprechender Fehlerbehandlung.
          */
         class JSONBinAPI {
             constructor(config) {
@@ -82,21 +82,21 @@
                     'X-Master-Key': config.MASTER_KEY,
                     'X-Access-Key': config.ACCESS_KEY
                 };
-                 // Здесь будут храниться загруженные GROUP_BIN_IDS и BUS_BIN_IDS
+                // Hier werden die geladenen GROUP_BIN_IDS und BUS_BIN_IDS gespeichert
                 this.groupBinIds = {}; 
                 this.busBinIds = {};
             }
 
             /**
-             * Загружает конфигурацию из главного BIN_ID.
-             * Этот метод должен быть вызван один раз при инициализации.
-             * @returns {Promise<boolean>} Статус успеха загрузки конфигурации.
+             * Lädt die Konfiguration aus dem Haupt-BIN_ID.
+             * Diese Methode sollte einmalig bei der Initialisierung aufgerufen werden.
+             * @returns {Promise<boolean>} Status des Konfigurationsladevorgangs.
              */
             async loadConfigBins() {
                 try {
                     const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
                         method: 'GET',
-                        headers: { 'X-Master-Key': this.config.MASTER_KEY } // Используем Master Key для чтения конфигурации
+                        headers: { 'X-Master-Key': this.config.MASTER_KEY }
                     });
                     
                     if (!response.ok) {
@@ -109,25 +109,23 @@
                     if (configData && configData.GROUP_BIN_IDS && configData.BUS_BIN_IDS) {
                         this.groupBinIds = configData.GROUP_BIN_IDS;
                         this.busBinIds = configData.BUS_BIN_IDS;
-                        // Обновляем TOTAL_GROUPS и TOTAL_BUSES из конфигурационного bin
                         this.config.TOTAL_GROUPS = configData.TOTAL_GROUPS; 
                         this.config.TOTAL_BUSES = configData.TOTAL_BUSES; 
                         return true;
                     } else {
-                        throw new Error('Некорректная структура конфигурации в главном bin.');
+                        throw new Error('Ungültige Konfigurationsstruktur im Haupt-Bin.');
                     }
 
                 } catch (error) {
-                    console.error('Ошибка при загрузке конфигурационных BIN_ID:', error);
+                    console.error('Fehler beim Laden der Konfigurations-BIN_IDs:', error);
                     return false;
                 }
             }
 
-
             /**
-             * Получить текущие данные из определенного bin (группы или автобуса).
-             * @param {string} binId - ID бина, из которого нужно получить данные.
-             * @returns {Promise<Object>} Текущая структура данных или пустой объект.
+             * Holt die aktuellen Daten aus einem bestimmten Bin (Gruppe oder Bus).
+             * @param {string} binId - ID des Bins, aus dem die Daten geholt werden.
+             * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt.
              */
             async getSpecificBinData(binId) {
                 try {
@@ -144,15 +142,15 @@
                     return result.record || {};
                 } catch (error) {
                     console.error(`Fehler beim Abrufen der Daten von BIN ${binId}:`, error);
-                    return {}; // Leeres Objekt zurückgeben, wenn der Abruf fehlschlägt
+                    return {};
                 }
             }
 
             /**
-             * Обновить данные в определенном bin (группы или автобуса).
-             * @param {string} binId - ID бина, который нужно обновить.
-             * @param {Object} data - Полная структура данных для сохранения.
-             * @returns {Promise<boolean>} Статус успеха.
+             * Aktualisiert Daten in einem bestimmten Bin (Gruppe oder Bus).
+             * @param {string} binId - ID des zu aktualisierenden Bins.
+             * @param {Object} data - Vollständige Datenstruktur zur Speicherung.
+             * @returns {Promise<boolean>} Erfolgsstatus.
              */
             async updateSpecificBinData(binId, data) {
                 try {
@@ -175,54 +173,29 @@
         }
 
         /**
-         * Служебные функции для общих операций.
+         * Hilfsfunktionen für allgemeine Operationen.
          */
         const Utils = {
-            /**
-             * Получить текущую дату в формате YYYY-MM-DD.
-             * @returns {string} Форматированная строка даты.
-             */
             getCurrentDate() {
                 return new Date().toISOString().split('T')[0];
             },
 
-            /**
-             * Получить сохраненное имя Betreuer из localStorage.
-             * @returns {string|null} Сохраненное имя или null.
-             */
             getStoredBetreuerName() {
                 return localStorage.getItem('betreuer_name');
             },
 
-            /**
-             * Сохранить имя Betreuer в localStorage.
-             * @param {string} name - Имя Betreuer для сохранения.
-             */
             storeBetreuerName(name) {
                 localStorage.setItem('betreuer_name', name);
             },
 
-            /**
-             * Сохранить номер группы в localStorage.
-             * @param {string} groupNumber - Номер группы для сохранения.
-             */ 
             storeGroupNumber(groupNumber) {
                 localStorage.setItem('group_number', groupNumber);
             },  
 
-            /**
-             * Получить сохраненный номер группы из localStorage.
-             * @returns {string|null} Сохраненный номер группы или null.
-             */
             getStoredGroupNumber() {
                 return localStorage.getItem('group_number');
             },  
 
-            /**
-             * Показать предупреждающее сообщение пользователю.
-             * @param {string} message - Сообщение для отображения.
-             * @param {string} type - Тип предупреждения (success, danger, warning, info).
-             */
             showAlert(message, type = 'info') {
                 const alertContainer = document.getElementById('alertContainer');
                 const alertHtml = `
@@ -232,7 +205,6 @@
                     </div>
                 `;
                 alertContainer.innerHTML = alertHtml;
-                // Скрыть предупреждение через 5 секунд
                 setTimeout(() => {
                     if (alertContainer.firstChild) {
                         alertContainer.firstChild.remove();
@@ -240,18 +212,11 @@
                 }, 5000);
             },
 
-            /**
-             * Загружает параметры конфигурации из URL или LocalStorage.
-             * Параметры URL имеют приоритет. Отсутствующие параметры используют значения по умолчанию.
-             * Все загруженные/по умолчанию параметры сохраняются в LocalStorage.
-             * @returns {Object} Объект, содержащий загруженную конфигурацию или сообщение об ошибке.
-             */
             loadConfig: function() {
                 const urlParams = new URLSearchParams(window.location.search);
                 const config = {};
                 const missingParams = [];
 
-                // Определяем все ожидаемые параметры и их ключи LocalStorage.
                 const paramMap = {
                     'TOTAL_GROUPS': 'config_TOTAL_GROUPS',
                     'TOTAL_BUSES': 'config_TOTAL_BUSSES',
@@ -265,54 +230,46 @@
                     let value = urlParams.get(urlParam) || localStorage.getItem(lsKey);
 
                     if (value !== null && value !== '') {
-                        // Специальная обработка для числовых параметров
                         if (urlParam === 'TOTAL_GROUPS' || urlParam === 'TOTAL_BUSES') {
                             config[urlParam] = parseInt(value, 10);
                         } else {
                             config[urlParam] = value;
                         }
-                        // Сохраняем в LocalStorage, если пришло из URL, или просто убеждаемся, что оно там есть.
                         localStorage.setItem(lsKey, value);
                     } else {
-                        // Проверяем, существует ли значение по умолчанию в CONFIG_DEFAULTS
                         if (CONFIG_DEFAULTS.hasOwnProperty(urlParam)) {
                             config[urlParam] = CONFIG_DEFAULTS[urlParam];
-                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]); // Сохраняем значение по умолчанию в LS
+                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[urlParam]);
                         } else {
                             missingParams.push(urlParam);
                         }
                     }
                 }
-                
-                // API_BASE_URL является константой и не передается через URL/LocalStorage
+
                 config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
 
                 if (missingParams.length > 0) {
-                    return { config: null, error: `Отсутствуют необходимые параметры конфигурации: ${missingParams.join(', ')}. Пожалуйста, убедитесь, что они переданы через URL или установлены в index.html.` };
+                    return { config: null, error: `Fehlende erforderliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass sie über die URL übergeben oder in index.html gesetzt wurden.` };
                 }
                 
                 return { config: config, error: null };
             }
         };
 
-        /**
-         * Основное приложение входа с Vue.js 3
-         * Управляет аутентификацией пользователей и отправкой данных в JSONBin.
-         */
         const { createApp } = Vue;
 
         createApp({
             data() {
                 return {
                     currentDate: '',
-                    totalGroups: CONFIG_DEFAULTS.TOTAL_GROUPS, // Начальное значение по умолчанию, будет перезаписано загруженной конфигурацией
-                    totalBuses: CONFIG_DEFAULTS.TOTAL_BUSES, // totalBuses добавлено к данным
+                    totalGroups: CONFIG_DEFAULTS.TOTAL_GROUPS,
+                    totalBuses: CONFIG_DEFAULTS.TOTAL_BUSES,
                     betreuerName: '',
                     groupNumber: '',
                     isLoading: false,
-                    api: null, // API будет инициализировано после загрузки конфигурации
-                    isConfigLoaded: false, // Флаг для проверки успешной загрузки конфигурации
-                    remoteConfigLoaded: false // Флаг для проверки успешной загрузки конфигурации из удаленного bin
+                    api: null,
+                    isConfigLoaded: false,
+                    remoteConfigLoaded: false
                 };
             },
             
@@ -321,43 +278,37 @@
             },
             
             methods: {
-                /**
-                 * Инициализирует форму с текущей датой и сохраненным именем и загружает конфигурацию.
-                 */
                 async initializeForm() {
                     const { config, error } = Utils.loadConfig();
 
                     if (error) {
                         Utils.showAlert(error, 'danger');
                         this.isConfigLoaded = false;
-                        return; // Останавливаем инициализацию, если конфигурация отсутствует
+                        return;
                     }
 
-                    // Сохраняем загруженную конфигурацию в экземпляре Vue
                     this.config = config; 
                     this.api = new JSONBinAPI(this.config);
-                    this.isConfigLoaded = true; // Отмечаем конфигурацию как загруженную
+                    this.isConfigLoaded = true;
 
-                    // Загружаем GROUP_BIN_IDS и BUS_BIN_IDS из главного конфигурационного bin
                     const configBinsLoaded = await this.api.loadConfigBins();
                     if (!configBinsLoaded) {
-                        Utils.showAlert('Не удалось загрузить конфигурационные идентификаторы Bin для групп и автобусов. Пожалуйста, проверьте конфигурацию.', 'danger');
+                        Utils.showAlert('Konfigurations-BINs für Gruppen und Busse konnten nicht geladen werden. Bitte überprüfen Sie die Konfiguration.', 'danger');
                         this.remoteConfigLoaded = false;
                         return;
                     }
+
                     this.remoteConfigLoaded = true;
-                    this.totalGroups = this.config.TOTAL_GROUPS; // Используем загруженное общее количество групп
-                    this.totalBuses = this.config.TOTAL_BUSES; // Используем загруженное общее количество автобусов
+                    this.totalGroups = this.config.TOTAL_GROUPS;
+                    this.totalBuses = this.config.TOTAL_BUSES;
 
                     this.currentDate = Utils.getCurrentDate();
                     
-                    // Загружаем сохраненное имя Betreuer, если доступно
                     const storedName = Utils.getStoredBetreuerName();
                     if (storedName) {
                         this.betreuerName = storedName;
                     }
 
-                    // Приоритет номера группы из URL, затем LocalStorage
                     const urlParams = new URLSearchParams(window.location.search);
                     const groupNumberFromUrl = urlParams.get('gr');
                     if (groupNumberFromUrl) {
@@ -367,88 +318,63 @@
                         if (storedGroupNumber) {
                             this.groupNumber = storedGroupNumber;
                         } else {
-                            this.groupNumber = ''; // По умолчанию пусто, если нет сохраненного значения
+                            this.groupNumber = '';
                         }
                     }
                 },
 
-                /**
-                 * Переход на страницу автобуса.
-                 * Перенаправляет на b_bus.html.
-                 */
                 goToBusPage() {
                     if (!this.isConfigLoaded || !this.remoteConfigLoaded) {
-                        Utils.showAlert('Конфигурация приложения не загружена. Пожалуйста, проверьте параметры URL или перейдите на страницу конфигурации (index.html).', 'danger');
+                        Utils.showAlert('Die App-Konfiguration wurde nicht geladen. Bitte überprüfen Sie die URL-Parameter oder rufen Sie die Konfigurationsseite (index.html) auf.', 'danger');
                         return;
                     }
                     if (!this.betreuerName) {
-                        Utils.showAlert('Пожалуйста, введите свое имя, прежде чем переходить к автобусу.', 'warning');
+                        Utils.showAlert('Bitte geben Sie Ihren Namen ein, bevor Sie zum Bus gehen.', 'warning');
                         return;
                     }
-                    // Сохраняем имя для будущего использования
                     Utils.storeBetreuerName(this.betreuerName);
-                    
-                    // Перенаправление на b_bus.html без параметров URL (модули читают из LocalStorage)
                     window.location.href = `b_bus.html`;
                 },  
 
-                /**
-                 * Обработка отправки формы
-                 * Проверяет ввод, сохраняет данные в JSONBin и перенаправляет на страницу группы
-                 */
                 async handleSubmit() {
                     if (!this.isConfigLoaded || !this.remoteConfigLoaded) {
-                        Utils.showAlert('Конфигурация приложения не загружена. Пожалуйста, проверьте параметры URL или перейдите на страницу конфигурации (index.html).', 'danger');
+                        Utils.showAlert('Die App-Konfiguration wurde nicht geladen. Bitte überprüfen Sie die URL-Parameter oder rufen Sie die Konfigurationsseite (index.html) auf.', 'danger');
                         return;
                     }
-                    // Проверяем ввод
                     if (!this.betreuerName || !this.groupNumber) {
-                        Utils.showAlert('Пожалуйста, заполните все поля.', 'warning');
+                        Utils.showAlert('Bitte füllen Sie alle Felder aus.', 'warning');
                         return;
                     }
-                    
-                    // Показываем состояние загрузки
+
                     this.setLoadingState(true);
                     
                     try {
-                        // Сохраняем имя и номер группы для будущего использования
                         Utils.storeBetreuerName(this.betreuerName);
                         Utils.storeGroupNumber(this.groupNumber);
-                        
-                        // Отправляем данные в JSONBin
                         const success = await this.submitLoginData();
                         
                         if (success) {
-                            // Перенаправление на b_group.html с номером группы (модули читают другие параметры из LocalStorage)
                             window.location.href = `b_group.html?gr=${this.groupNumber}`;                          
                         } else {
-                            Utils.showAlert('Ошибка при входе. Пожалуйста, попробуйте еще раз.', 'danger');
+                            Utils.showAlert('Fehler beim Anmelden. Bitte versuchen Sie es erneut.', 'danger');
                         }
                     } catch (error) {
-                        console.error('Ошибка входа:', error);
-                        Utils.showAlert('Произошла непредвиденная ошибка. Пожалуйста, попробуйте еще раз.', 'danger');
+                        console.error('Fehler bei der Anmeldung:', error);
+                        Utils.showAlert('Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.', 'danger');
                     } finally {
                         this.setLoadingState(false);
                     }
                 },
 
-                /**
-                 * Отправляет данные входа в JSONBin.
-                 * Создает или обновляет структуру данных с назначением Betreuer.
-                 * @returns {Promise<boolean>} Статус успеха.
-                 */
                 async submitLoginData() {
                     try {
-                        // Находим BIN_ID для текущей группы
                         const groupBinId = this.api.groupBinIds[this.groupNumber];
                         if (!groupBinId) {
-                            throw new Error(`BIN_ID для группы ${this.groupNumber} не найден.`);
+                            throw new Error(`BIN_ID für Gruppe ${this.groupNumber} nicht gefunden.`);
                         }
 
-                        // Получаем текущие данные для этой конкретной группы
                         const currentGroupData = await this.api.getSpecificBinData(groupBinId);
                         
-                        // Убедиться, что структура даты существует
                         if (!currentGroupData[this.currentDate]) {
                             currentGroupData[this.currentDate] = { 
                                 Betreuer: [], 
@@ -456,14 +382,12 @@
                                 KinderAnzahlNow: null 
                             };
                         }
-                        
-                        // Добавляем Betreuer к группе, если его там еще нет
+
                         const dateEntry = currentGroupData[this.currentDate];
                         if (!dateEntry.Betreuer.includes(this.betreuerName)) {
                             dateEntry.Betreuer.push(this.betreuerName);
                         }
-                        
-                        // Обновляем данные в JSONBin для конкретного bin группы
+
                         return await this.api.updateSpecificBinData(groupBinId, currentGroupData);
                     } catch (error) {
                         console.error('Fehler beim Übermitteln der Anmeldedaten:', error);
@@ -471,10 +395,6 @@
                     }
                 },
 
-                /**
-                 * Устанавливает состояние загрузки для обратной связи с пользовательским интерфейсом.
-                 * @param {boolean} loading - Состояние загрузки.
-                 */
                 setLoadingState(loading) {
                     this.isLoading = loading;
                     const spinner = document.querySelector('.loading-spinner');

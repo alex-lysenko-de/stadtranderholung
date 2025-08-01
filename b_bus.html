@@ -146,110 +146,110 @@
             TOTAL_BUSES: null
         };
 
+    
+    
+    /**
+     * Dienstprogrammklasse für die Verwaltung von JSONBin.io API-Interaktionen
+     * Behandelt alle CRUD-Operationen mit ordnungsgemäßer Fehlerbehandlung
+     */
+    class JSONBinAPI {
+        constructor(config) {
+            this.config = config;
+            this.headers = {
+                'Content-Type': 'application/json',
+                'X-Master-Key': config.MASTER_KEY,
+                'X-Access-Key': config.ACCESS_KEY
+            };
+            this.groupBinIds = {}; // Hier werden geladene GROUP_BIN_IDS gespeichert
+            this.busBinIds = {};   // Hier werden geladene BUS_BIN_IDS gespeichert
+        }
+
         /**
-         * Dienstprogrammklasse für die Verwaltung von JSONBin.io API-Interaktionen
-         * Behandelt alle CRUD-Operationen mit ordnungsgemäßer Fehlerbehandlung
+         * Lädt Konfiguration aus dem Haupt-BIN_ID.
+         * Sollte einmal bei der Initialisierung aufgerufen werden.
+         * @returns {Promise<boolean>} Status des erfolgreichen Ladens
          */
-        class JSONBinAPI {
-            constructor(config) {
-                this.config = config;
-                // Header enthalten jetzt Access-Key für Schreiboperationen
-                this.headers = {
-                    'Content-Type': 'application/json',
-                    'X-Master-Key': config.MASTER_KEY,
-                    'X-Access-Key': config.ACCESS_KEY // Access-Key für PUT-Anfragen einbeziehen
-                };
-                this.groupBinIds = {}; // Hier werden geladene GROUP_BIN_IDS gespeichert
-                this.busBinIds = {}; // Hier werden geladene BUS_BIN_IDS gespeichert
-            }
+        async loadConfigBins() {
+            try {
+                const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
+                    method: 'GET',
+                    headers: { 'X-Master-Key': this.config.MASTER_KEY }
+                });
 
-            /**
-             * Загружает конфигурацию из главного BIN_ID.
-             * Этот метод должен быть вызван один раз при инициализации.
-             * @returns {Promise<boolean>} Статус успеха загрузки конфигурации.
-             */
-            async loadConfigBins() {
-                try {
-                    const response = await fetch(`${this.config.API_BASE_URL}/${this.config.BIN_ID}/latest`, {
-                        method: 'GET',
-                        headers: { 'X-Master-Key': this.config.MASTER_KEY } // Используем Master Key для чтения конфигурации
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP-Fehler! Status: ${response.status}`);
-                    }
-
-                    const result = await response.json();
-                    const configData = result.record;
-
-                    if (configData && configData.GROUP_BIN_IDS && configData.BUS_BIN_IDS) {
-                        this.groupBinIds = configData.GROUP_BIN_IDS;
-                        this.busBinIds = configData.BUS_BIN_IDS;
-                        // Обновляем TOTAL_GROUPS и TOTAL_BUSES из конфигурационного bin
-                        this.config.TOTAL_GROUPS = configData.TOTAL_GROUPS;
-                        this.config.TOTAL_BUSES = configData.TOTAL_BUSES;
-                        return true;
-                    } else {
-                        throw new Error('Некорректная структура конфигурации в главном bin.');
-                    }
-
-                } catch (error) {
-                    console.error('Ошибка при загрузке конфигурационных BIN_ID:', error);
-                    return false;
+                if (!response.ok) {
+                    throw new Error(`HTTP-Fehler! Status: ${response.status}`);
                 }
-            }
 
-            /**
-             * Получить текущие данные из определенного bin (группы или автобуса).
-             * @param {string} binId - ID бина, из которого нужно получить данные.
-             * @returns {Promise<Object>} Текущая структура данных или пустой объект.
-             */
-            async getSpecificBinData(binId) {
-                try {
-                    const response = await fetch(`${this.config.API_BASE_URL}/${binId}/latest`, {
-                        method: 'GET',
-                        headers: this.headers
-                    });
+                const result = await response.json();
+                const configData = result.record;
 
-                    if (!response.ok) {
-                        throw new Error(`HTTP-Fehler! Status: ${response.status}`);
-                    }
-
-                    const result = await response.json();
-                    return result.record || {};
-                } catch (error) {
-                    console.error(`Fehler beim Abrufen der Daten von BIN ${binId}:`, error);
-                    return {}; // Leeres Objekt zurückgeben, wenn der Abruf fehlschlägt
-                }
-            }
-
-            /**
-             * Обновить данные в определенном bin (группы или автобуса).
-             * @param {string} binId - ID бина, который нужно обновить.
-             * @param {Object} data - Полная структура данных для сохранения.
-             * @returns {Promise<boolean>} Статус успеха.
-             */
-            async updateSpecificBinData(binId, data) {
-                try {
-                    const response = await fetch(`${this.config.API_BASE_URL}/${binId}`, {
-                        method: 'PUT',
-                        headers: this.headers,
-                        body: JSON.stringify(data)
-                    });
-
-                    if (!response.ok) {
-                        // Versuch, die Fehlermeldung aus der Antwort zu lesen
-                        const errorData = await response.json();
-                        throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorData.message || 'Unbekannter Fehler'}`);
-                    }
-
+                if (configData && configData.GROUP_BIN_IDS && configData.BUS_BIN_IDS) {
+                    this.groupBinIds = configData.GROUP_BIN_IDS;
+                    this.busBinIds = configData.BUS_BIN_IDS;
+                    this.config.TOTAL_GROUPS = configData.TOTAL_GROUPS;
+                    this.config.TOTAL_BUSES = configData.TOTAL_BUSES;
                     return true;
-                } catch (error) {
-                    console.error(`Fehler beim Aktualisieren der Daten in BIN ${binId}:`, error);
-                    return false;
+                } else {
+                    throw new Error('Ungültige Struktur in der Hauptkonfiguration.');
                 }
+
+            } catch (error) {
+                console.error('Fehler beim Laden der Konfigurations-BIN_IDs:', error);
+                return false;
             }
         }
+
+        /**
+         * Holt aktuelle Daten aus einem bestimmten Bin (Gruppe oder Bus).
+         * @param {string} binId - Die ID des abzurufenden Bins
+         * @returns {Promise<Object>} Aktuelle Datenstruktur oder leeres Objekt
+         */
+        async getSpecificBinData(binId) {
+            try {
+                const response = await fetch(`${this.config.API_BASE_URL}/${binId}/latest`, {
+                    method: 'GET',
+                    headers: this.headers
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP-Fehler! Status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                return result.record || {};
+            } catch (error) {
+                console.error(`Fehler beim Abrufen der Daten von BIN ${binId}:`, error);
+                return {};
+            }
+        }
+
+        /**
+         * Aktualisiert Daten in einem bestimmten Bin (Gruppe oder Bus).
+         * @param {string} binId - Die ID des zu aktualisierenden Bins
+         * @param {Object} data - Die zu speichernde Datenstruktur
+         * @returns {Promise<boolean>} Erfolg oder Fehler
+         */
+        async updateSpecificBinData(binId, data) {
+            try {
+                const response = await fetch(`${this.config.API_BASE_URL}/${binId}`, {
+                    method: 'PUT',
+                    headers: this.headers,
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`HTTP-Fehler! Status: ${response.status}, Nachricht: ${errorData.message || 'Unbekannter Fehler'}`);
+                }
+
+                return true;
+            } catch (error) {
+                console.error(`Fehler beim Aktualisieren der Daten in BIN ${binId}:`, error);
+                return false;
+            }
+        }
+    }
+    
 
         /**
          * Dienstprogrammfunktionen für allgemeine Operationen
