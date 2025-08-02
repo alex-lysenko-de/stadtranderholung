@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <title>Configuration - Stadtranderholung</title>
+    <title>Configuration - SRE</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.4.21/vue.global.min.js"></script>
@@ -45,7 +45,7 @@
                             </div>
 
                             <form @submit.prevent="saveConfiguration" :class="{'loading': isLoading}">
-                                <div class="mb-3">
+                                <div class="mb-3" v-if="!isLightMode">
                                     <label for="year" class="form-label">Jahr:</label>
                                     <input type="text" id="year" class="form-control" v-model="formData.year" required>
                                 </div>
@@ -60,24 +60,24 @@
                                         v-model.number="formData.total_buses" min="1" required>
                                 </div>
 
-                                <div class="mb-3">
+                                <div class="mb-3" v-if="!isLightMode">
                                     <label for="binId" class="form-label">Config Bin ID (JSONBin.io):</label>
                                     <input type="text" id="binId" class="form-control" v-model="formData.bin_id"
                                         placeholder="Leer lassen für automatische Erstellung">
                                     <small class="form-text text-muted">Wenn leer, wird automatisch ein neuer Config-Bin
                                         erstellt</small>
                                 </div>
-                                <div class="mb-3">
+                                <div class="mb-3" v-if="!isLightMode">
                                     <label for="binMasterKey" class="form-label">Master Key (JSONBin.io):</label>
                                     <input type="text" id="binMasterKey" class="form-control"
                                         v-model="formData.bin_master_key" required>
                                 </div>
-                                <div class="mb-3">
+                                <div class="mb-3" v-if="!isLightMode">
                                     <label for="binAccessKey" class="form-label">Access Key (JSONBin.io):</label>
                                     <input type="text" id="binAccessKey" class="form-control"
                                         v-model="formData.bin_access_key" required>
                                 </div>
-                                <div class="mb-3">
+                                <div class="mb-3" v-if="!isLightMode">
                                     <label for="baseUrl" class="form-label">Basis-URL (ohne Dateinamen):</label>
                                     <input type="text" id="baseUrl" class="form-control" v-model="formData.base_url"
                                         placeholder="z.B. https://raw.githack.com/alex-lysenko-de/stadtranderholung/main/"
@@ -85,7 +85,7 @@
                                 </div>
 
                                 <div class="d-grid gap-2 mb-4">
-                                    <button type="submit" class="btn btn-primary" :disabled="isLoading">
+                                    <button type="submit" class="btn btn-primary" :disabled="isLoading || (isLightMode && !formData.bin_id)">
                                         <span v-if="isLoading">
                                             <span class="spinner-border spinner-border-sm me-2" role="status"
                                                 aria-hidden="true"></span>
@@ -98,6 +98,9 @@
                                     </button>
                                 </div>
                             </form>
+                            <div v-if="isLightMode && !formData.bin_id" class="alert alert-warning">
+                                Im "Light"-Modus können Einstellungen nur aktualisiert werden, wenn eine Config Bin ID im LocalStorage gefunden wird. Bitte starten Sie den Konfigurator zuerst im Standardmodus, um die Konfiguration zu erstellen.
+                            </div>
 
                             <div class="d-grid gap-2 mb-3">
                                 <button @click="showAdminLoginUrl" class="btn btn-info" :disabled="!formData.bin_id">
@@ -163,19 +166,24 @@
                     successMessage: '',
                     showError: false,
                     errorMessage: '',
-                    isLoading: false
+                    isLoading: false,
+                    isLightMode: false
                 };
             },
             methods: {
                 async saveConfiguration() {
                     this.isLoading = true;
                     try {
-                        // If BIN_ID is empty, create new configuration
-                        if (!this.formData.bin_id || this.formData.bin_id.trim() === '') {
-                            await this.createNewConfiguration();
+                        if (this.isLightMode && !this.formData.bin_id) {
+                            throw new Error('Im "Light"-Modus kann die Konfiguration nur aktualisiert werden, wenn eine Config Bin ID vorhanden ist.');
                         }
 
-                        // Save to localStorage
+                        if (!this.formData.bin_id || this.formData.bin_id.trim() === '') {
+                            await this.createNewConfiguration();
+                        } else {
+                            await this.updateExistingConfiguration();
+                        }
+
                         this.saveToLocalStorage();
                         this.showNotification('Konfiguration erfolgreich gespeichert!', 'success');
                     } catch (error) {
@@ -187,17 +195,16 @@
                 },
 
                 async createNewConfiguration() {
-                    // Step 1: Create config bin
-                    const configBinId = await this.createBin('Configuration', {
+                    this.showNotification('Erstelle neue Konfiguration...', 'info');
+                    const configBinData = {
                         TOTAL_GROUPS: this.formData.total_groups,
                         TOTAL_BUSES: this.formData.total_buses,
                         GROUP_BIN_IDS: {},
                         BUS_BIN_IDS: {}
-                    });
-
+                    };
+                    const configBinId = await this.createBin('Configuration', configBinData);
                     this.formData.bin_id = configBinId;
 
-                    // Step 2: Create group bins
                     const groupBinIds = {};
                     for (let i = 1; i <= this.formData.total_groups; i++) {
                         const groupData = {
@@ -207,8 +214,8 @@
                         const groupBinId = await this.createBin(`Group_${i}`, groupData);
                         groupBinIds[i.toString()] = groupBinId;
                     }
+                    configBinData.GROUP_BIN_IDS = groupBinIds;
 
-                    // Step 3: Create bus bins
                     const busBinIds = {};
                     for (let i = 1; i <= this.formData.total_buses; i++) {
                         const busData = {
@@ -217,13 +224,63 @@
                         const busBinId = await this.createBin(`Bus_${i}`, busData);
                         busBinIds[i.toString()] = busBinId;
                     }
+                    configBinData.BUS_BIN_IDS = busBinIds;
 
-                    // Step 4: Update config bin with all bin IDs
-                    await this.updateBin(configBinId, {
-                        TOTAL_GROUPS: this.formData.total_groups,
-                        TOTAL_BUSES: this.formData.total_buses,
-                        GROUP_BIN_IDS: groupBinIds,
-                        BUS_BIN_IDS: busBinIds
+                    await this.updateBin(configBinId, configBinData);
+                },
+
+                async updateExistingConfiguration() {
+                    this.showNotification('Aktualisiere bestehende Konfiguration...', 'info');
+                    const currentConfigBinData = await this.fetchBin(this.formData.bin_id);
+                    let { TOTAL_GROUPS, TOTAL_BUSES, GROUP_BIN_IDS, BUS_BIN_IDS } = currentConfigBinData;
+
+                    // --- Handle TOTAL_GROUPS changes ---
+                    const currentGroupCount = Object.keys(GROUP_BIN_IDS).length;
+                    if (this.formData.total_groups > currentGroupCount) {
+                        for (let i = currentGroupCount + 1; i <= this.formData.total_groups; i++) {
+                            const groupData = { GroupNumber: i, Kinder: [] };
+                            const newBinId = await this.createBin(`Group_${i}`, groupData);
+                            GROUP_BIN_IDS[i.toString()] = newBinId;
+                            this.showNotification(`Gruppe ${i} Bin erstellt.`, 'info');
+                        }
+                    } else if (this.formData.total_groups < currentGroupCount) {
+                        for (let i = currentGroupCount; i > this.formData.total_groups; i--) {
+                            const binIdToDelete = GROUP_BIN_IDS[i.toString()];
+                            if (binIdToDelete) {
+                                await this.deleteBin(binIdToDelete);
+                                delete GROUP_BIN_IDS[i.toString()];
+                                this.showNotification(`Gruppe ${i} Bin gelöscht.`, 'info');
+                            }
+                        }
+                    }
+                    TOTAL_GROUPS = this.formData.total_groups;
+
+                    // --- Handle TOTAL_BUSES changes ---
+                    const currentBusCount = Object.keys(BUS_BIN_IDS).length;
+                    if (this.formData.total_buses > currentBusCount) {
+                        for (let i = currentBusCount + 1; i <= this.formData.total_buses; i++) {
+                            const busData = { BusNumber: i };
+                            const newBinId = await this.createBin(`Bus_${i}`, busData);
+                            BUS_BIN_IDS[i.toString()] = newBinId;
+                            this.showNotification(`Bus ${i} Bin erstellt.`, 'info');
+                        }
+                    } else if (this.formData.total_buses < currentBusCount) {
+                        for (let i = currentBusCount; i > this.formData.total_buses; i--) {
+                            const binIdToDelete = BUS_BIN_IDS[i.toString()];
+                            if (binIdToDelete) {
+                                await this.deleteBin(binIdToDelete);
+                                delete BUS_BIN_IDS[i.toString()];
+                                this.showNotification(`Bus ${i} Bin gelöscht.`, 'info');
+                            }
+                        }
+                    }
+                    TOTAL_BUSES = this.formData.total_buses;
+
+                    await this.updateBin(this.formData.bin_id, {
+                        TOTAL_GROUPS,
+                        TOTAL_BUSES,
+                        GROUP_BIN_IDS,
+                        BUS_BIN_IDS
                     });
                 },
 
@@ -265,6 +322,38 @@
                     return await response.json();
                 },
 
+                async fetchBin(binId) {
+                    const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                        method: 'GET',
+                        headers: {
+                            'X-Master-Key': this.formData.bin_master_key
+                        }
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`Fehler beim Abrufen von Bin ${binId}: ${errorData.message || response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    return result.record;
+                },
+
+                async deleteBin(binId) {
+                    const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-Master-Key': this.formData.bin_master_key
+                        }
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`Fehler beim Löschen von Bin ${binId}: ${errorData.message || response.statusText}`);
+                    }
+                    return true;
+                },
+
                 saveToLocalStorage() {
                     try {
                         for (const key in this.formData) {
@@ -275,7 +364,10 @@
                     }
                 },
 
-                loadFromLocalStorage() {
+                async loadFromLocalStorage() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    this.isLightMode = urlParams.get('mode') === 'light';
+
                     for (const key in this.formData) {
                         const savedValue = localStorage.getItem(`config_${key}`);
                         if (savedValue !== null) {
@@ -286,10 +378,25 @@
                             }
                         }
                     }
+
+                    if (this.isLightMode && this.formData.bin_id) {
+                        try {
+                            // Fetch current TOTAL_GROUPS and TOTAL_BUSES from the remote bin
+                            const remoteConfig = await this.fetchBin(this.formData.bin_id);
+                            this.formData.total_groups = remoteConfig.TOTAL_GROUPS;
+                            this.formData.total_buses = remoteConfig.TOTAL_BUSES;
+                            this.showNotification('Konfiguration aus dem Bin geladen (Light-Modus).', 'info');
+                        } catch (error) {
+                            console.error('Error loading config in light mode:', error);
+                            this.showNotification('Fehler beim Laden der Konfiguration im Light-Modus. Bitte stellen Sie sicher, dass die Config Bin ID gültig ist und im LocalStorage gespeichert wurde.', 'error');
+                            // Disable save if config cannot be loaded in light mode
+                            this.formData.bin_id = ''; // Invalidate bin_id to disable save button
+                        }
+                    }
                 },
 
                 generateUrl(is_admin) {
-                    if (!this.formData.year || !this.formData.bin_master_key || !this.formData.bin_access_key || !this.formData.base_url || !this.formData.total_groups || !this.formData.total_buses || !this.formData.bin_id) {
+                    if (!this.formData.year || !this.formData.bin_master_key || !this.formData.bin_access_key || !this.formData.base_url || !this.formData.bin_id) {
                         this.showNotification('Bitte füllen Sie alle erforderlichen Felder aus und speichern Sie die Konfiguration, um eine URL zu generieren.', 'error');
                         this.generatedUrl = '';
                         this.clearQrCode();
@@ -300,8 +407,6 @@
                         year: this.formData.year,
                         MASTER_KEY: this.formData.bin_master_key,
                         ACCESS_KEY: this.formData.bin_access_key,
-                        TOTAL_GROUPS: this.formData.total_groups,
-                        TOTAL_BUSES: this.formData.total_buses,
                         BIN_ID: this.formData.bin_id
                     });
                     const page = is_admin ? "a_login.html" : "b_login.html";

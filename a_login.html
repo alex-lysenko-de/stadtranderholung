@@ -8,43 +8,47 @@
     <meta http-equiv="Expires" content="0" />
     
     <title>Leiter Login - Stadtranderholung</title>
-    <!-- Bootstrap 5.3.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- use Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
     <link rel="stylesheet" href="css/a_login.css">
     <link rel="icon" href="a_favicon.ico" type="image/x-icon">    
 
-    <!-- Favicon -->
-</head>
+    </head>
 <body>
     <div id="app">
         <div class="login-container">
             <div class="login-card">
                 <div class="card-header">
-                    <div class="admin-icon"><!-- add crown fa-icon --><i class="fas fa-crown"></i></div>
+                    <div class="admin-icon"><i class="fas fa-crown"></i></div>
                     <h2 class="mb-0">Leiter</h2>
                     <p class="mb-0 mt-2">Stadtranderholung {{ currentYear }}</p>
                 </div>
                 <div class="navigation-section">
-                    <!-- Container für Erfolgs-/Fehlermeldungen -->
                     <div id="alertContainer"></div>
                     
-                    <!-- Parameterinformationen (nur anzeigen, wenn Parameter geladen wurden) -->
                     <div v-if="hasParameters && isConfigLoaded" class="parameters-info">
                         <h6 class="mb-2"><i class="fas fa-clipboard-list"></i> Geladene Parameter:</h6>
-                        <div v-for="(value, key) in loadedParameters" :key="key" class="parameter-item">
+                        <div v-for="(value, key) in displayedParameters" :key="key" class="parameter-item">
                             <strong>{{ key }}:</strong> {{ value }}
                         </div>
+
+                        <div class="mt-3 parameter-item">
+                            <strong>Gesamtanzahl Gruppen:</strong> {{ config.TOTAL_GROUPS }}
+                        </div>
+                        <div class="mt-2 mb-3 parameter-item">
+                            <strong>Gesamtanzahl Busse:</strong> {{ config.TOTAL_BUSES }}
+                        </div>
+                        
+                        <button @click="navigateTo('index.html?mode=light')" class="btn btn-secondary w-100 mb-3">
+                            <i class="fas fa-cog me-2"></i>Konfiguration
+                        </button>
                     </div>
                     
-                    <!-- Ladeanzeige während der Konfigurationsvalidierung -->
                     <div v-if="isValidatingConfig" class="text-center mb-3">
                         <div class="spinner-border spinner-border-sm me-2" role="status"></div>
                         <small class="text-muted">Konfiguration wird validiert...</small>
                     </div>
                     
-                    <!-- Hauptnavigationsschaltflächen -->
                     <div class="d-grid gap-2">
                         <button @click="navigateTo('a_overview.html')" class="btn btn-primary nav-button" :disabled="!isConfigLoaded || isValidatingConfig">
                             <i class="fa-solid fa-users"></i> Gruppen Übersicht
@@ -54,12 +58,9 @@
                             <i class="fa-solid fa-bus"></i> Bus Übersicht
                         </button>
                         
-                        <button @click="navigateTo('b_login.html')" class="btn btn-info nav-button" :disabled="!isConfigLoaded || isValidatingConfig">
-                            <i class="fa-solid fa-user"></i> Betreuer Login
-                        </button>
+                       
                     </div>
                     
-                    <!-- Zusätzlicher Informationsbereich -->
                     <div class="mt-4 text-center">
                         <small class="text-muted">
                             Aktuelle Zeit: {{ currentDateTime }}
@@ -70,9 +71,7 @@
         </div>
     </div>
 
-    <!-- Bootstrap 5.3.3 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Vue.js 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     
     <script>
@@ -81,11 +80,11 @@
          */
         const CONFIG_DEFAULTS = {
             API_BASE_URL: 'https://api.jsonbin.io/v3/b',
-            BIN_ID: '68892cef7b4b8670d8a95f2b', // Standard Config-BIN_ID - now contains configuration with GROUP_BIN_IDS and BUS_BIN_IDS
-            MASTER_KEY: '$2a$10$Yxp3iL9EqLkbpNRwKv0et.hXwFYAtyN3wkFpYhkyiCmD8riOLllqm',
-            ACCESS_KEY: '$2a$10$25EbEOOZQFXGw/T2PkMKm.EELC/3G9sFCI7TNaAxpkawvjEUhAYCu',
-            TOTAL_GROUPS: 15,
-            TOTAL_BUSES: 3
+            BIN_ID: null, // Standard Config-BIN_ID - now contains configuration with GROUP_BIN_IDS and BUS_BIN_IDS
+            MASTER_KEY: null,
+            ACCESS_KEY: null,
+            TOTAL_GROUPS: null, // Default for display if not loaded from bin
+            TOTAL_BUSES: null // Default for display if not loaded from bin
         };
 
         /**
@@ -144,11 +143,10 @@
                 // Alle erwarteten Parameter und deren LocalStorage-Schlüssel definieren
                 const paramMap = {
                     'year': 'config_year',
-                    'TOTAL_GROUPS': 'config_TOTAL_GROUPS',
-                    'TOTAL_BUSES': 'config_TOTAL_BUSSES',
                     'MASTER_KEY': 'config_MASTER_KEY',
                     'ACCESS_KEY': 'config_ACCESS_KEY',
                     'BIN_ID': 'config_BIN_ID'
+                    // TOTAL_GROUPS and TOTAL_BUSES are now fetched from the bin directly
                 };
 
                 for (const urlParam in paramMap) {
@@ -156,29 +154,25 @@
                     let value = urlParams.get(urlParam) || localStorage.getItem(lsKey);
 
                     if (value !== null && value !== '') {
-                        // Spezielle Behandlung für numerische Parameter
-                        if (urlParam === 'TOTAL_GROUPS' || urlParam === 'TOTAL_BUSES') {
-                            config[urlParam] = parseInt(value, 10);
-                        } else {
-                            config[urlParam] = value;
-                        }
-                        // Im LocalStorage speichern, wenn es von der URL kam oder einfach sicherstellen, dass es dort ist
+                        config[urlParam] = value;
                         localStorage.setItem(lsKey, value);
                     } else {
-                        // Prüfen, ob ein Standardwert in CONFIG_DEFAULTS existiert
                         const defaultKey = urlParam;
                         
                         if (CONFIG_DEFAULTS.hasOwnProperty(defaultKey)) {
                             config[urlParam] = CONFIG_DEFAULTS[defaultKey];
-                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[defaultKey]); // Standardwert im LS speichern
+                            localStorage.setItem(lsKey, CONFIG_DEFAULTS[defaultKey]);
                         } else {
                             missingParams.push(urlParam);
                         }
                     }
                 }
                 
-                // API_BASE_URL ist eine Konstante und wird nicht über URL/LocalStorage übergeben
                 config.API_BASE_URL = CONFIG_DEFAULTS.API_BASE_URL;
+                // Initialize TOTAL_GROUPS and TOTAL_BUSES from defaults, will be overwritten by bin data
+                config.TOTAL_GROUPS = CONFIG_DEFAULTS.TOTAL_GROUPS;
+                config.TOTAL_BUSES = CONFIG_DEFAULTS.TOTAL_BUSES;
+
 
                 if (missingParams.length > 0) {
                     return { config: null, error: `Es fehlen wesentliche Konfigurationsparameter: ${missingParams.join(', ')}. Bitte stellen Sie sicher, dass diese über die URL übergeben oder in index.html festgelegt werden.` };
@@ -188,16 +182,16 @@
             },
 
             /**
-             * Validiert die Konfiguration durch Abfrage des Config-Bins
-             * @param {Object} config - Die zu validierende Konfiguration
-             * @returns {Promise<Object>} Promise mit Validierungsergebnis
+             * Validates the configuration by querying the Config-Bin
+             * @param {Object} config - The to-be-validated configuration
+             * @returns {Promise<Object>} Promise with validation result
              */
             async validateConfiguration(config) {
                 try {
                     const response = await fetch(`${config.API_BASE_URL}/${config.BIN_ID}/latest`, {
                         method: 'GET',
                         headers: {
-                            'X-Master-Key': config.MASTER_KEY
+                            'X-Master-Key': config.MASTER_KEY // Using Master Key for fetching config bin
                         }
                     });
 
@@ -208,22 +202,27 @@
                     const data = await response.json();
                     const configData = data.record;
 
-                    // Validiere die Struktur der Konfiguration
+                    // Validate the structure of the configuration
                     if (!configData.TOTAL_GROUPS || !configData.TOTAL_BUSES || 
                         !configData.GROUP_BIN_IDS || !configData.BUS_BIN_IDS) {
                         throw new Error('Ungültige Konfigurationsstruktur im Config-Bin');
                     }
 
-                    // Validiere, dass die Anzahl der Bin-IDs mit den Totals übereinstimmt
+                    // Validate that the number of Bin IDs matches the totals
                     const groupBinCount = Object.keys(configData.GROUP_BIN_IDS).length;
                     const busBinCount = Object.keys(configData.BUS_BIN_IDS).length;
 
                     if (groupBinCount !== configData.TOTAL_GROUPS) {
-                        throw new Error(`Anzahl der Gruppen-Bins (${groupBinCount}) stimmt nicht mit TOTAL_GROUPS (${configData.TOTAL_GROUPS}) überein`);
+                        console.warn(`Anzahl der Gruppen-Bins (${groupBinCount}) stimmt nicht mit TOTAL_GROUPS (${configData.TOTAL_GROUPS}) überein. Aktualisierung des LOCALSTORAGE.`);
+                        // Attempt to correct if discrepancy is found, by setting local storage to actual bin count
+                        localStorage.setItem('config_TOTAL_GROUPS', groupBinCount);
+                        configData.TOTAL_GROUPS = groupBinCount; // Adjust the configData to reflect actual
                     }
 
                     if (busBinCount !== configData.TOTAL_BUSES) {
-                        throw new Error(`Anzahl der Bus-Bins (${busBinCount}) stimmt nicht mit TOTAL_BUSES (${configData.TOTAL_BUSES}) überein`);
+                        console.warn(`Anzahl der Bus-Bins (${busBinCount}) stimmt nicht mit TOTAL_BUSES (${configData.TOTAL_BUSES}) überein. Aktualisierung des LOCALSTORAGE.`);
+                        localStorage.setItem('config_TOTAL_BUSSES', busBinCount);
+                        configData.TOTAL_BUSES = busBinCount; // Adjust the configData to reflect actual
                     }
 
                     return { 
@@ -257,8 +256,8 @@
                     hasParameters: false,
                     isConfigLoaded: false, // Flag, um den Konfigurationsladestatus zu verfolgen
                     isValidatingConfig: false, // Flag für Validierungsvorgang
-                    config: {}, // Hier wird die geladene Konfiguration gespeichert
-                    remoteConfig: {} // Hier wird die vom Server geladene Konfiguration gespeichert
+                    config: {}, // Hier wird die geladene Konfiguration gespeichert (aus URL/LocalStorage)
+                    remoteConfig: {} // Here the configuration loaded from the server is stored (incl. GROUP_BIN_IDS, BUS_BIN_IDS)
                 };
             },
             
@@ -266,11 +265,25 @@
                 this.initializeApp();
                 this.startClock();
             },
+
+            computed: {
+                displayedParameters() {
+                    const params = {};
+                    // Filter out sensitive keys for display and also TOTAL_GROUPS/TOTAL_BUSES as they are displayed separately
+                    const sensitiveAndSeparateKeys = ['API_BASE_URL', 'MASTER_KEY', 'ACCESS_KEY', 'BIN_ID', 'TOTAL_GROUPS', 'TOTAL_BUSES'];
+                    for (const key in this.config) {
+                        if (!sensitiveAndSeparateKeys.includes(key)) {
+                            params[key] = this.config[key];
+                        }
+                    }
+                    return params;
+                }
+            },
             
             methods: {
                 /**
-                 * Initialisiert die Anwendung
-                 * Analysiert URL-Parameter und richtet den Anfangszustand ein
+                 * Initializes the application
+                 * Parses URL parameters and sets up the initial state
                  */
                 async initializeApp() {
                     console.log('Administrator-Anmeldung wird initialisiert...');
@@ -280,44 +293,37 @@
                     if (error) {
                         Utils.showAlert(error, 'danger');
                         this.isConfigLoaded = false;
-                        return; // Initialisierung stoppen, wenn Konfiguration fehlt
+                        return; // Stop initialization if configuration is missing
                     }
 
-                    this.config = config; // Geladene Konfiguration speichern
+                    this.config = config; // Save loaded configuration
 
-                    // Anzeigen der geladenen Parameter im UI
-                    this.loadedParameters = {};
-                    for (const key in this.config) {
-                        // Filtern von internen Konfigurationsschlüsseln, die nicht angezeigt werden sollen
-                        if (key !== 'API_BASE_URL') { 
-                            this.loadedParameters[key] = this.config[key];
-                        }
-                    }
+                    this.loadedParameters = this.config;
                     this.hasParameters = Object.keys(this.loadedParameters).length > 0;
 
-                    // Jahr aus Konfiguration setzen, falls verfügbar
+                    // Set year from configuration, if available
                     if (this.config.year) {
                         this.currentYear = this.config.year;
                     }
                     
                     if (this.hasParameters) {
-                        const paramCount = Object.keys(this.loadedParameters).length;
+                        const paramCount = Object.keys(this.displayedParameters).length;
                         Utils.showAlert(
                             `${paramCount} Parameter erfolgreich geladen.`, 
                             'success'
                         );
-                        console.log('Geladene Parameter:', this.loadedParameters);
+                        console.log('Geladene Parameter (alle):', this.loadedParameters); // Log all for technical view
                     }
 
-                    // Konfiguration validieren
+                    // Validate configuration
                     await this.validateConfig();
                     
-                    // Aktuelle Zeit einstellen
+                    // Set current time
                     this.updateDateTime();
                 },
 
                 /**
-                 * Validiert die Konfiguration durch Abfrage des Config-Bins
+                 * Validates the configuration by querying the Config-Bin
                  */
                 async validateConfig() {
                     this.isValidatingConfig = true;
@@ -326,16 +332,13 @@
                         const validation = await Utils.validateConfiguration(this.config);
                         
                         if (validation.valid) {
-                            this.remoteConfig = validation.configData;
+                            this.remoteConfig = validation.configData; // Store the full remote config
                             this.isConfigLoaded = true;
                             
-                            // Aktualisiere lokale Totals mit den Werten vom Server
+                            // Update local TOTAL_GROUPS and TOTAL_BUSES with values from the server
+                            // This ensures the displayed values are from the bin
                             this.config.TOTAL_GROUPS = validation.configData.TOTAL_GROUPS;
                             this.config.TOTAL_BUSES = validation.configData.TOTAL_BUSES;
-                            
-                            // Speichere die aktualisierten Werte im LocalStorage
-                            localStorage.setItem('config_TOTAL_GROUPS', validation.configData.TOTAL_GROUPS);
-                            localStorage.setItem('config_TOTAL_BUSSES', validation.configData.TOTAL_BUSES);
                             
                             Utils.showAlert(
                                 `Konfiguration validiert: ${validation.configData.TOTAL_GROUPS} Gruppen, ${validation.configData.TOTAL_BUSES} Busse`, 
@@ -354,8 +357,8 @@
                 },
 
                 /**
-                 * Navigiert zur angegebenen Seite
-                 * @param {string} page - Dateiname der Zielseite
+                 * Navigates to the specified page
+                 * @param {string} page - Filename of the target page
                  */
                 navigateTo(page) {
                     if (!this.isConfigLoaded) {
@@ -363,25 +366,25 @@
                         return;
                     }
                     console.log(`Navigiere zu: ${page}`);
-                    // Navigation ohne URL-Parameter, da Module aus LocalStorage lesen sollen
+                    // Navigate without URL parameters, as modules should read from LocalStorage
                     window.location.href = page;
                 },
 
                 /**
-                 * Aktuelles Datum und Uhrzeit aktualisieren
+                 * Update current date and time
                  */
                 updateDateTime() {
                     this.currentDateTime = Utils.getCurrentDateTime();
                 },
 
                 /**
-                 * Startet die Uhr, um die Zeit jede Minute zu aktualisieren
+                 * Starts the clock to update time every minute
                  */
                 startClock() {
-                    // Sofort aktualisieren
+                    // Update immediately
                     this.updateDateTime();
                     
-                    // Jede Minute aktualisieren
+                    // Update every minute
                     setInterval(() => {
                         this.updateDateTime();
                     }, 60000);

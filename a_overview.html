@@ -12,6 +12,32 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/a_overview.css">
     <link rel="icon" href="a_favicon.ico" type="image/x-icon">
+    <style>
+        .group-loading td {
+            background-color: rgba(0, 123, 255, 0.05);
+            position: relative;
+        }
+
+        .group-loading td::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(0, 123, 255, 0.1), transparent);
+            animation: loadingShimmer 1.5s infinite;
+        }
+
+        .group-error td {
+            background-color: rgba(220, 53, 69, 0.05);
+        }
+
+        @keyframes loadingShimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+    </style>
 </head>
 
 <body>
@@ -85,28 +111,22 @@
                         <div class="spinner-border mb-3" role="status">
                             <span class="visually-hidden">Wird geladen...</span>
                         </div>
-                        <p class="text-muted">Lade Gruppendaten für heute...</p>
                     </div>
 
-                    <div v-else-if="!hasGroupsData && isConfigLoaded && remoteConfigLoaded" class="text-center py-5">
-                        <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
-                        <h5 class="text-muted">Keine Daten für heute verfügbar</h5>
-                        <p class="text-muted">Noch kein Betreuer hat sich heute angemeldet.</p>
-                    </div>
-                    <div v-else-if="!isConfigLoaded" class="text-center py-5">
+                    <div v-if="!isConfigLoaded" class="text-center py-5">
                         <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
                         <h5 class="text-muted">Lokale Konfiguration konnte nicht geladen werden.</h5>
                         <p class="text-muted">Bitte gehen Sie zur Anmeldeseite zurück, um die Konfiguration zu laden.
                         </p>
                     </div>
-                    <div v-else-if="!remoteConfigLoaded" class="text-center py-5">
+                    <div v-if="!remoteConfigLoaded" class="text-center py-5">
                         <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
                         <h5 class="text-muted">Remote-Konfiguration konnte nicht geladen werden.</h5>
                         <p class="text-muted">Stellen Sie sicher, dass die Master-BIN-ID korrekt ist und die
                             Konfiguration auf JSONBin.io verfügbar ist.</p>
                     </div>
 
-                    <div v-else class="table-responsive">
+                    <div v-if = "remoteConfigLoaded" class="table-responsive">
                         <table class="table table-hover group-table">
                             <thead>
                                 <tr>
@@ -121,23 +141,40 @@
                             </thead>
                             <tbody>
                                 <tr v-for="groupNumber in totalGroupsRange" :key="groupNumber"
-                                    :class="{ 'group-inactive': !getGroupData(groupNumber).Betreuer || getGroupData(groupNumber).Betreuer.length === 0 }">
-                                    <td><span v-html="getStatusIndicator(getGroupData(groupNumber))"></span></td>
+                                    :class="{ 
+                                        'group-inactive': !getGroupData(groupNumber).Betreuer || getGroupData(groupNumber).Betreuer.length === 0,
+                                        'group-loading': getGroupData(groupNumber).isLoading,
+                                        'group-error': getGroupData(groupNumber).hasError
+                                    }">
+                                    <td>
+                                        <span v-if="getGroupData(groupNumber).isLoading" class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                                        <span v-else v-html="getStatusIndicator(getGroupData(groupNumber))"></span>
+                                    </td>
                                     <td>
                                         <a :href="'b_group.html?gr=' + groupNumber" class="group-number">
                                             <i class="fas fa-users"></i><br> {{ groupNumber }}
                                         </a>
                                     </td>
-                                    <td><span
-                                            v-html="formatCount(getGroupData(groupNumber).KinderAnzahl, 'morning')"></span>
+                                    <td>
+                                        <span v-if="getGroupData(groupNumber).isLoading" class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                                        <span v-else v-html="formatCount(getGroupData(groupNumber).KinderAnzahl, 'morning')"></span>
                                     </td>
-                                    <td><span
-                                            v-html="formatCount(getGroupData(groupNumber).KinderAnzahlNow, 'current')"></span>
+                                    <td>
+                                        <span v-if="getGroupData(groupNumber).isLoading" class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                                        <span v-else v-html="formatCount(getGroupData(groupNumber).KinderAnzahlNow, 'current')"></span>
                                     </td>
-                                    <td><span v-html="formatBetreuerList(getGroupData(groupNumber).Betreuer)"></span>
+                                    <td>
+                                        <span v-if="getGroupData(groupNumber).isLoading" class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                                        <span v-else v-html="formatBetreuerList(getGroupData(groupNumber).Betreuer)"></span>
                                     </td>
-                                    <td><span v-html="formatDifference(getGroupData(groupNumber))"></span></td>
-                                    <td v-html="formatTimestamp(getGroupData(groupNumber).timestamp)"></td>
+                                    <td>
+                                        <span v-if="getGroupData(groupNumber).isLoading" class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                                        <span v-else v-html="formatDifference(getGroupData(groupNumber))"></span>
+                                    </td>
+                                    <td>
+                                        <span v-if="getGroupData(groupNumber).isLoading" class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                                        <span v-else v-html="formatTimestamp(getGroupData(groupNumber).timestamp)"></span>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -489,7 +526,8 @@
                     this.remoteConfigLoaded = true;
 
                     // Daten laden, nachdem die Konfiguration erfolgreich geladen wurde
-                    await this.loadOverviewData(false);
+                    // TODO: please display all groups, possibly with empty data and then  load data for each group
+                    await this.loadOverviewDataContinuously();
                 },
 
                 getGroupData(groupNumber) {
@@ -497,7 +535,9 @@
                         Betreuer: [],
                         KinderAnzahl: null,
                         KinderAnzahlNow: null,
-                        timestamp: null
+                        timestamp: null,
+                        isLoading: false,
+                        hasError: false
                     };
                 },
 
@@ -505,7 +545,34 @@
                     location.href = 'a_login.html';
                 },
 
-                async loadOverviewData(silent = false) {
+                async loadOverviewDataContinuously(iSecondsCount=300){
+
+                    var timeOut = Date.now() + iSecondsCount * 1000;
+                     
+                 let bAtLeastOneGroupHasKinderAnzahlEqNull = false;
+                    do {
+                        await this.loadOverviewData(true);
+
+                        // Überprüfen, ob mindestens eine Gruppe KinderAnzahl oder KinderAnzahlNow gleich null ist
+                        bAtLeastOneGroupHasKinderAnzahlEqNull = Object.values(this.groupsData).some(group => group.KinderAnzahl === null || group.KinderAnzahlNow === null);
+
+                        if (bAtLeastOneGroupHasKinderAnzahlEqNull) {
+                            Utils.showAlert('Mindestens eine Gruppe hat Kinderanzahl oder aktuelle Kinderanzahl auf Null gesetzt. Bitte warten Sie auf die Neuberechnung.', 'warning');
+                        }
+
+                        // Kurze Pause zwischen den Aktualisierungen
+                        await new Promise(resolve => setTimeout(resolve, 5000));
+
+                    } while (bAtLeastOneGroupHasKinderAnzahlEqNull && Date.now() < timeOut);
+                    if (bAtLeastOneGroupHasKinderAnzahlEqNull) {
+                        Utils.showAlert('Die Neuberechnung konnte nicht abgeschlossen werden. Bitte versuchen Sie es später erneut.', 'danger');
+                    } else {
+                        Utils.showAlert('Daten erfolgreich aktualisiert!', 'success');
+                    }   
+
+                },
+                
+                async loadOverviewData(silent = true) {
                     if (!this.isConfigLoaded || !this.remoteConfigLoaded) {
                         if (!silent) {
                             Utils.showAlert('App-Konfiguration konnte nicht geladen werden. Daten können nicht abgerufen werden.', 'danger');
@@ -519,39 +586,71 @@
                             this.loadingInitialData = true;
                         }
 
-                        const newGroupsData = {};
                         const currentDay = this.currentDate;
                         const groupNumbers = Object.keys(this.api.groupBinIds);
 
-                        // Sequenzielles Abrufen statt parallelem Abruf
+                        // Initialize groupsData with loading state
+                        const initialGroupsData = {};
+                        groupNumbers.forEach(groupNumber => {
+                            initialGroupsData[groupNumber] = {
+                                Betreuer: null, // null indicates loading state
+                                KinderAnzahl: null,
+                                KinderAnzahlNow: null,
+                                timestamp: null,
+                                isLoading: false // Add loading flag
+                            };
+                        });
+                        this.groupsData = initialGroupsData;
+
+                        // Process groups sequentially
                         for (const groupNumber of groupNumbers) {
                             try {
+                                // Update loading state for current group
+                                this.groupsData = {
+                                    ...this.groupsData,
+                                    [groupNumber]: {
+                                        ...this.groupsData[groupNumber],
+                                        isLoading: true
+                                    }
+                                };
+
                                 const groupBinId = this.api.groupBinIds[groupNumber];
                                 const binContent = await this.api.getSpecificBinData(groupBinId);
 
-                                newGroupsData[groupNumber] = binContent[currentDay] || {
-                                    Betreuer: [],
-                                    KinderAnzahl: null,
-                                    KinderAnzahlNow: null,
-                                    timestamp: null
+                                // Update the specific group's data immediately
+                                this.groupsData = {
+                                    ...this.groupsData,
+                                    [groupNumber]: {
+                                        ...(binContent[currentDay] || {
+                                            Betreuer: [],
+                                            KinderAnzahl: null,
+                                            KinderAnzahlNow: null,
+                                            timestamp: null
+                                        }),
+                                        isLoading: false
+                                    }
                                 };
 
-                                // Kurze Pause zwischen den Anfragen
-                                await new Promise(resolve => setTimeout(resolve, 100));
+                                // Process the updated data
+                                this.processGroupsData();
+                                this.lastUpdateTime = Utils.getCurrentTimeForDisplay();
+
                             } catch (error) {
                                 console.error(`Fehler beim Abrufen der Daten für Gruppe ${groupNumber}:`, error);
-                                newGroupsData[groupNumber] = {
-                                    Betreuer: [],
-                                    KinderAnzahl: null,
-                                    KinderAnzahlNow: null,
-                                    timestamp: null
+                                // Mark group as loaded but with error
+                                this.groupsData = {
+                                    ...this.groupsData,
+                                    [groupNumber]: {
+                                        Betreuer: [],
+                                        KinderAnzahl: null,
+                                        KinderAnzahlNow: null,
+                                        timestamp: null,
+                                        isLoading: false,
+                                        hasError: true
+                                    }
                                 };
                             }
                         }
-
-                        this.groupsData = newGroupsData;
-                        this.lastUpdateTime = Utils.getCurrentTimeForDisplay();
-                        this.processGroupsData();
 
                         if (!silent) {
                             Utils.showAlert('Gruppen-Daten erfolgreich aktualisiert!', 'success');
@@ -720,7 +819,7 @@
                                 await this.api.updateSpecificBinData(groupBinId, groupBinData);
 
                                 // Pause zwischen den Aktualisierungen
-                                await new Promise(resolve => setTimeout(resolve, 200));
+                                await new Promise(resolve => setTimeout(resolve, 10));
                             } catch (error) {
                                 console.error(`Fehler bei Neuberechnung für Gruppe ${groupNumber}:`, error);
                             }
@@ -728,7 +827,8 @@
 
                         Utils.showAlert('Neuberechnung erfolgreich abgeschlossen! Weiterleitung...', 'success');
                         setTimeout(() => {
-                            location.href = 'a_login.html';
+                            location.href = 'a_login.html'; 
+                            
                         }, 1500);
 
                     } catch (error) {
