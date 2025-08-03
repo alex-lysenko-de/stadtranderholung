@@ -47,9 +47,9 @@ Diese Anwendung unterstützt **Betreuer:innen** und **Leiter:innen** bei der Org
 ## 🚀 Erste Schritte (Einrichtung)
 
 1. **Indexseite öffnen**  
-   Öffne die Datei `index.html` im Browser.
+   Öffne die Datei [index.html](https://raw.githack.com/alex-lysenko-de/stadtranderholung/main/index.html) im Browser.
 
-   📸 `img/setup_index.png`
+   📸 [img/setup_index.png](img/setup_index.png)
 
 2. **Konfiguration eingeben**  
    Gib folgende Daten ein:
@@ -60,12 +60,11 @@ Diese Anwendung unterstützt **Betreuer:innen** und **Leiter:innen** bei der Org
    - **Master Key** & **Access Key**  
      Diese erhältst du nach kostenloser Registrierung bei **[jsonbin.io](https://jsonbin.io)**
 
-   📸 `img/keys_input.png`
+   📸 ![img/1.png](img/1.png)
 
 3. **Einstellungen speichern**  
    Drücke **"Einstellungen speichern"**, um die Daten im lokalen Browser-Speicher zu sichern.
 
-   📸 `img/settings_saved.png`
 
 4. **Login-Links generieren**  
    Nutze die Buttons:
@@ -79,8 +78,8 @@ Diese Anwendung unterstützt **Betreuer:innen** und **Leiter:innen** bei der Org
    - als QR-Code verteilen
    - in die Zwischenablage kopieren
 
-   📸 `img/generated_links.png`
-
+	![img/2.png](img/2.png)
+	![img/3.png](img/3.png)
 ---
 
 ## 👤 Betreuer-Login & Gruppenüberwachung
@@ -92,7 +91,7 @@ Diese Anwendung unterstützt **Betreuer:innen** und **Leiter:innen** bei der Org
 - Datum wird automatisch gesetzt
 - Nach dem Login gelangt man zu `b_group.html`
 
-📸 `img/betreuer_login.png`
+	![img/4.png](img/4.png)
 
 ---
 
@@ -106,10 +105,9 @@ Optional:
 - Kinderliste bearbeiten (`group_edit.html`)
 - Differenzanalyse starten (`group_calc.html`)
 
-📸 `img/b_group_start.png`  
-📸 `img/group_edit_button.png`  
-📸 `img/group_calc_button.png`
-
+	![img/5.png](img/5.png)
+	![img/6.png](img/6.png)
+	![img/7.png](img/7.png)
 ---
 
 ## 🚌 Bus-Überwachung (`b_bus.html`)
@@ -120,7 +118,7 @@ Optional:
   - Anzahl Betreuer:innen
 - Alle Werte werden an JSONBin.io übertragen
 
-📸 `img/bus_input.png`
+	![img/8.png](img/8.png)
 
 ---
 
@@ -131,7 +129,17 @@ Optional:
 - Zugang zu allen Leitungsfunktionen
 - Navigation zu Gruppen- und Busübersicht
 
-📸 `img/leiter_login.png`
+	![img/9.png](img/9.png)
+
+---
+
+
+### 🚌 Busübersicht (`a_bus.html`)
+
+- Tagesübersicht aller Busse
+- Anzahl Kinder & Betreuer:innen pro Bus
+
+	![img/10.png](img/10.png)
 
 ---
 
@@ -142,16 +150,8 @@ Optional:
 - Visuelle Warnung bei Abweichungen
 - Button **"Überprüfung durchgeführt"** setzt Abendzählung zurück
 
-📸 `img/overview_groups.png`
-
----
-
-### 🚌 Busübersicht (`a_bus.html`)
-
-- Tagesübersicht aller Busse
-- Anzahl Kinder & Betreuer:innen pro Bus
-
-📸 `img/overview_buses.png`
+	![img/12.png](img/12.png)
+	![img/13.png](img/13.png)	
 
 ---
 
