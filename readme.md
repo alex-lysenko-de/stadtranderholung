@@ -173,25 +173,4 @@ Optional:
 
 ---
 
-## 📸 Screenshots
-
-| Bereich                   | Bild                       |
-|--------------------------|----------------------------|
-| Konfiguration             | `img/setup_index.png`      |
-| Betreuer-Login            | `img/betreuer_login.png`   |
-| Gruppenzählung            | `img/b_group_start.png`    |
-| Busdaten-Eingabe          | `img/bus_input.png`        |
-| Gruppenübersicht (Leiter) | `img/overview_groups.png`  |
-| Busübersicht (Leiter)     | `img/overview_buses.png`   |
-
-
----
-
-## 🧑‍💻 Autor
-
-**Alex Lysenko**  
-📎 [GitHub-Profil](https://github.com/alex-lysenko-de)
-
----
-
 > Dieses Projekt entstand zur Verbesserung der Sicherheit bei Stadtranderholungen und ähnlichen Events. Es steht als Open Source zur Verfügung.
