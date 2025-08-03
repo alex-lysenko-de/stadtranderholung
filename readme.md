@@ -1,5 +1,3 @@
-https://raw.githack.com/alex-lysenko-de/stadtranderholung/main/index.html
-
 # Stadtranderholung App
 
 Ein webbasiertes System zur **Sicherheitsüberwachung von Kindergruppen während Ausflügen und Ferienprogrammen**.
@@ -49,7 +47,6 @@ Diese Anwendung unterstützt **Betreuer:innen** und **Leiter:innen** bei der Org
 1. **Indexseite öffnen**  
    Öffne die Datei [index.html](https://raw.githack.com/alex-lysenko-de/stadtranderholung/main/index.html) im Browser.
 
-   📸 [img/setup_index.png](img/setup_index.png)
 
 2. **Konfiguration eingeben**  
    Gib folgende Daten ein:
@@ -60,7 +57,8 @@ Diese Anwendung unterstützt **Betreuer:innen** und **Leiter:innen** bei der Org
    - **Master Key** & **Access Key**  
      Diese erhältst du nach kostenloser Registrierung bei **[jsonbin.io](https://jsonbin.io)**
 
-   📸 ![img/1.png](img/1.png)
+   ![img/1.png](img/1.png)
+   ![img/3.png](img/3.png)
 
 3. **Einstellungen speichern**  
    Drücke **"Einstellungen speichern"**, um die Daten im lokalen Browser-Speicher zu sichern.
@@ -78,8 +76,7 @@ Diese Anwendung unterstützt **Betreuer:innen** und **Leiter:innen** bei der Org
    - als QR-Code verteilen
    - in die Zwischenablage kopieren
 
-	![img/2.png](img/2.png)
-	![img/3.png](img/3.png)
+
 ---
 
 ## 👤 Betreuer-Login & Gruppenüberwachung
@@ -92,7 +89,7 @@ Diese Anwendung unterstützt **Betreuer:innen** und **Leiter:innen** bei der Org
 - Nach dem Login gelangt man zu `b_group.html`
 
 	![img/4.png](img/4.png)
-
+	![img/5.png](img/5.png)
 ---
 
 ### 👥 Gruppenmodul (`b_group.html`)
@@ -105,7 +102,6 @@ Optional:
 - Kinderliste bearbeiten (`group_edit.html`)
 - Differenzanalyse starten (`group_calc.html`)
 
-	![img/5.png](img/5.png)
 	![img/6.png](img/6.png)
 	![img/7.png](img/7.png)
 ---
@@ -119,7 +115,7 @@ Optional:
 - Alle Werte werden an JSONBin.io übertragen
 
 	![img/8.png](img/8.png)
-
+	![img/10.png](img/10.png)
 ---
 
 ## 📊 Leiter-Übersicht
@@ -129,6 +125,7 @@ Optional:
 - Zugang zu allen Leitungsfunktionen
 - Navigation zu Gruppen- und Busübersicht
 
+	![img/2.png](img/2.png)
 	![img/9.png](img/9.png)
 
 ---
@@ -139,7 +136,6 @@ Optional:
 - Tagesübersicht aller Busse
 - Anzahl Kinder & Betreuer:innen pro Bus
 
-	![img/10.png](img/10.png)
 
 ---
 
